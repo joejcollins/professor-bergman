@@ -54,3 +54,8 @@ docs/_build/
 target/
 
 *.suo
+Dinmore.Winforms/x64/
+bin/
+obj/
+*.csproj.user
+packages/
