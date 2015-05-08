@@ -53,7 +53,7 @@ docs/_build/
 # PyBuilder
 target/
 
-*.suo
+*.v12.suo
 Dinmore.Winforms/x64/
 bin/
 obj/
