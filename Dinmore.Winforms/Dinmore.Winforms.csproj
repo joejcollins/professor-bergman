@@ -112,6 +112,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="cascades\aGest.xml" />
+    <Content Include="cascades\haarcascade_eye.xml" />
+    <Content Include="cascades\haarcascade_frontalface_default.xml" />
     <Content Include="x64\cudart64_65.dll" />
     <Content Include="x64\cufft64_65.dll" />
     <Content Include="x64\cvextern.dll" />
