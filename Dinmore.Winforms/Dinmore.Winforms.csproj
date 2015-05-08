@@ -13,7 +13,7 @@
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>x64</PlatformTarget>
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -79,9 +79,6 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <EmbeddedResource Include="Form1.resx">
-      <DependentUpon>Form1.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
@@ -115,39 +112,6 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="bin\cudart64_65.dll" />
-    <Content Include="bin\cufft64_65.dll" />
-    <Content Include="bin\cvextern.dll" />
-    <Content Include="bin\nppc64_65.dll" />
-    <Content Include="bin\nppi64_65.dll" />
-    <Content Include="bin\npps64_65.dll" />
-    <Content Include="bin\OpenCL.dll" />
-    <Content Include="bin\opencv_calib3d2410.dll" />
-    <Content Include="bin\opencv_contrib2410.dll" />
-    <Content Include="bin\opencv_core2410.dll" />
-    <Content Include="bin\opencv_features2d2410.dll" />
-    <Content Include="bin\opencv_flann2410.dll" />
-    <Content Include="bin\opencv_gpu2410.dll" />
-    <Content Include="bin\opencv_highgui2410.dll" />
-    <Content Include="bin\opencv_imgproc2410.dll" />
-    <Content Include="bin\opencv_legacy2410.dll" />
-    <Content Include="bin\opencv_ml2410.dll" />
-    <Content Include="bin\opencv_nonfree2410.dll" />
-    <Content Include="bin\opencv_objdetect2410.dll" />
-    <Content Include="bin\opencv_photo2410.dll" />
-    <Content Include="bin\opencv_stitching2410.dll" />
-    <Content Include="bin\opencv_superres2410.dll" />
-    <Content Include="bin\opencv_video2410.dll" />
-    <Content Include="bin\opencv_videostab2410.dll" />
-    <Content Include="cascades\aGest.xml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="cascades\haarcascade_eye.xml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="cascades\haarcascade_frontalface_default.xml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="x64\cudart64_65.dll" />
     <Content Include="x64\cufft64_65.dll" />
     <Content Include="x64\cvextern.dll" />
