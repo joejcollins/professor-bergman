@@ -1,3 +1,5 @@
+**This content has been archived for historical purposes but is no longer relevant to the intelligent museum project**
+
 # Patron Interactive Engagement
 
 ## Dinmore - counting patrons
