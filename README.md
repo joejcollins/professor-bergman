@@ -1,4 +1,4 @@
-# Intelligent Museum
+# Intelligent Museum Exhibits (Patron Interactive Engagement)
 A project which enables two key capabilities within the context of museums:
 
 1. Intelligent exhibits which can react to the person looking at it based on age and gender
