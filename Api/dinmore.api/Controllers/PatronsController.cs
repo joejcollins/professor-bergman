@@ -1,0 +1,85 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using dinmore.api.Models;
+
+namespace dinmore.api.Controllers
+{
+    [Produces("application/json")]
+    [Route("api/Patrons")]
+    public class PatronsController : Controller
+    {
+        // POST: api/Patrons
+        [HttpPost]
+        public IActionResult Post()
+        {
+            //generate mock content for now
+            var patrons = GenerateMockData();
+            return Json(patrons);
+        }
+
+        private IEnumerable<Patron> GenerateMockData()
+        {
+            var patrons = new List<Patron>();
+
+            patrons.Add(new Patron()
+            {
+                Age = 38,
+                Gender = "Male",
+                EmotionScores = new EmotionScores()
+                {
+                    happiness = 0.87,
+                    anger = 0.01,
+                    contempt = 0.06,
+                    surprise = 0.34,
+                    disgust = 0.04,
+                    fear = 0.01,
+                    neutral = 0.23,
+                    sadness = 0.02
+                },
+                FaceId = Guid.NewGuid().ToString(),
+                FaceRectangle = new FaceRectangle()
+                {
+                    left = 488,
+                    top = 263,
+                    width = 148,
+                    height = 148
+                },
+                PrimaryEmotion = "happiness"
+            });
+
+            patrons.Add(new Patron()
+            {
+                Age = 17,
+                Gender = "Female",
+                EmotionScores = new EmotionScores()
+                {
+                    happiness = 0.05,
+                    anger = 0.01,
+                    contempt = 0.12,
+                    surprise = 0.38,
+                    disgust = 0.01,
+                    fear = 0.03,
+                    neutral = 0.84,
+                    sadness = 0.16
+                },
+                FaceId = Guid.NewGuid().ToString(),
+                FaceRectangle = new FaceRectangle()
+                {
+                    left = 153,
+                    top = 251,
+                    width = 133,
+                    height = 133
+                },
+                PrimaryEmotion = "neutral"
+            });
+
+            return patrons;
+        }
+    }
+
+
+}
