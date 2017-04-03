@@ -1,0 +1,9 @@
+C:\Users\martin\Documents\GitHub\dinmore\Api\dinmore.api.testapp\bin\Debug\netcoreapp1.1\dinmore.api.testapp.deps.json
+C:\Users\martin\Documents\GitHub\dinmore\Api\dinmore.api.testapp\bin\Debug\netcoreapp1.1\dinmore.api.testapp.runtimeconfig.json
+C:\Users\martin\Documents\GitHub\dinmore\Api\dinmore.api.testapp\bin\Debug\netcoreapp1.1\dinmore.api.testapp.runtimeconfig.dev.json
+C:\Users\martin\Documents\GitHub\dinmore\Api\dinmore.api.testapp\bin\Debug\netcoreapp1.1\dinmore.api.testapp.dll
+C:\Users\martin\Documents\GitHub\dinmore\Api\dinmore.api.testapp\bin\Debug\netcoreapp1.1\dinmore.api.testapp.pdb
+C:\Users\martin\Documents\GitHub\dinmore\Api\dinmore.api.testapp\obj\Debug\netcoreapp1.1\dinmore.api.testapp.csprojResolveAssemblyReference.cache
+C:\Users\martin\Documents\GitHub\dinmore\Api\dinmore.api.testapp\obj\Debug\netcoreapp1.1\dinmore.api.testapp.AssemblyInfo.cs
+C:\Users\martin\Documents\GitHub\dinmore\Api\dinmore.api.testapp\obj\Debug\netcoreapp1.1\dinmore.api.testapp.dll
+C:\Users\martin\Documents\GitHub\dinmore\Api\dinmore.api.testapp\obj\Debug\netcoreapp1.1\dinmore.api.testapp.pdb

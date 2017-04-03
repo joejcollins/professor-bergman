@@ -1,0 +1,58 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+
+<form enctype="multipart/form-data" id="upload-form">
+    <div class="form-inputs">
+        <div class="form-group" id="form-file-input">
+            <div class="input-group">
+                <input type="file" name="file" id="file" class="form-control input-lg">
+                <input type="text" class="form-control" readonly>
+            </div>
+        </div>
+
+        <div class="form-group" id="form-submit-button">
+            <button type="button" class="btn btn-primary btn-lg btn-block" id="upload-button"><i class="fa fa-upload"></i> Upload</button>
+        </div>
+
+    </div>
+</form>
+
+
+@section Scripts{
+<script>
+    $(document).ready(function () {
+
+        $("#upload-button").click(function (evt) {
+            //get form data
+            var fd = new FormData();
+            var file_data = $('input[type="file"]')[0].files; // for multiple files
+            for (var i = 0; i < file_data.length; i++) {
+                fd.append("file_" + i, file_data[i]);
+            }
+            var other_data = $('form').serializeArray();
+            $.each(other_data, function (key, input) {
+                fd.append(input.name, input.value);
+            });
+
+
+            //post to api
+            $.ajax({
+                type: "POST",
+                url: "http://localhost:21166/api/patrons",
+                contentType: false,
+                processData: false,
+                data: fd,
+                success: function (response) {
+                    console.log("Posted image");
+                },
+                error: function (error) {
+                    console.log(error.statusText);
+                }
+            });
+        });
+
+    });
+</script>
+}
