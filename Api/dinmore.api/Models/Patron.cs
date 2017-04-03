@@ -15,7 +15,7 @@ namespace dinmore.api.Models
 
         public string Gender { get; set; }
 
-        public EmotionScores EmotionScores { get; set; }
+        public Scores EmotionScores { get; set; }
 
         public string PrimaryEmotion { get; set; }
     }

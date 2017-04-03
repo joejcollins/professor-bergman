@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace dinmore.api.Models
 {
-    public class EmotionScores
+    public class Scores
     {
         public double anger { get; set; }
 
