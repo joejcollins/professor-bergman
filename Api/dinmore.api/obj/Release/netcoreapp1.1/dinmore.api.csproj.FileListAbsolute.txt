@@ -1,9 +1,0 @@
-C:\Users\martin\Documents\GitHub\dinmore\Api\dinmore.api\bin\Release\netcoreapp1.1\dinmore.api.deps.json
-C:\Users\martin\Documents\GitHub\dinmore\Api\dinmore.api\bin\Release\netcoreapp1.1\dinmore.api.runtimeconfig.json
-C:\Users\martin\Documents\GitHub\dinmore\Api\dinmore.api\bin\Release\netcoreapp1.1\dinmore.api.runtimeconfig.dev.json
-C:\Users\martin\Documents\GitHub\dinmore\Api\dinmore.api\bin\Release\netcoreapp1.1\dinmore.api.dll
-C:\Users\martin\Documents\GitHub\dinmore\Api\dinmore.api\bin\Release\netcoreapp1.1\dinmore.api.pdb
-C:\Users\martin\Documents\GitHub\dinmore\Api\dinmore.api\obj\Release\netcoreapp1.1\dinmore.api.csprojResolveAssemblyReference.cache
-C:\Users\martin\Documents\GitHub\dinmore\Api\dinmore.api\obj\Release\netcoreapp1.1\dinmore.api.AssemblyInfo.cs
-C:\Users\martin\Documents\GitHub\dinmore\Api\dinmore.api\obj\Release\netcoreapp1.1\dinmore.api.dll
-C:\Users\martin\Documents\GitHub\dinmore\Api\dinmore.api\obj\Release\netcoreapp1.1\dinmore.api.pdb
