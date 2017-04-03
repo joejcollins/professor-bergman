@@ -7,6 +7,9 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using dinmore.api.Models;
+using dinmore.api.Interfaces;
+using dinmore.api.Repositories;
 
 namespace dinmore.api
 {
@@ -30,6 +33,13 @@ namespace dinmore.api
         {
             // Add framework services.
             services.AddMvc();
+
+            // Add app settings
+            var appSettings = Configuration.GetSection("AppSettings");
+            services.Configure<AppSettings>(appSettings);
+
+            // Add repositories
+            services.AddSingleton<IEmotionApiRepository, EmotionApiRepository>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

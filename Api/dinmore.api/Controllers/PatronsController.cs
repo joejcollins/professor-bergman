@@ -8,50 +8,73 @@ using dinmore.api.Models;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using Microsoft.Extensions.Options;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
+using dinmore.api.Interfaces;
 
 namespace dinmore.api.Controllers
 {
 
-    public class DataHolder {
-        public byte[] Bytes { get; set; }
-    }
     [Produces("application/json")]
     [Route("api/Patrons")]
     public class PatronsController : Controller
     {
-        public const string _emotionApiKey = "1dd1f4e23a5743139399788aa30a7153";
-        public const string _emotionApiUrl = "https://api.projectoxford.ai/emotion/v1.0/recognize";
+        //private readonly AppSettings _appSettings;
+        private readonly IEmotionApiRepository _emotionApiRepository;
+
+        public PatronsController(IEmotionApiRepository emotionApiRepository)
+        {
+            _emotionApiRepository = emotionApiRepository;
+        }
 
         // POST: api/Patrons
+        // To post in PostMan set Content-Type to application/octet-stream and attach a file as a binary body
         [HttpPost]
         public async Task<IActionResult> Post()
         {
             //read body of request into a byte array
             byte[] bytes = ReadFileStream(Request.Body);
 
-            //call emotion api
-            var emotionResponseString = string.Empty;
-            using (var httpClient = new HttpClient())
+            //setup patrons list
+            var patrons = new List<Patron>();
+
+            //get faces with emotion
+            var facesWithEmotion = await _emotionApiRepository.GetFacesWithEmotion(bytes);
+            foreach (var faceWithEmotion in facesWithEmotion)
             {
-                //setup HttpClient with content
-                httpClient.BaseAddress = new Uri(_emotionApiUrl);
-                httpClient.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", _emotionApiKey);
-                var content = new StreamContent(new MemoryStream(bytes));
-                content.Headers.ContentType = new MediaTypeWithQualityHeaderValue("application/octet-stream");
-
-                //make request
-                var responseMessage = await httpClient.PostAsync(_emotionApiUrl, content);
-
-                //read response as a json string
-                emotionResponseString = await responseMessage.Content.ReadAsStringAsync();
+                patrons.Add(new Patron()
+                {
+                    Age = 38,
+                    Gender = "Male",
+                    EmotionScores = faceWithEmotion.scores,
+                    FaceId = Guid.NewGuid().ToString(),
+                    FaceRectangle = faceWithEmotion.faceRectangle,
+                    PrimaryEmotion = GetTopEmotion(faceWithEmotion.scores)
+                });
             }
-
-            //generate mock content for now
-            var patrons = GenerateMockData();
+            
             return Json(patrons);
         }
 
-        public static byte[] ReadFileStream(Stream input)
+        private static string GetTopEmotion(Scores scores)
+        {
+            var scoresList = new SortedDictionary<string, float>();
+            scoresList.Add("anger", scores.anger);
+            scoresList.Add("happiness", scores.happiness);
+            scoresList.Add("contempt", scores.contempt);
+            scoresList.Add("disgust", scores.disgust);
+            scoresList.Add("fear", scores.fear);
+            scoresList.Add("neutral", scores.neutral);
+            scoresList.Add("sadness", scores.sadness);
+            scoresList.Add("surprise", scores.surprise);
+       
+            var key = scoresList.OrderBy(x => x.Value).Select(x => x.Key).First();
+
+            return key;
+        }
+
+        private static byte[] ReadFileStream(Stream input)
         {
             byte[] buffer = new byte[16 * 1024];
             using (MemoryStream ms = new MemoryStream())
@@ -65,65 +88,5 @@ namespace dinmore.api.Controllers
             }
         }
 
-        private IEnumerable<Patron> GenerateMockData()
-        {
-            var patrons = new List<Patron>();
-
-            patrons.Add(new Patron()
-            {
-                Age = 38,
-                Gender = "Male",
-                EmotionScores = new EmotionScores()
-                {
-                    happiness = 0.87,
-                    anger = 0.01,
-                    contempt = 0.06,
-                    surprise = 0.34,
-                    disgust = 0.04,
-                    fear = 0.01,
-                    neutral = 0.23,
-                    sadness = 0.02
-                },
-                FaceId = Guid.NewGuid().ToString(),
-                FaceRectangle = new FaceRectangle()
-                {
-                    left = 488,
-                    top = 263,
-                    width = 148,
-                    height = 148
-                },
-                PrimaryEmotion = "happiness"
-            });
-
-            patrons.Add(new Patron()
-            {
-                Age = 17,
-                Gender = "Female",
-                EmotionScores = new EmotionScores()
-                {
-                    happiness = 0.05,
-                    anger = 0.01,
-                    contempt = 0.12,
-                    surprise = 0.38,
-                    disgust = 0.01,
-                    fear = 0.03,
-                    neutral = 0.84,
-                    sadness = 0.16
-                },
-                FaceId = Guid.NewGuid().ToString(),
-                FaceRectangle = new FaceRectangle()
-                {
-                    left = 153,
-                    top = 251,
-                    width = 133,
-                    height = 133
-                },
-                PrimaryEmotion = "neutral"
-            });
-
-            return patrons;
-        }
     }
-
-
 }
