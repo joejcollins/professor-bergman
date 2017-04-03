@@ -6,13 +6,10 @@ using System.Threading.Tasks;
 namespace dinmore.api.Models
 {
 
-    public class Face
+    public class FaceWithEmotion
     {
-
         public FaceRectangle faceRectangle { get; set; }
 
         public Scores scores { get; set; }
-
     }
-    
 }
