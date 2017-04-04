@@ -32,7 +32,7 @@ namespace Dinmore.Uwp
     /// <summary>
     /// Page for demonstrating FaceTracking.
     /// </summary>
-    public sealed partial class TrackFacesInWebcam : Page
+    public sealed partial class WebcamFaceDetector : Page
     {
         /// <summary>
         /// Brush for drawing the bounding box around each identified face.
@@ -80,9 +80,9 @@ namespace Dinmore.Uwp
         private SemaphoreSlim frameProcessingSemaphore = new SemaphoreSlim(1);
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TrackFacesInWebcam"/> class.
+        /// Initializes a new instance of the <see cref="WebcamFaceDetector"/> class.
         /// </summary>
-        public TrackFacesInWebcam()
+        public WebcamFaceDetector()
         {
             this.InitializeComponent();
 
@@ -117,6 +117,7 @@ namespace Dinmore.Uwp
             if (this.faceTracker == null)
             {
                 this.faceTracker = await FaceTracker.CreateAsync();
+                this.ChangeScenarioState(ScenarioState.Streaming);
             }
         }
 
@@ -194,7 +195,7 @@ namespace Dinmore.Uwp
         /// </summary>
         private async void ShutdownWebCam()
         {
-            if(this.frameProcessingTimer != null)
+            if (this.frameProcessingTimer != null)
             {
                 this.frameProcessingTimer.Cancel();
             }
@@ -207,7 +208,7 @@ namespace Dinmore.Uwp
                     {
                         await this.mediaCapture.StopPreviewAsync();
                     }
-                    catch(Exception)
+                    catch (Exception)
                     {
                         ;   // Since we're going to destroy the MediaCapture object there's nothing to do here
                     }
@@ -218,8 +219,6 @@ namespace Dinmore.Uwp
             this.frameProcessingTimer = null;
             this.CamPreview.Source = null;
             this.mediaCapture = null;
-            this.CameraStreamingButton.IsEnabled = true;
-
         }
 
         /// <summary>
@@ -329,9 +328,6 @@ namespace Dinmore.Uwp
         /// <param name="newState">State to switch to</param>
         private async void ChangeScenarioState(ScenarioState newState)
         {
-            // Disable UI while state change is in progress
-            this.CameraStreamingButton.IsEnabled = false;
-
             switch (newState)
             {
                 case ScenarioState.Idle:
@@ -339,7 +335,6 @@ namespace Dinmore.Uwp
                     this.ShutdownWebCam();
 
                     this.VisualizationCanvas.Children.Clear();
-                    this.CameraStreamingButton.Content = "Start Streaming";
                     this.currentState = newState;
                     break;
 
@@ -352,9 +347,7 @@ namespace Dinmore.Uwp
                     }
 
                     this.VisualizationCanvas.Children.Clear();
-                    this.CameraStreamingButton.Content = "Stop Streaming";
                     this.currentState = newState;
-                    this.CameraStreamingButton.IsEnabled = true;
                     break;
             }
         }
@@ -372,23 +365,6 @@ namespace Dinmore.Uwp
             {
                 ChangeScenarioState(ScenarioState.Idle);
             });
-        }
-
-        /// <summary>
-        /// Handles "streaming" button clicks to start/stop webcam streaming.
-        /// </summary>
-        /// <param name="sender">Button user clicked</param>
-        /// <param name="e">Event data</param>
-        private void CameraStreamingButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (this.currentState == ScenarioState.Streaming)
-            {
-                this.ChangeScenarioState(ScenarioState.Idle);
-            }
-            else
-            {
-                this.ChangeScenarioState(ScenarioState.Streaming);
-            }
         }
     }
 }
