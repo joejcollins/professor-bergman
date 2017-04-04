@@ -57,6 +57,11 @@ namespace dinmore.api.Controllers
             return Json(patrons);
         }
 
+        /// <summary>
+        /// What's the primary emotion then?
+        /// </summary>
+        /// <param name="scores"></param>
+        /// <returns></returns>
         private static string GetTopEmotion(Scores scores)
         {
             var scoresList = new SortedDictionary<string, float>();
@@ -69,7 +74,7 @@ namespace dinmore.api.Controllers
             scoresList.Add("sadness", scores.sadness);
             scoresList.Add("surprise", scores.surprise);
        
-            var key = scoresList.OrderBy(x => x.Value).Select(x => x.Key).First();
+            var key = scoresList.OrderByDescending(x => x.Value).Select(x => x.Key).First();
 
             return key;
         }
