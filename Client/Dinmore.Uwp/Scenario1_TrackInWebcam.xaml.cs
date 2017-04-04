@@ -50,11 +50,6 @@ namespace Dinmore.Uwp
         private readonly SolidColorBrush fillBrush = new SolidColorBrush(Windows.UI.Colors.Transparent);
 
         /// <summary>
-        /// Reference back to the "root" page of the app.
-        /// </summary>
-        private MainPage rootPage;
-
-        /// <summary>
         /// Holds the current scenario state value.
         /// </summary>
         private ScenarioState currentState;
@@ -117,8 +112,6 @@ namespace Dinmore.Uwp
         /// <param name="e">Event data</param>
         protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
-            this.rootPage = MainPage.Current;
-
             // The 'await' operation can only be used from within an async method but class constructors
             // cannot be labeled as async, and so we'll initialize FaceTracker here.
             if (this.faceTracker == null)
@@ -184,12 +177,12 @@ namespace Dinmore.Uwp
             catch (System.UnauthorizedAccessException)
             {
                 // If the user has disabled their webcam this exception is thrown; provide a descriptive message to inform the user of this fact.
-                this.rootPage.NotifyUser("Webcam is disabled or access to the webcam is disabled for this app.\nEnsure Privacy Settings allow webcam usage.", NotifyType.ErrorMessage);
+                //this.rootPage.NotifyUser("Webcam is disabled or access to the webcam is disabled for this app.\nEnsure Privacy Settings allow webcam usage.", NotifyType.ErrorMessage);
                 successful = false;
             }
             catch (Exception ex)
             {
-                this.rootPage.NotifyUser(ex.ToString(), NotifyType.ErrorMessage);
+                //this.rootPage.NotifyUser(ex.ToString(), NotifyType.ErrorMessage);
                 successful = false;
             }
 
@@ -285,7 +278,7 @@ namespace Dinmore.Uwp
             {
                 var ignored = this.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                 {
-                    this.rootPage.NotifyUser(ex.ToString(), NotifyType.ErrorMessage);
+                    //this.rootPage.NotifyUser(ex.ToString(), NotifyType.ErrorMessage);
                 });
             }
             finally
@@ -390,12 +383,10 @@ namespace Dinmore.Uwp
         {
             if (this.currentState == ScenarioState.Streaming)
             {
-                this.rootPage.NotifyUser(string.Empty, NotifyType.StatusMessage);
                 this.ChangeScenarioState(ScenarioState.Idle);
             }
             else
             {
-                this.rootPage.NotifyUser(string.Empty, NotifyType.StatusMessage);
                 this.ChangeScenarioState(ScenarioState.Streaming);
             }
         }
