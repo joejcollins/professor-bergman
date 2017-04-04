@@ -95,8 +95,8 @@
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Scenario1_TrackInWebcam.xaml.cs">
-      <DependentUpon>Scenario1_TrackInWebcam.xaml</DependentUpon>
+    <Compile Include="WebcamFaceDetector.xaml.cs">
+      <DependentUpon>WebcamFaceDetector.xaml</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -109,7 +109,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Page Include="Scenario1_TrackInWebcam.xaml">
+    <Page Include="WebcamFaceDetector.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
