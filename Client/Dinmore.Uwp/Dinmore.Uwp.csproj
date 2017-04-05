@@ -128,13 +128,46 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Assets\microsoft-sdk.png" />
-    <Content Include="Assets\smalltile-sdk.png" />
-    <Content Include="Assets\splash-sdk.png" />
-    <Content Include="Assets\squaretile-sdk.png" />
-    <Content Include="Assets\storelogo-sdk.png" />
-    <Content Include="Assets\tile-sdk.png" />
-    <Content Include="Assets\windows-sdk.png" />
+    <Content Include="Assets\LargeTile.scale-100.png" />
+    <Content Include="Assets\LargeTile.scale-125.png" />
+    <Content Include="Assets\LargeTile.scale-150.png" />
+    <Content Include="Assets\LargeTile.scale-200.png" />
+    <Content Include="Assets\LargeTile.scale-400.png" />
+    <Content Include="Assets\SmallTile-sdk.altform-unplated_targetsize-16.png" />
+    <Content Include="Assets\SmallTile-sdk.altform-unplated_targetsize-24.png" />
+    <Content Include="Assets\SmallTile-sdk.altform-unplated_targetsize-256.png" />
+    <Content Include="Assets\SmallTile-sdk.altform-unplated_targetsize-32.png" />
+    <Content Include="Assets\SmallTile-sdk.altform-unplated_targetsize-48.png" />
+    <Content Include="Assets\SmallTile-sdk.scale-100.png" />
+    <Content Include="Assets\SmallTile-sdk.scale-125.png" />
+    <Content Include="Assets\SmallTile-sdk.scale-150.png" />
+    <Content Include="Assets\SmallTile-sdk.scale-200.png" />
+    <Content Include="Assets\SmallTile-sdk.scale-400.png" />
+    <Content Include="Assets\SmallTile-sdk.targetsize-16.png" />
+    <Content Include="Assets\SmallTile-sdk.targetsize-24.png" />
+    <Content Include="Assets\SmallTile-sdk.targetsize-256.png" />
+    <Content Include="Assets\SmallTile-sdk.targetsize-32.png" />
+    <Content Include="Assets\SmallTile-sdk.targetsize-48.png" />
+    <Content Include="Assets\SmallTile.scale-100.png" />
+    <Content Include="Assets\SmallTile.scale-125.png" />
+    <Content Include="Assets\SmallTile.scale-150.png" />
+    <Content Include="Assets\SmallTile.scale-200.png" />
+    <Content Include="Assets\SmallTile.scale-400.png" />
+    <Content Include="Assets\Splash-sdk.scale-100.png" />
+    <Content Include="Assets\Splash-sdk.scale-125.png" />
+    <Content Include="Assets\Splash-sdk.scale-150.png" />
+    <Content Include="Assets\Splash-sdk.scale-200.png" />
+    <Content Include="Assets\Splash-sdk.scale-400.png" />
+    <Content Include="Assets\squareTile-sdk.scale-100.png" />
+    <Content Include="Assets\squareTile-sdk.scale-125.png" />
+    <Content Include="Assets\squareTile-sdk.scale-150.png" />
+    <Content Include="Assets\squareTile-sdk.scale-200.png" />
+    <Content Include="Assets\squareTile-sdk.scale-400.png" />
+    <Content Include="Assets\WideTile.scale-100.png" />
+    <Content Include="Assets\WideTile.scale-125.png" />
+    <Content Include="Assets\WideTile.scale-150.png" />
+    <Content Include="Assets\WideTile.scale-200.png" />
+    <Content Include="Assets\WideTile.scale-400.png" />
     <Content Include="Properties\Default.rd.xml" />
   </ItemGroup>
   <ItemGroup />
