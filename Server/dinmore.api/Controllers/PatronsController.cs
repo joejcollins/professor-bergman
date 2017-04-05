@@ -31,7 +31,7 @@ namespace dinmore.api.Controllers
         // POST: api/Patrons
         // To post in PostMan set Content-Type to application/octet-stream and attach a file as a binary body
         [HttpPost]
-        public async Task<IActionResult> Post()
+        public async Task<IActionResult> Post(string device)
         {
             //read body of request into a byte array
             byte[] bytes = ReadFileStream(Request.Body);
@@ -40,7 +40,7 @@ namespace dinmore.api.Controllers
             var patrons = new List<Patron>();
 
             //get faces 
-            var faces = await _faceApiRepository.DetectFaces(bytes);
+            var faces = await _faceApiRepository.DetectFaces(bytes, true, "age,gender,headPose,smile,facialHair,glasses,emotion");
             foreach (var face in faces)
             {
                 patrons.Add(new Patron()

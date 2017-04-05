@@ -1,5 +1,6 @@
 ﻿using dinmore.api.Interfaces;
 using dinmore.api.Models;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -22,20 +23,29 @@ namespace dinmore.api.Repositories
             _appSettings = appSettings.Value;
         }
 
-        public async Task<IEnumerable<Face>> DetectFaces(byte[] image)
+        public async Task<IEnumerable<Face>> DetectFaces(byte[] image, bool returnFaceLandmarks, string returnFaceAttributes)
         {
             //call face api
             var responseString = string.Empty;
             using (var httpClient = new HttpClient())
             {
+
                 //setup HttpClient with content
                 httpClient.BaseAddress = new Uri(_appSettings.FaceApiDetectBaseUrl);
                 httpClient.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", _appSettings.FaceApiKey);
                 var content = new StreamContent(new MemoryStream(image));
                 content.Headers.ContentType = new MediaTypeWithQualityHeaderValue("application/octet-stream");
 
+                //construct full API endpoint uri
+                var parameters = new Dictionary<string, string> {
+                    { "returnFaceId", "true"},
+                    { "returnFaceLandmarks", returnFaceLandmarks.ToString() },
+                    { "returnFaceAttributes", returnFaceAttributes },
+                };
+                var apiUri = QueryHelpers.AddQueryString(_appSettings.FaceApiDetectBaseUrl, parameters);
+                
                 //make request
-                var responseMessage = await httpClient.PostAsync(_appSettings.FaceApiDetectBaseUrl + "?returnFaceId=true&returnFaceLandmarks=true&returnFaceAttributes=age,gender,headPose,smile,facialHair,glasses,emotion", content);
+                var responseMessage = await httpClient.PostAsync(apiUri, content);
 
                 //read response as a json string
                 responseString = await responseMessage.Content.ReadAsStringAsync();

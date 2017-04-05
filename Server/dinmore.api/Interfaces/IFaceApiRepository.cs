@@ -8,6 +8,6 @@ namespace dinmore.api.Interfaces
 {
     public interface IFaceApiRepository
     {
-        Task<IEnumerable<Face>> DetectFaces(byte[] image);
+        Task<IEnumerable<Face>> DetectFaces(byte[] image, bool returnFaceLandmarks, string returnFaceAttributes);
     }
 }
