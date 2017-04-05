@@ -21,17 +21,20 @@ namespace dinmore.api.Controllers
     public class PatronsController : Controller
     {
         //private readonly AppSettings _appSettings;
-        private readonly IEmotionApiRepository _emotionApiRepository;
+        private readonly IFaceApiRepository _faceApiRepository;
 
-        public PatronsController(IEmotionApiRepository emotionApiRepository)
+        public PatronsController(IFaceApiRepository faceApiRepository)
         {
-            _emotionApiRepository = emotionApiRepository;
+            _faceApiRepository = faceApiRepository;
         }
 
         // POST: api/Patrons
-        // To post in PostMan set Content-Type to application/octet-stream and attach a file as a binary body
+        // To post in PostMan set 'Content-Type' to 'application/octet-stream' and attach a file as a binary body
+        // 'device' is a unique identifier for the device that sent the photo 
+        // 'returnFaceLandmarks' to return things like 'upperLipBottom', there are 27 landmarks in total. Defaults to false
+        // 'returnFaceAttributes' to return specific attributes. Accepts a comma-delimited list. Defaults to age,gender,headPose,smile,facialHair,glasses,emotion
         [HttpPost]
-        public async Task<IActionResult> Post()
+        public async Task<IActionResult> Post(string device, bool returnFaceLandmarks = false, string returnFaceAttributes = "age,gender,headPose,smile,facialHair,glasses,emotion")
         {
             //read body of request into a byte array
             byte[] bytes = ReadFileStream(Request.Body);
@@ -39,42 +42,51 @@ namespace dinmore.api.Controllers
             //setup patrons list
             var patrons = new List<Patron>();
 
-            //get faces with emotion
-            var facesWithEmotion = await _emotionApiRepository.GetFacesWithEmotion(bytes);
-            foreach (var faceWithEmotion in facesWithEmotion)
+            //get faces 
+            var faces = await _faceApiRepository.DetectFaces(bytes, returnFaceLandmarks, returnFaceAttributes);
+            foreach (var face in faces)
             {
                 patrons.Add(new Patron()
                 {
-                    Age = 38,
-                    Gender = "Male",
-                    EmotionScores = faceWithEmotion.scores,
                     FaceId = Guid.NewGuid().ToString(),
-                    FaceRectangle = faceWithEmotion.faceRectangle,
-                    PrimaryEmotion = GetTopEmotion(faceWithEmotion.scores)
+                    FaceRectangle = face.faceRectangle,
+                    FaceAttributes = face.faceAttributes,
+                    FaceLandmarks = face.faceLandmarks,
+                    PrimaryEmotion = (face.faceAttributes.emotion != null) ?
+                        GetTopEmotion(face.faceAttributes.emotion) :
+                        null,
+                    TimeLastSeen = null,
+                    DeviceLastSeen = "Not Implemented"
                 });
             }
-            
+
             return Json(patrons);
         }
 
         /// <summary>
         /// What's the primary emotion then?
         /// </summary>
-        /// <param name="scores"></param>
+        /// <param name="emotion"></param>
         /// <returns></returns>
-        private static string GetTopEmotion(Scores scores)
+        private static string GetTopEmotion(Emotion emotion)
         {
-            var scoresList = new SortedDictionary<string, float>();
-            scoresList.Add("anger", scores.anger);
-            scoresList.Add("happiness", scores.happiness);
-            scoresList.Add("contempt", scores.contempt);
-            scoresList.Add("disgust", scores.disgust);
-            scoresList.Add("fear", scores.fear);
-            scoresList.Add("neutral", scores.neutral);
-            scoresList.Add("sadness", scores.sadness);
-            scoresList.Add("surprise", scores.surprise);
-       
-            var key = scoresList.OrderByDescending(x => x.Value).Select(x => x.Key).First();
+            var scoresList = new Dictionary<string, double>();
+            scoresList.Add("anger", emotion.anger);
+            scoresList.Add("happiness", emotion.happiness );
+            scoresList.Add("contempt", emotion.contempt );
+            scoresList.Add("disgust", emotion.disgust );
+            scoresList.Add("fear",  emotion.fear );
+            scoresList.Add("neutral", emotion.neutral );
+            scoresList.Add("sadness", emotion.sadness );
+            scoresList.Add("surprise", emotion.surprise );
+
+            //sort by scores
+            var sortedScoresList = scoresList.ToList();
+            sortedScoresList.Sort((x, y) => x.Value.CompareTo(y.Value));
+            sortedScoresList.Reverse();
+
+            //get the emotion label fopr top scoring EmotionScore
+            var key = sortedScoresList.First().Key;
 
             return key;
         }
