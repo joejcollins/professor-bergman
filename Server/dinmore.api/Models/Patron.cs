@@ -9,6 +9,8 @@ namespace dinmore.api.Models
     {
         public string FaceId { get; set; }
 
+        public string PersistedFaceId { get; set; }
+
         public FaceRectangle FaceRectangle { get; set; }
 
         public FaceLandmarks FaceLandmarks { get; set; }
