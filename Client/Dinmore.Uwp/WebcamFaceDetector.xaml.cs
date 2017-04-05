@@ -1,8 +1,13 @@
+using dinmore.api.Models;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.Data.Json;
 using Windows.Graphics.Imaging;
 using Windows.Media;
 using Windows.Media.Capture;
@@ -112,11 +117,6 @@ namespace Dinmore.Uwp
             /// Call to API has been made and now waiting for response or timeout.
             /// </summary>
             WaitingForApiResponse,
-
-            /// <summary>
-            /// A response from the API has been received and needs to be processed.
-            /// </summary>
-            ApiResponseReceived,
         }
 
         /// <summary>
@@ -234,47 +234,83 @@ namespace Dinmore.Uwp
             mediaCapture = null;
         }
 
+        byte[] lastFrame = null; // TODO: Global, needs reworking but difficult with state machine below.
+
         private async void ProcessCurrentStateAsync(ThreadPoolTimer timer)
         {
-            VideoFrame currentFrame = null;
-
             switch (currentState)
             {
                 case ScenarioState.Idle:
                     break;
                 case ScenarioState.WaitingForFaces:
-                    currentFrame = await ProcessCurrentVideoFrameAsync();
+                    lastFrame = await ProcessCurrentVideoFrameAsync();
 
-                    if (currentFrame != null)
+                    if (lastFrame != null)
                     {
-                        currentState = ScenarioState.FaceDetectedOnDevice;
+                        ChangeScenarioState(ScenarioState.FaceDetectedOnDevice);
                     }
                     break;
                 case ScenarioState.FaceDetectedOnDevice:
                     if (lastImageApiPush.AddMilliseconds(ApiIntervalMs) < DateTimeOffset.UtcNow)
                     {
-                        currentState = ScenarioState.WaitingForApiResponse;
+                        ChangeScenarioState(ScenarioState.WaitingForApiResponse); // Prevent re-entry from other timers while waiting for response.
                         lastImageApiPush = DateTimeOffset.UtcNow;
 
-                        /* TODO: Send to API.
-                        var responseFromApi = CoggoServoWrapper(currentFrame);
-                        */
+                        var apiResult = await PostImageToApiAsync(lastFrame);
+
+                        if (apiResult != null && apiResult.Any())
+                        {
+                            //// Create our visualization using the frame dimensions and face results but run it on the UI thread.
+                            //var previewFrameSize = new Windows.Foundation.Size(previewFrame.SoftwareBitmap.PixelWidth, previewFrame.SoftwareBitmap.PixelHeight);
+                            //var ignored = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                            //{
+                            //    SetupVisualization(previewFrameSize, faces);
+                            //});
+                        }
+                        ChangeScenarioState(ScenarioState.WaitingForFaces);
                     }
                     break;
                 case ScenarioState.WaitingForApiResponse:
-                    // TODO: Check here for timeout?
-                    break;
-                case ScenarioState.ApiResponseReceived:
-                    //// Create our visualization using the frame dimensions and face results but run it on the UI thread.
-                    //var previewFrameSize = new Windows.Foundation.Size(previewFrame.SoftwareBitmap.PixelWidth, previewFrame.SoftwareBitmap.PixelHeight);
-                    //var ignored = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                    //{
-                    //    SetupVisualization(previewFrameSize, faces);
-                    //});
+                    // TODO: Check here for timeout or rely on timeout of HttpClient?
                     break;
                 default:
-                    currentState = ScenarioState.Idle;
+                    ChangeScenarioState(ScenarioState.Idle);
                     break;
+            }
+        }
+
+        private async Task<List<FaceWithEmotion>> PostImageToApiAsync(byte[] image)
+        {
+            using (var httpClient = new HttpClient())
+            {
+                var content = new StreamContent(new MemoryStream(image));
+                content.Headers.ContentType = new MediaTypeWithQualityHeaderValue("application/octet-stream");
+
+                var responseMessage = await httpClient.PostAsync("http://localhost:54169/api/patrons", content);
+
+                var response = await responseMessage.Content.ReadAsStringAsync();
+
+                // TODO: Process the json response here, also handle errors.
+                //var xx = new JsonObject();
+                //var p = JsonObject.Parse(response);
+                //p.de
+                //var x = new Windows.Data.Json.JsonArray();
+                //x.pa
+                //var emotionResponseArray = JArray.Parse(emotionResponseString);
+                //var faces = new List<FaceWithEmotion>();
+                //foreach (var emotionFaceResponse in emotionResponseArray)
+                //{
+                //    //deserialise json to face
+                //    var face = JsonConvert.DeserializeObject<FaceWithEmotion>(emotionFaceResponse.ToString());
+
+                //    //add face to faces list
+                //    faces.Add(face);
+                //}
+
+                //return faces;
+
+
+                return null;
             }
         }
 
@@ -286,7 +322,7 @@ namespace Dinmore.Uwp
         /// will vary depending on the size of each frame and the number of faces being tracked. That is, a large image with several tracked faces may
         /// take longer to process.
         /// </remarks>
-        private async Task<VideoFrame> ProcessCurrentVideoFrameAsync()
+        private async Task<byte[]> ProcessCurrentVideoFrameAsync()
         {
             // If a lock is being held it means we're still waiting for processing work on the previous frame to complete.
             // In this situation, don't wait on the semaphore but exit immediately.
@@ -299,6 +335,7 @@ namespace Dinmore.Uwp
             {
                 // Create a VideoFrame object specifying the pixel format we want our capture image to be (NV12 bitmap in this case).
                 // GetPreviewFrame will convert the native webcam frame into this format.
+                // TODO: Might be possible to side step the convert below by using RGBa16.
                 const BitmapPixelFormat InputPixelFormat = BitmapPixelFormat.Nv12;
                 using (var previewFrame = new VideoFrame(InputPixelFormat, (int)videoProperties.Width, (int)videoProperties.Height))
                 {
@@ -312,8 +349,30 @@ namespace Dinmore.Uwp
                     var faces = await faceTracker.ProcessNextFrameAsync(previewFrame);
                     if (faces.Any())
                     {
-                        // TODO: Return a rectangle enclosing all of the faces with a margin around thenm
-                        return previewFrame;
+                        using (var ms = new MemoryStream())
+                        {
+                            // Create an encoder with the desired format
+                            BitmapEncoder encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.JpegEncoderId, ms.AsRandomAccessStream());
+
+                            // To use the encoder to resize we need to change the bitmap format. Might be a better way to do this.
+                            var converted = SoftwareBitmap.Convert(previewFrame.SoftwareBitmap, BitmapPixelFormat.Rgba16);
+
+                            // Set the software bitmap
+                            encoder.SetSoftwareBitmap(converted);
+
+                            var bounds = new BitmapBounds
+                            {
+                                X = faces.Min(x => x.FaceBox.X),
+                                Y = faces.Min(y => y.FaceBox.Y),
+                            };
+                            bounds.Height = faces.Max(y => y.FaceBox.Y + y.FaceBox.Height) - bounds.Y;
+                            bounds.Width = faces.Max(x => x.FaceBox.X + x.FaceBox.Width) - bounds.X;
+
+                            encoder.BitmapTransform.Bounds = bounds;
+
+                            await encoder.FlushAsync();
+                            return ms.ToArray();
+                        }
                     }
                     return null;
                 }
@@ -381,7 +440,6 @@ namespace Dinmore.Uwp
                     ShutdownWebCam();
 
                     VisualizationCanvas.Children.Clear();
-                    currentState = newState;
                     break;
 
                 case ScenarioState.WaitingForFaces:
@@ -393,9 +451,9 @@ namespace Dinmore.Uwp
                     }
 
                     VisualizationCanvas.Children.Clear();
-                    currentState = newState;
                     break;
             }
+            currentState = newState;
         }
 
         /// <summary>
