@@ -24,6 +24,7 @@ namespace dinmore.api.Repositories
 
         public async Task<IEnumerable<FaceWithEmotion>> GetFacesWithEmotion(byte[] image)
         {
+            //call face 
             //call emotion api
             var emotionResponseString = string.Empty;
             using (var httpClient = new HttpClient())
