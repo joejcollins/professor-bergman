@@ -18,6 +18,7 @@ using Windows.System.Threading;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Media;
+using Windows.UI.Xaml.Media.Imaging;
 using Windows.UI.Xaml.Navigation;
 using Windows.UI.Xaml.Shapes;
 
@@ -79,7 +80,7 @@ namespace Dinmore.Uwp
         /// <summary>
         /// The current step of the state machine for detecting faces, playing sounds etc.
         /// </summary>
-        private DetectionState CurrentState { get; set; }
+        public DetectionState CurrentState { get; set; }
 
         public ObservableCollection<StatusMessage> StatusLog { get; set; } = new ObservableCollection<StatusMessage>();
 
@@ -224,9 +225,9 @@ namespace Dinmore.Uwp
                         break;
                     case DetectionStates.WaitingForFaces:
                         LogStatusMessage("Waiting for faces", StatusSeverity.Info);
-                        CurrentState.LastFrame = await ProcessCurrentVideoFrameAsync();
+                        CurrentState.ApiRequestParameters = await ProcessCurrentVideoFrameAsync();
 
-                        if (CurrentState.LastFrame != null)
+                        if (CurrentState.ApiRequestParameters != null)
                         {
                             LogStatusMessage("Detected face(s)", StatusSeverity.Info);
                             ChangeDetectionState(DetectionStates.FaceDetectedOnDevice);
@@ -236,30 +237,34 @@ namespace Dinmore.Uwp
                         LogStatusMessage("Just about to send API call for faces", StatusSeverity.Info);
                         if (CurrentState.LastImageApiPush.AddMilliseconds(ApiIntervalMs) < DateTimeOffset.UtcNow)
                         {
-                            ChangeDetectionState(DetectionStates.WaitingForApiResponse); // Prevent re-entry from other timers while waiting for response.
                             CurrentState.LastImageApiPush = DateTimeOffset.UtcNow;
-
-                            var apiResult = await PostImageToApiAsync(CurrentState.LastFrame);
-
-                            if (apiResult != null && apiResult.Any())
-                            {
-                                // TODO: We've got some results, so display them or play stuff or whatever.
-                                //// Create our visualization using the frame dimensions and face results but run it on the UI thread.
-                                //var previewFrameSize = new Windows.Foundation.Size(previewFrame.SoftwareBitmap.PixelWidth, previewFrame.SoftwareBitmap.PixelHeight);
-                                //var ignored = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                                //{
-                                //    SetupVisualization(previewFrameSize, faces);
-                                //});
-                                // TODO: Store API results.
-                                //ChangeDetectionState(DetectionStates.InterpretingApiResults);
-                                //break;
-                            }
-                            ChangeDetectionState(DetectionStates.WaitingForFaces);
+                            CurrentState.FacesFoundByApi = await PostImageToApiAsync(CurrentState.ApiRequestParameters.Image);
+                            ChangeDetectionState(DetectionStates.ApiResponseReceived);
                         }
                         break;
-                    case DetectionStates.WaitingForApiResponse:
-                        LogStatusMessage("Waiting for API response", StatusSeverity.Info);
-                        // TODO: Check here for timeout or rely on timeout of HttpClient?
+                    case DetectionStates.ApiResponseReceived:
+                        LogStatusMessage("API response received", StatusSeverity.Info);
+                        if (CurrentState.FacesFoundByApi != null && CurrentState.FacesFoundByApi.Any())
+                        {
+                            LogStatusMessage("Face(s) detected", StatusSeverity.Info);
+                            ChangeDetectionState(DetectionStates.InterpretingApiResults);
+                            break;
+                        }
+                        ChangeDetectionState(DetectionStates.WaitingForFaces);
+                        break;
+                    case DetectionStates.InterpretingApiResults:
+                        // We have faces and data, so decide what to do here (play a sound etc).
+                        // You'd probably kick this off in a background thread and track it by putting a
+                        // reference into the CurrentState object (new property).
+
+                        var ignored = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                        {
+                            SetupVisualization(CurrentState);
+                        });
+
+                        // Check here if the media has finished playing or the people have walked away.
+                        ChangeDetectionState(DetectionStates.WaitingForFaces);
+
                         break;
                     default:
                         ChangeDetectionState(DetectionStates.Idle);
@@ -268,7 +273,7 @@ namespace Dinmore.Uwp
             }
             catch (Exception ex)
             {
-                LogStatusMessage("Unable to process curren frame. " + ex.ToString(), StatusSeverity.Error);
+                LogStatusMessage("Unable to process current frame. " + ex.ToString(), StatusSeverity.Error);
             }
             finally
             {
@@ -302,7 +307,7 @@ namespace Dinmore.Uwp
 
                     var response = await responseMessage.Content.ReadAsStringAsync();
                     var result = JsonConvert.DeserializeObject<List<FaceWithEmotion>>(response);
-                    
+
                     return result;
                 }
             }
@@ -321,7 +326,7 @@ namespace Dinmore.Uwp
         /// will vary depending on the size of each frame and the number of faces being tracked. That is, a large image with several tracked faces may
         /// take longer to process.
         /// </remarks>
-        private async Task<byte[]> ProcessCurrentVideoFrameAsync()
+        private async Task<ApiRequestParameters> ProcessCurrentVideoFrameAsync()
         {
             // If a lock is being held it means we're still waiting for processing work on the previous frame to complete.
             // In this situation, don't wait on the semaphore but exit immediately.
@@ -351,7 +356,7 @@ namespace Dinmore.Uwp
                         using (var ms = new MemoryStream())
                         {
                             // Create an encoder with the desired format
-                            BitmapEncoder encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.JpegEncoderId, ms.AsRandomAccessStream());
+                            var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.JpegEncoderId, ms.AsRandomAccessStream());
 
                             // To use the encoder to resize we need to change the bitmap format. Might be a better way to do this.
                             var converted = SoftwareBitmap.Convert(previewFrame.SoftwareBitmap, BitmapPixelFormat.Rgba16);
@@ -359,18 +364,23 @@ namespace Dinmore.Uwp
                             // Set the software bitmap
                             encoder.SetSoftwareBitmap(converted);
 
-                            var bounds = new BitmapBounds
-                            {
-                                X = faces.Min(x => x.FaceBox.X),
-                                Y = faces.Min(y => y.FaceBox.Y),
-                            };
-                            bounds.Height = faces.Max(y => y.FaceBox.Y + y.FaceBox.Height) - bounds.Y;
-                            bounds.Width = faces.Max(x => x.FaceBox.X + x.FaceBox.Width) - bounds.X;
+                            var bounds = BoundingBoxForFaces(faces, converted.PixelWidth, converted.PixelHeight);
 
                             encoder.BitmapTransform.Bounds = bounds;
 
                             await encoder.FlushAsync();
-                            return ms.ToArray();
+
+                            //var copied = new MemoryStream(ms.ToArray());
+                            //var bs64 = Convert.ToBase64String(copied.ToArray());
+                            //ms.Position = 0;
+
+                            return new ApiRequestParameters
+                            {
+                                Image = ms.ToArray(),
+                                ImageBounds = bounds,
+                                OriginalImageHeight = converted.PixelHeight,
+                                OriginalImageWidth = converted.PixelWidth,
+                            };
                         }
                     }
                     return null;
@@ -378,17 +388,49 @@ namespace Dinmore.Uwp
             }
             catch (Exception ex)
             {
-                var ignored = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                {
-                    LogStatusMessage("Unable to process current frame: " + ex.ToString(), StatusSeverity.Error);
-                });
+                LogStatusMessage("Unable to process current frame: " + ex.ToString(), StatusSeverity.Error);
                 return null;
             }
             finally
             {
                 frameProcessingSemaphore.Release();
             }
+        }
 
+        private BitmapBounds BoundingBoxForFaces(IList<DetectedFace> faces, int pixelWidth, int pixelHeight)
+        {
+            var bounds = new BitmapBounds
+            {
+                X = faces.Min(x => x.FaceBox.X),
+                Y = faces.Min(y => y.FaceBox.Y),
+            };
+            bounds.Height = faces.Max(y => y.FaceBox.Y + y.FaceBox.Height) - bounds.Y;
+            bounds.Width = faces.Max(x => x.FaceBox.X + x.FaceBox.Width) - bounds.X;
+
+            var expanded = new BitmapBounds();
+            expanded.X = bounds.X - (bounds.Width / 2);
+            expanded.Y = bounds.Y - (bounds.Height / 2);
+            expanded.Width = bounds.Width * 2;
+            expanded.Height = bounds.Height * 2;
+
+            if (expanded.X < 0)
+            {
+                expanded.X = 0;
+            }
+            if (expanded.Y < 0)
+            {
+                expanded.Y = 0;
+            }
+            if (expanded.X + expanded.Width > pixelWidth)
+            {
+                expanded.Width = (uint)pixelWidth - expanded.X;
+            }
+            if (expanded.Y + expanded.Height > pixelHeight)
+            {
+                expanded.Height = (uint)pixelHeight - expanded.Y;
+            }
+
+            return expanded;
         }
 
         /// <summary>
@@ -396,30 +438,31 @@ namespace Dinmore.Uwp
         /// </summary>
         /// <param name="framePizelSize">Width and height (in pixels) of the video capture frame</param>
         /// <param name="foundFaces">List of detected faces; output from FaceTracker</param>
-        private void SetupVisualization(Windows.Foundation.Size framePizelSize, IList<DetectedFace> foundFaces)
+        private void SetupVisualization(DetectionState state)
         {
             VisualizationCanvas.Children.Clear();
 
             double actualWidth = VisualizationCanvas.ActualWidth;
             double actualHeight = VisualizationCanvas.ActualHeight;
 
-            if (CurrentState.State == DetectionStates.WaitingForFaces && foundFaces != null && actualWidth != 0 && actualHeight != 0)
+            if (CurrentState.State == DetectionStates.WaitingForFaces && state.FacesFoundByApi != null && actualWidth != 0 && actualHeight != 0)
             {
-                double widthScale = framePizelSize.Width / actualWidth;
-                double heightScale = framePizelSize.Height / actualHeight;
+                double widthScale = state.ApiRequestParameters.OriginalImageWidth / actualWidth;
+                double heightScale = state.ApiRequestParameters.OriginalImageHeight / actualHeight;
 
-                foreach (DetectedFace face in foundFaces)
+                foreach (var face in state.FacesFoundByApi)
                 {
                     // Create a rectangle element for displaying the face box but since we're using a Canvas
                     // we must scale the rectangles according to the frames's actual size.
-                    Rectangle box = new Rectangle();
-                    box.Width = (uint)(face.FaceBox.Width / widthScale);
-                    box.Height = (uint)(face.FaceBox.Height / heightScale);
-                    box.Fill = fillBrush;
-                    box.Stroke = lineBrush;
-                    box.StrokeThickness = lineThickness;
-                    box.Margin = new Thickness((uint)(face.FaceBox.X / widthScale), (uint)(face.FaceBox.Y / heightScale), 0, 0);
-
+                    var box = new Rectangle()
+                    {                         
+                        Width = (uint)(face.faceRectangle.width / widthScale),
+                        Height = (uint)(face.faceRectangle.height / heightScale),
+                        Fill = fillBrush,
+                        Stroke = lineBrush,
+                        StrokeThickness = lineThickness,
+                        Margin = new Thickness((uint)(face.faceRectangle.left / widthScale), (uint)(face.faceRectangle.top / heightScale), 0, 0)
+                    };
                     VisualizationCanvas.Children.Add(box);
                 }
             }
