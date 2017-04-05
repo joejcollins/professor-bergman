@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using dinmore.api.Models;
 using dinmore.api.Interfaces;
 using dinmore.api.Repositories;
+using dinmore.api.TableStorage;
 
 namespace dinmore.api
 {
@@ -21,6 +22,7 @@ namespace dinmore.api
                 .SetBasePath(env.ContentRootPath)
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
                 .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true);
+
             if (env.IsDevelopment())
             {
                 // For more details on using the user secret store see 
@@ -46,6 +48,7 @@ namespace dinmore.api
 
             // Add repositories
             services.AddSingleton<IFaceApiRepository, FaceApiRepository>();
+            services.AddSingleton<IStoreApiResults, StoreApiResults>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
