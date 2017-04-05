@@ -91,18 +91,16 @@
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\..\Server\dinmore.api\Models\FaceRectangle.cs">
-      <Link>Models\FaceRectangle.cs</Link>
-    </Compile>
-    <Compile Include="..\..\Server\dinmore.api\Models\FaceWithEmotion.cs">
-      <Link>Models\FaceWithEmotion.cs</Link>
-    </Compile>
-    <Compile Include="..\..\Server\dinmore.api\Models\Scores.cs">
-      <Link>Models\Scores.cs</Link>
-    </Compile>
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Models\DetectionStates.cs" />
+    <Compile Include="Models\FaceRectangle.cs" />
+    <Compile Include="Models\DetectionState.cs" />
+    <Compile Include="Models\FaceWithMotion.cs" />
+    <Compile Include="Models\Scores.cs" />
+    <Compile Include="Models\StatusMessage.cs" />
+    <Compile Include="Models\StatusSeverity.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WebcamFaceDetector.xaml.cs">
       <DependentUpon>WebcamFaceDetector.xaml</DependentUpon>
