@@ -100,7 +100,7 @@ namespace Dinmore.Uwp
             if (faceTracker == null)
             {
                 faceTracker = await FaceTracker.CreateAsync();
-                ChangeDetectionState(DetectionStates.WaitingForFaces);
+                ChangeDetectionState(DetectionStates.Startup);
             }
         }
 
@@ -111,7 +111,7 @@ namespace Dinmore.Uwp
         /// <param name="e">Event data</param>
         private void OnSuspending(object sender, Windows.ApplicationModel.SuspendingEventArgs e)
         {
-            if (CurrentState.State == DetectionStates.WaitingForFaces)
+            if (CurrentState.State == DetectionStates.Startup || CurrentState.State == DetectionStates.WaitingForFaces)
             {
                 var deferral = e.SuspendingOperation.GetDeferral();
                 try
@@ -209,6 +209,8 @@ namespace Dinmore.Uwp
             switch (CurrentState.State)
             {
                 case DetectionStates.Idle:
+                    break;
+                case DetectionStates.Startup:
                     break;
                 case DetectionStates.WaitingForFaces:
                     CurrentState.LastFrame = await ProcessCurrentVideoFrameAsync();
@@ -412,20 +414,15 @@ namespace Dinmore.Uwp
             switch (newState)
             {
                 case DetectionStates.Idle:
-
                     ShutdownWebCam();
-
                     VisualizationCanvas.Children.Clear();
                     break;
-
-                case DetectionStates.WaitingForFaces:
-
+                case DetectionStates.Startup:
                     if (!await StartWebcamStreaming())
                     {
                         ChangeDetectionState(DetectionStates.Idle);
                         break;
                     }
-
                     VisualizationCanvas.Children.Clear();
                     break;
             }

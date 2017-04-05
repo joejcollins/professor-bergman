@@ -11,6 +11,11 @@
         Idle,
 
         /// <summary>
+        /// Camera is starting up.
+        /// </summary>
+        Startup,
+
+        /// <summary>
         /// Webcam is running and looking for faces.
         /// </summary>
         WaitingForFaces,
