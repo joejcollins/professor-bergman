@@ -94,6 +94,7 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Models\ApiRequestParameters.cs" />
     <Compile Include="Models\DetectionStates.cs" />
     <Compile Include="Models\FaceRectangle.cs" />
     <Compile Include="Models\DetectionState.cs" />
