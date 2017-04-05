@@ -272,7 +272,12 @@ namespace Dinmore.Uwp
         {
             var ignored = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
             {
-                StatusLog.Add(new StatusMessage(message));
+                while (StatusLog.Count > 100)
+                {
+                    StatusLog.RemoveAt(StatusLog.Count - 1);
+                }
+
+                StatusLog.Insert(0, new StatusMessage(message));
             });
         }
 

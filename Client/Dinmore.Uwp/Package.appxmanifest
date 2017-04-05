@@ -15,7 +15,7 @@
   </Resources>
   <Applications>
     <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="Dinmore.Uwp.App">
-      <uap:VisualElements DisplayName="Basic Face Tracking C# Sample" Description="Face tracking client" Square150x150Logo="Assets\squareTile-sdk.png" Square44x44Logo="Assets\SmallTile-sdk.png" BackgroundColor="#00b2f0">
+      <uap:VisualElements DisplayName="Dinmore client" Description="Dinmore client" Square150x150Logo="Assets\squareTile-sdk.png" Square44x44Logo="Assets\SmallTile-sdk.png" BackgroundColor="#00b2f0">
         <uap:SplashScreen Image="Assets\Splash-sdk.png" />
         <uap:DefaultTile>
           <uap:ShowNameOnTiles>
