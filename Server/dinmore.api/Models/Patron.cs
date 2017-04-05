@@ -16,5 +16,9 @@ namespace dinmore.api.Models
         public FaceAttributes FaceAttributes { get; set; }
 
         public string PrimaryEmotion { get; set; }
+
+        public DateTime TimeLastSeen { get; set; }
+
+        public string DeviceLastSeen { get; set; }
     }
 }
