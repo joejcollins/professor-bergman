@@ -141,6 +141,7 @@
     <Content Include="Assets\tile-sdk.png" />
     <Content Include="Assets\windows-sdk.png" />
     <Content Include="Properties\Default.rd.xml" />
+    <None Include="readme.md" />
   </ItemGroup>
   <ItemGroup />
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
