@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace dinmore.api.Interfaces
 {
-    public interface IEmotionApiRepository
+    public interface IFaceApiRepository
     {
-        Task<IEnumerable<FaceWithEmotion>> GetFacesWithEmotion(byte[] image);
+        Task<IEnumerable<Face>> DetectFaces(byte[] image);
     }
 }
