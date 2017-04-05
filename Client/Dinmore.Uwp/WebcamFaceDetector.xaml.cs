@@ -294,7 +294,7 @@ namespace Dinmore.Uwp
             });
         }
 
-        private async Task<List<FaceWithEmotion>> PostImageToApiAsync(byte[] image)
+        private async Task<List<Face>> PostImageToApiAsync(byte[] image)
         {
             try
             {
@@ -306,7 +306,7 @@ namespace Dinmore.Uwp
                     var responseMessage = await httpClient.PostAsync("http://dinmore-api.azurewebsites.net/api/patrons", content);
 
                     var response = await responseMessage.Content.ReadAsStringAsync();
-                    var result = JsonConvert.DeserializeObject<List<FaceWithEmotion>>(response);
+                    var result = JsonConvert.DeserializeObject<List<Face>>(response);
 
                     return result;
                 }
@@ -445,7 +445,7 @@ namespace Dinmore.Uwp
             double actualWidth = VisualizationCanvas.ActualWidth;
             double actualHeight = VisualizationCanvas.ActualHeight;
 
-            if (CurrentState.State == DetectionStates.WaitingForFaces && state.FacesFoundByApi != null && actualWidth != 0 && actualHeight != 0)
+            if (state.FacesFoundByApi != null && actualWidth != 0 && actualHeight != 0)
             {
                 double widthScale = state.ApiRequestParameters.OriginalImageWidth / actualWidth;
                 double heightScale = state.ApiRequestParameters.OriginalImageHeight / actualHeight;
