@@ -80,7 +80,7 @@ namespace Dinmore.Uwp
         /// </summary>
         private DetectionState CurrentState { get; set; }
 
-        public ObservableCollection<StatusMessage> StatusLog { get; set; } = new ObservableCollection<StatusMessage>() { new StatusMessage("Started xxx") };
+        public ObservableCollection<StatusMessage> StatusLog { get; set; } = new ObservableCollection<StatusMessage>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WebcamFaceDetector"/> class.
@@ -163,12 +163,12 @@ namespace Dinmore.Uwp
             catch (UnauthorizedAccessException)
             {
                 // If the user has disabled their webcam this exception is thrown; provide a descriptive message to inform the user of this fact.
-                //this.rootPage.NotifyUser("Webcam is disabled or access to the webcam is disabled for this app.\nEnsure Privacy Settings allow webcam usage.", NotifyType.ErrorMessage);
+                LogStatusMessage("Webcam is disabled or access to the webcam is disabled for this app.\nEnsure Privacy Settings allow webcam usage.", StatusSeverity.Error);
                 successful = false;
             }
             catch (Exception ex)
             {
-                //this.rootPage.NotifyUser(ex.ToString(), NotifyType.ErrorMessage);
+                LogStatusMessage("Unable to start camera: " + ex.ToString(), StatusSeverity.Error);
                 successful = false;
             }
 
@@ -222,17 +222,17 @@ namespace Dinmore.Uwp
                     case DetectionStates.Startup:
                         break;
                     case DetectionStates.WaitingForFaces:
-                        LogStatusMessage("Waiting for faces");
+                        LogStatusMessage("Waiting for faces", StatusSeverity.Error);
                         CurrentState.LastFrame = await ProcessCurrentVideoFrameAsync();
 
                         if (CurrentState.LastFrame != null)
                         {
-                            LogStatusMessage("Detected face(s)");
+                            LogStatusMessage("Detected face(s)", StatusSeverity.Info);
                             ChangeDetectionState(DetectionStates.FaceDetectedOnDevice);
                         }
                         break;
                     case DetectionStates.FaceDetectedOnDevice:
-                        LogStatusMessage("Just about to send API call for faces");
+                        LogStatusMessage("Just about to send API call for faces", StatusSeverity.Info);
                         if (CurrentState.LastImageApiPush.AddMilliseconds(ApiIntervalMs) < DateTimeOffset.UtcNow)
                         {
                             ChangeDetectionState(DetectionStates.WaitingForApiResponse); // Prevent re-entry from other timers while waiting for response.
@@ -254,7 +254,7 @@ namespace Dinmore.Uwp
                         }
                         break;
                     case DetectionStates.WaitingForApiResponse:
-                        LogStatusMessage("Waiting for API response");
+                        LogStatusMessage("Waiting for API response", StatusSeverity.Info);
                         // TODO: Check here for timeout or rely on timeout of HttpClient?
                         break;
                     default:
@@ -268,7 +268,7 @@ namespace Dinmore.Uwp
             }
         }
 
-        private void LogStatusMessage(string message)
+        private void LogStatusMessage(string message, StatusSeverity severity)
         {
             var ignored = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
             {
@@ -277,7 +277,7 @@ namespace Dinmore.Uwp
                     StatusLog.RemoveAt(StatusLog.Count - 1);
                 }
 
-                StatusLog.Insert(0, new StatusMessage(message));
+                StatusLog.Insert(0, new StatusMessage(message, severity));
             });
         }
 
@@ -319,8 +319,7 @@ namespace Dinmore.Uwp
             }
             catch (Exception ex)
             {
-                LogStatusMessage("Exception: " + ex.ToString());
-                // TODO: Log.
+                LogStatusMessage("Exception: " + ex.ToString(), StatusSeverity.Error);
                 return null;
             }
         }
@@ -392,7 +391,7 @@ namespace Dinmore.Uwp
             {
                 var ignored = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                 {
-                    //this.rootPage.NotifyUser(ex.ToString(), NotifyType.ErrorMessage);
+                    LogStatusMessage("Unable to process current frame: " + ex.ToString(), StatusSeverity.Error);
                 });
                 return null;
             }
