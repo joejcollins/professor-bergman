@@ -67,16 +67,17 @@ namespace Dinmore.Uwp
         private SemaphoreSlim frameProcessingSemaphore = new SemaphoreSlim(1);
 
         /// <summary>
-        /// Tracks the last time we asked the API anything so we don't get too chatty.
-        /// </summary>
-        private DateTimeOffset lastImageApiPush = DateTimeOffset.UtcNow;
-
-        /// <summary>
         /// The minimum interval required between API calls.
         /// </summary>
         private const double ApiIntervalMs = 500;
 
-        public DetectionState CurrentState { get; set; }
+        // Use a 66 millisecond interval for our timer, i.e. 15 frames per second
+        private TimeSpan timerInterval = TimeSpan.FromMilliseconds(66);
+
+        /// <summary>
+        /// The current step of the state machine for detecting faces, playing sounds etc.
+        /// </summary>
+        private DetectionState CurrentState { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WebcamFaceDetector"/> class.
@@ -154,9 +155,7 @@ namespace Dinmore.Uwp
                 CamPreview.Source = mediaCapture;
                 await mediaCapture.StartPreviewAsync();
 
-                // Use a 66 millisecond interval for our timer, i.e. 15 frames per second
-                TimeSpan timerInterval = TimeSpan.FromMilliseconds(66);
-                frameProcessingTimer = ThreadPoolTimer.CreatePeriodicTimer(new TimerElapsedHandler(ProcessCurrentStateAsync), timerInterval);
+                RunTimer();
             }
             catch (UnauthorizedAccessException)
             {
@@ -171,6 +170,11 @@ namespace Dinmore.Uwp
             }
 
             return successful;
+        }
+
+        private void RunTimer()
+        {
+            frameProcessingTimer = ThreadPoolTimer.CreateTimer(new TimerElapsedHandler(ProcessCurrentStateAsync), timerInterval);
         }
 
         /// <summary>
@@ -206,46 +210,54 @@ namespace Dinmore.Uwp
 
         private async void ProcessCurrentStateAsync(ThreadPoolTimer timer)
         {
-            switch (CurrentState.State)
+            try
             {
-                case DetectionStates.Idle:
-                    break;
-                case DetectionStates.Startup:
-                    break;
-                case DetectionStates.WaitingForFaces:
-                    CurrentState.LastFrame = await ProcessCurrentVideoFrameAsync();
+                switch (CurrentState.State)
+                {
+                    case DetectionStates.Idle:
+                        break;
+                    case DetectionStates.Startup:
+                        break;
+                    case DetectionStates.WaitingForFaces:
+                        CurrentState.LastFrame = await ProcessCurrentVideoFrameAsync();
 
-                    if (CurrentState.LastFrame != null)
-                    {
-                        ChangeDetectionState(DetectionStates.FaceDetectedOnDevice);
-                    }
-                    break;
-                case DetectionStates.FaceDetectedOnDevice:
-                    if (lastImageApiPush.AddMilliseconds(ApiIntervalMs) < DateTimeOffset.UtcNow)
-                    {
-                        ChangeDetectionState(DetectionStates.WaitingForApiResponse); // Prevent re-entry from other timers while waiting for response.
-                        lastImageApiPush = DateTimeOffset.UtcNow;
-
-                        var apiResult = await PostImageToApiAsync(CurrentState.LastFrame);
-
-                        if (apiResult != null && apiResult.Any())
+                        if (CurrentState.LastFrame != null)
                         {
-                            //// Create our visualization using the frame dimensions and face results but run it on the UI thread.
-                            //var previewFrameSize = new Windows.Foundation.Size(previewFrame.SoftwareBitmap.PixelWidth, previewFrame.SoftwareBitmap.PixelHeight);
-                            //var ignored = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                            //{
-                            //    SetupVisualization(previewFrameSize, faces);
-                            //});
+                            ChangeDetectionState(DetectionStates.FaceDetectedOnDevice);
                         }
-                        ChangeDetectionState(DetectionStates.WaitingForFaces);
-                    }
-                    break;
-                case DetectionStates.WaitingForApiResponse:
-                    // TODO: Check here for timeout or rely on timeout of HttpClient?
-                    break;
-                default:
-                    ChangeDetectionState(DetectionStates.Idle);
-                    break;
+                        break;
+                    case DetectionStates.FaceDetectedOnDevice:
+                        if (CurrentState.LastImageApiPush.AddMilliseconds(ApiIntervalMs) < DateTimeOffset.UtcNow)
+                        {
+                            ChangeDetectionState(DetectionStates.WaitingForApiResponse); // Prevent re-entry from other timers while waiting for response.
+                            CurrentState.LastImageApiPush = DateTimeOffset.UtcNow;
+
+                            var apiResult = await PostImageToApiAsync(CurrentState.LastFrame);
+
+                            if (apiResult != null && apiResult.Any())
+                            {
+                                // TODO: We've got some results, so display them or play stuff or whatever.
+                                //// Create our visualization using the frame dimensions and face results but run it on the UI thread.
+                                //var previewFrameSize = new Windows.Foundation.Size(previewFrame.SoftwareBitmap.PixelWidth, previewFrame.SoftwareBitmap.PixelHeight);
+                                //var ignored = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                                //{
+                                //    SetupVisualization(previewFrameSize, faces);
+                                //});
+                            }
+                            ChangeDetectionState(DetectionStates.WaitingForFaces);
+                        }
+                        break;
+                    case DetectionStates.WaitingForApiResponse:
+                        // TODO: Check here for timeout or rely on timeout of HttpClient?
+                        break;
+                    default:
+                        ChangeDetectionState(DetectionStates.Idle);
+                        break;
+                }
+            }
+            finally
+            {
+                RunTimer();
             }
         }
 
