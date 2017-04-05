@@ -29,9 +29,12 @@ namespace dinmore.api.Controllers
         }
 
         // POST: api/Patrons
-        // To post in PostMan set Content-Type to application/octet-stream and attach a file as a binary body
+        // To post in PostMan set 'Content-Type' to 'application/octet-stream' and attach a file as a binary body
+        // 'device' is a unique identifier for the device that sent the photo 
+        // 'returnFaceLandmarks' to return things like 'upperLipBottom', there are 27 landmarks in total. Defaults to false
+        // 'returnFaceAttributes' to return specific attributes. Accepts a comma-delimited list. Defaults to age,gender,headPose,smile,facialHair,glasses,emotion
         [HttpPost]
-        public async Task<IActionResult> Post(string device)
+        public async Task<IActionResult> Post(string device, bool returnFaceLandmarks = false, string returnFaceAttributes = "age,gender,headPose,smile,facialHair,glasses,emotion")
         {
             //read body of request into a byte array
             byte[] bytes = ReadFileStream(Request.Body);
@@ -40,7 +43,7 @@ namespace dinmore.api.Controllers
             var patrons = new List<Patron>();
 
             //get faces 
-            var faces = await _faceApiRepository.DetectFaces(bytes, true, "age,gender,headPose,smile,facialHair,glasses,emotion");
+            var faces = await _faceApiRepository.DetectFaces(bytes, returnFaceLandmarks, returnFaceAttributes);
             foreach (var face in faces)
             {
                 patrons.Add(new Patron()
@@ -49,7 +52,9 @@ namespace dinmore.api.Controllers
                     FaceRectangle = face.faceRectangle,
                     FaceAttributes = face.faceAttributes,
                     FaceLandmarks = face.faceLandmarks,
-                    PrimaryEmotion = GetTopEmotion(face.faceAttributes.emotion)
+                    PrimaryEmotion = GetTopEmotion(face.faceAttributes.emotion),
+                    TimeLastSeen = null,
+                    DeviceLastSeen = "Not Implemented"
                 });
             }
 

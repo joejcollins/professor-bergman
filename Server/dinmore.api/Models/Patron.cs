@@ -17,7 +17,7 @@ namespace dinmore.api.Models
 
         public string PrimaryEmotion { get; set; }
 
-        public DateTime TimeLastSeen { get; set; }
+        public Nullable<DateTime> TimeLastSeen { get; set; }
 
         public string DeviceLastSeen { get; set; }
     }
