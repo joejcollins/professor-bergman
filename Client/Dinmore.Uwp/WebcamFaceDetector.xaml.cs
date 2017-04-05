@@ -1,4 +1,4 @@
-using dinmore.api.Models;
+using Dinmore.Uwp.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -7,7 +7,6 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
-using Windows.Data.Json;
 using Windows.Graphics.Imaging;
 using Windows.Media;
 using Windows.Media.Capture;
@@ -41,11 +40,6 @@ namespace Dinmore.Uwp
         /// Transparent fill for the bounding box.
         /// </summary>
         private readonly SolidColorBrush fillBrush = new SolidColorBrush(Windows.UI.Colors.Transparent);
-
-        /// <summary>
-        /// Holds the current scenario state value.
-        /// </summary>
-        private ScenarioState currentState;
 
         /// <summary>
         /// References a MediaCapture instance; is null when not in Streaming state.
@@ -82,6 +76,8 @@ namespace Dinmore.Uwp
         /// </summary>
         private const double ApiIntervalMs = 500;
 
+        public DetectionState CurrentState { get; set; }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="WebcamFaceDetector"/> class.
         /// </summary>
@@ -89,34 +85,8 @@ namespace Dinmore.Uwp
         {
             InitializeComponent();
 
-            currentState = ScenarioState.Idle;
+            CurrentState = new DetectionState { State = DetectionStates.Idle };
             App.Current.Suspending += OnSuspending;
-        }
-
-        /// <summary>
-        /// Values for identifying and controlling scenario states.
-        /// </summary>
-        private enum ScenarioState
-        {
-            /// <summary>
-            /// Camera is off and app is either starting up or shutting down.
-            /// </summary>
-            Idle,
-
-            /// <summary>
-            /// Webcam is running and looking for faces.
-            /// </summary>
-            WaitingForFaces,
-
-            /// <summary>
-            /// At least one face has been detected by the IoT device.
-            /// </summary>
-            FaceDetectedOnDevice,
-
-            /// <summary>
-            /// Call to API has been made and now waiting for response or timeout.
-            /// </summary>
-            WaitingForApiResponse,
         }
 
         /// <summary>
@@ -130,7 +100,7 @@ namespace Dinmore.Uwp
             if (faceTracker == null)
             {
                 faceTracker = await FaceTracker.CreateAsync();
-                ChangeScenarioState(ScenarioState.WaitingForFaces);
+                ChangeDetectionState(DetectionStates.WaitingForFaces);
             }
         }
 
@@ -141,12 +111,12 @@ namespace Dinmore.Uwp
         /// <param name="e">Event data</param>
         private void OnSuspending(object sender, Windows.ApplicationModel.SuspendingEventArgs e)
         {
-            if (currentState == ScenarioState.WaitingForFaces)
+            if (CurrentState.State == DetectionStates.WaitingForFaces)
             {
                 var deferral = e.SuspendingOperation.GetDeferral();
                 try
                 {
-                    ChangeScenarioState(ScenarioState.Idle);
+                    ChangeDetectionState(DetectionStates.Idle);
                 }
                 finally
                 {
@@ -234,29 +204,27 @@ namespace Dinmore.Uwp
             mediaCapture = null;
         }
 
-        byte[] lastFrame = null; // TODO: Global, needs reworking but difficult with state machine below.
-
         private async void ProcessCurrentStateAsync(ThreadPoolTimer timer)
         {
-            switch (currentState)
+            switch (CurrentState.State)
             {
-                case ScenarioState.Idle:
+                case DetectionStates.Idle:
                     break;
-                case ScenarioState.WaitingForFaces:
-                    lastFrame = await ProcessCurrentVideoFrameAsync();
+                case DetectionStates.WaitingForFaces:
+                    CurrentState.LastFrame = await ProcessCurrentVideoFrameAsync();
 
-                    if (lastFrame != null)
+                    if (CurrentState.LastFrame != null)
                     {
-                        ChangeScenarioState(ScenarioState.FaceDetectedOnDevice);
+                        ChangeDetectionState(DetectionStates.FaceDetectedOnDevice);
                     }
                     break;
-                case ScenarioState.FaceDetectedOnDevice:
+                case DetectionStates.FaceDetectedOnDevice:
                     if (lastImageApiPush.AddMilliseconds(ApiIntervalMs) < DateTimeOffset.UtcNow)
                     {
-                        ChangeScenarioState(ScenarioState.WaitingForApiResponse); // Prevent re-entry from other timers while waiting for response.
+                        ChangeDetectionState(DetectionStates.WaitingForApiResponse); // Prevent re-entry from other timers while waiting for response.
                         lastImageApiPush = DateTimeOffset.UtcNow;
 
-                        var apiResult = await PostImageToApiAsync(lastFrame);
+                        var apiResult = await PostImageToApiAsync(CurrentState.LastFrame);
 
                         if (apiResult != null && apiResult.Any())
                         {
@@ -267,49 +235,57 @@ namespace Dinmore.Uwp
                             //    SetupVisualization(previewFrameSize, faces);
                             //});
                         }
-                        ChangeScenarioState(ScenarioState.WaitingForFaces);
+                        ChangeDetectionState(DetectionStates.WaitingForFaces);
                     }
                     break;
-                case ScenarioState.WaitingForApiResponse:
+                case DetectionStates.WaitingForApiResponse:
                     // TODO: Check here for timeout or rely on timeout of HttpClient?
                     break;
                 default:
-                    ChangeScenarioState(ScenarioState.Idle);
+                    ChangeDetectionState(DetectionStates.Idle);
                     break;
             }
         }
 
         private async Task<List<FaceWithEmotion>> PostImageToApiAsync(byte[] image)
         {
-            using (var httpClient = new HttpClient())
+            try
             {
-                var content = new StreamContent(new MemoryStream(image));
-                content.Headers.ContentType = new MediaTypeWithQualityHeaderValue("application/octet-stream");
+                using (var httpClient = new HttpClient())
+                {
+                    var content = new StreamContent(new MemoryStream(image));
+                    content.Headers.ContentType = new MediaTypeWithQualityHeaderValue("application/octet-stream");
 
-                var responseMessage = await httpClient.PostAsync("http://localhost:54169/api/patrons", content);
+                    var responseMessage = await httpClient.PostAsync("http://localhost:54169/api/patrons", content);
 
-                var response = await responseMessage.Content.ReadAsStringAsync();
+                    var response = await responseMessage.Content.ReadAsStringAsync();
 
-                // TODO: Process the json response here, also handle errors.
-                //var xx = new JsonObject();
-                //var p = JsonObject.Parse(response);
-                //p.de
-                //var x = new Windows.Data.Json.JsonArray();
-                //x.pa
-                //var emotionResponseArray = JArray.Parse(emotionResponseString);
-                //var faces = new List<FaceWithEmotion>();
-                //foreach (var emotionFaceResponse in emotionResponseArray)
-                //{
-                //    //deserialise json to face
-                //    var face = JsonConvert.DeserializeObject<FaceWithEmotion>(emotionFaceResponse.ToString());
+                    // TODO: Process the json response here, also handle errors.
+                    //var xx = new JsonObject();
+                    //var p = JsonObject.Parse(response);
+                    //p.de
+                    //var x = new Windows.Data.Json.JsonArray();
+                    //x.pa
+                    //var emotionResponseArray = JArray.Parse(emotionResponseString);
+                    //var faces = new List<FaceWithEmotion>();
+                    //foreach (var emotionFaceResponse in emotionResponseArray)
+                    //{
+                    //    //deserialise json to face
+                    //    var face = JsonConvert.DeserializeObject<FaceWithEmotion>(emotionFaceResponse.ToString());
 
-                //    //add face to faces list
-                //    faces.Add(face);
-                //}
+                    //    //add face to faces list
+                    //    faces.Add(face);
+                    //}
 
-                //return faces;
+                    //return faces;
 
 
+                    return null;
+                }
+            }
+            catch (Exception)
+            {
+                // TODO: Log.
                 return null;
             }
         }
@@ -404,7 +380,7 @@ namespace Dinmore.Uwp
             double actualWidth = VisualizationCanvas.ActualWidth;
             double actualHeight = VisualizationCanvas.ActualHeight;
 
-            if (currentState == ScenarioState.WaitingForFaces && foundFaces != null && actualWidth != 0 && actualHeight != 0)
+            if (CurrentState.State == DetectionStates.WaitingForFaces && foundFaces != null && actualWidth != 0 && actualHeight != 0)
             {
                 double widthScale = framePizelSize.Width / actualWidth;
                 double heightScale = framePizelSize.Height / actualHeight;
@@ -431,29 +407,29 @@ namespace Dinmore.Uwp
         /// passed in state value. Handles failures and resets the state if necessary.
         /// </summary>
         /// <param name="newState">State to switch to</param>
-        private async void ChangeScenarioState(ScenarioState newState)
+        private async void ChangeDetectionState(DetectionStates newState)
         {
             switch (newState)
             {
-                case ScenarioState.Idle:
+                case DetectionStates.Idle:
 
                     ShutdownWebCam();
 
                     VisualizationCanvas.Children.Clear();
                     break;
 
-                case ScenarioState.WaitingForFaces:
+                case DetectionStates.WaitingForFaces:
 
                     if (!await StartWebcamStreaming())
                     {
-                        ChangeScenarioState(ScenarioState.Idle);
+                        ChangeDetectionState(DetectionStates.Idle);
                         break;
                     }
 
                     VisualizationCanvas.Children.Clear();
                     break;
             }
-            currentState = newState;
+            CurrentState.State = newState;
         }
 
         /// <summary>
@@ -467,7 +443,7 @@ namespace Dinmore.Uwp
             // and instead need to schedule the state change on the UI thread.
             var ignored = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
             {
-                ChangeScenarioState(ScenarioState.Idle);
+                ChangeDetectionState(DetectionStates.Idle);
             });
         }
     }
