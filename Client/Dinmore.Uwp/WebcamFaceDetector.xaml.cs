@@ -1,4 +1,5 @@
 using Dinmore.Uwp.Models;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -222,7 +223,7 @@ namespace Dinmore.Uwp
                     case DetectionStates.Startup:
                         break;
                     case DetectionStates.WaitingForFaces:
-                        LogStatusMessage("Waiting for faces", StatusSeverity.Error);
+                        LogStatusMessage("Waiting for faces", StatusSeverity.Info);
                         CurrentState.LastFrame = await ProcessCurrentVideoFrameAsync();
 
                         if (CurrentState.LastFrame != null)
@@ -249,6 +250,9 @@ namespace Dinmore.Uwp
                                 //{
                                 //    SetupVisualization(previewFrameSize, faces);
                                 //});
+                                // TODO: Store API results.
+                                //ChangeDetectionState(DetectionStates.InterpretingApiResults);
+                                //break;
                             }
                             ChangeDetectionState(DetectionStates.WaitingForFaces);
                         }
@@ -261,6 +265,10 @@ namespace Dinmore.Uwp
                         ChangeDetectionState(DetectionStates.Idle);
                         break;
                 }
+            }
+            catch (Exception ex)
+            {
+                LogStatusMessage("Unable to process curren frame. " + ex.ToString(), StatusSeverity.Error);
             }
             finally
             {
@@ -290,31 +298,12 @@ namespace Dinmore.Uwp
                     var content = new StreamContent(new MemoryStream(image));
                     content.Headers.ContentType = new MediaTypeWithQualityHeaderValue("application/octet-stream");
 
-                    var responseMessage = await httpClient.PostAsync("http://localhost:54169/api/patrons", content);
+                    var responseMessage = await httpClient.PostAsync("http://dinmore-api.azurewebsites.net/api/patrons", content);
 
                     var response = await responseMessage.Content.ReadAsStringAsync();
-
-                    // TODO: Process the json response here, also handle errors.
-                    //var xx = new JsonObject();
-                    //var p = JsonObject.Parse(response);
-                    //p.de
-                    //var x = new Windows.Data.Json.JsonArray();
-                    //x.pa
-                    //var emotionResponseArray = JArray.Parse(emotionResponseString);
-                    //var faces = new List<FaceWithEmotion>();
-                    //foreach (var emotionFaceResponse in emotionResponseArray)
-                    //{
-                    //    //deserialise json to face
-                    //    var face = JsonConvert.DeserializeObject<FaceWithEmotion>(emotionFaceResponse.ToString());
-
-                    //    //add face to faces list
-                    //    faces.Add(face);
-                    //}
-
-                    //return faces;
-
-
-                    return null;
+                    var result = JsonConvert.DeserializeObject<List<FaceWithEmotion>>(response);
+                    
+                    return result;
                 }
             }
             catch (Exception ex)
