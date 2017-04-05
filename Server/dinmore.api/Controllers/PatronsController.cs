@@ -64,17 +64,22 @@ namespace dinmore.api.Controllers
         /// <returns></returns>
         private static string GetTopEmotion(Scores scores)
         {
-            var scoresList = new SortedDictionary<string, float>();
-            scoresList.Add("anger", scores.anger);
-            scoresList.Add("happiness", scores.happiness);
-            scoresList.Add("contempt", scores.contempt);
-            scoresList.Add("disgust", scores.disgust);
-            scoresList.Add("fear", scores.fear);
-            scoresList.Add("neutral", scores.neutral);
-            scoresList.Add("sadness", scores.sadness);
-            scoresList.Add("surprise", scores.surprise);
-       
-            var key = scoresList.OrderByDescending(x => x.Value).Select(x => x.Key).First();
+            var scoresList = new List<EmotionScore>();
+            scoresList.Add(new EmotionScore() { Emotion = "anger", Score = scores.anger });
+            scoresList.Add(new EmotionScore() { Emotion = "happiness", Score = scores.happiness });
+            scoresList.Add(new EmotionScore() { Emotion = "contempt", Score = scores.contempt });
+            scoresList.Add(new EmotionScore() { Emotion = "disgust", Score = scores.disgust });
+            scoresList.Add(new EmotionScore() { Emotion = "fear", Score = scores.fear });
+            scoresList.Add(new EmotionScore() { Emotion = "neutral", Score = scores.neutral });
+            scoresList.Add(new EmotionScore() { Emotion = "sadness", Score = scores.sadness });
+            scoresList.Add(new EmotionScore() { Emotion = "surprise", Score = scores.surprise });
+
+            //sort by scores
+            scoresList.Sort((x, y) => x.Score.CompareTo(y.Score));
+            scoresList.Reverse();
+
+            //get the emotion label fopr top scoring EmotionScore
+            var key = scoresList.First().Emotion;
 
             return key;
         }
