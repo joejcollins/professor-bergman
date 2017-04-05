@@ -99,6 +99,7 @@
     <Compile Include="Models\DetectionState.cs" />
     <Compile Include="Models\FaceWithMotion.cs" />
     <Compile Include="Models\Scores.cs" />
+    <Compile Include="Models\StatusMessage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WebcamFaceDetector.xaml.cs">
       <DependentUpon>WebcamFaceDetector.xaml</DependentUpon>

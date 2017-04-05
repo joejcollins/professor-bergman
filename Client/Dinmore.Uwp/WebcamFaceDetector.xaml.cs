@@ -1,6 +1,7 @@
 using Dinmore.Uwp.Models;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -78,6 +79,8 @@ namespace Dinmore.Uwp
         /// The current step of the state machine for detecting faces, playing sounds etc.
         /// </summary>
         private DetectionState CurrentState { get; set; }
+
+        public ObservableCollection<StatusMessage> StatusLog { get; set; } = new ObservableCollection<StatusMessage>() { new StatusMessage("Started xxx") };
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WebcamFaceDetector"/> class.
@@ -219,14 +222,17 @@ namespace Dinmore.Uwp
                     case DetectionStates.Startup:
                         break;
                     case DetectionStates.WaitingForFaces:
+                        LogStatusMessage("Waiting for faces");
                         CurrentState.LastFrame = await ProcessCurrentVideoFrameAsync();
 
                         if (CurrentState.LastFrame != null)
                         {
+                            LogStatusMessage("Detected face(s)");
                             ChangeDetectionState(DetectionStates.FaceDetectedOnDevice);
                         }
                         break;
                     case DetectionStates.FaceDetectedOnDevice:
+                        LogStatusMessage("Just about to send API call for faces");
                         if (CurrentState.LastImageApiPush.AddMilliseconds(ApiIntervalMs) < DateTimeOffset.UtcNow)
                         {
                             ChangeDetectionState(DetectionStates.WaitingForApiResponse); // Prevent re-entry from other timers while waiting for response.
@@ -248,6 +254,7 @@ namespace Dinmore.Uwp
                         }
                         break;
                     case DetectionStates.WaitingForApiResponse:
+                        LogStatusMessage("Waiting for API response");
                         // TODO: Check here for timeout or rely on timeout of HttpClient?
                         break;
                     default:
@@ -259,6 +266,14 @@ namespace Dinmore.Uwp
             {
                 RunTimer();
             }
+        }
+
+        private void LogStatusMessage(string message)
+        {
+            var ignored = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+            {
+                StatusLog.Add(new StatusMessage(message));
+            });
         }
 
         private async Task<List<FaceWithEmotion>> PostImageToApiAsync(byte[] image)
@@ -297,8 +312,9 @@ namespace Dinmore.Uwp
                     return null;
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                LogStatusMessage("Exception: " + ex.ToString());
                 // TODO: Log.
                 return null;
             }
@@ -428,6 +444,7 @@ namespace Dinmore.Uwp
                 case DetectionStates.Idle:
                     ShutdownWebCam();
                     VisualizationCanvas.Children.Clear();
+                    CurrentState.State = newState;
                     break;
                 case DetectionStates.Startup:
                     if (!await StartWebcamStreaming())
@@ -436,9 +453,12 @@ namespace Dinmore.Uwp
                         break;
                     }
                     VisualizationCanvas.Children.Clear();
+                    ChangeDetectionState(DetectionStates.WaitingForFaces);
+                    break;
+                default:
+                    CurrentState.State = newState;
                     break;
             }
-            CurrentState.State = newState;
         }
 
         /// <summary>
