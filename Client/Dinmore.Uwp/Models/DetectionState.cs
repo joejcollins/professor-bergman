@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Dinmore.Uwp.Models
 {
     public class DetectionState
     {
-        public byte[] LastFrame { get; set; }
+        public ApiRequestParameters ApiRequestParameters { get; internal set; }
+
+        public List<FaceWithEmotion> FacesFoundByApi { get; internal set; }
 
         /// <summary>
         /// Tracks the last time we asked the API anything so we don't get too chatty.

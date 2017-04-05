@@ -25,9 +25,11 @@
         /// </summary>
         FaceDetectedOnDevice,
 
+        ApiResponseReceived,
+
         /// <summary>
-        /// Call to API has been made and now waiting for response or timeout.
+        /// Call to API has been made and now have some results to look at.
         /// </summary>
-        WaitingForApiResponse,
+        InterpretingApiResults,
     }
 }
