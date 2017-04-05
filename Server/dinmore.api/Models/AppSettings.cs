@@ -11,5 +11,7 @@ namespace dinmore.api.Models
         public string EmotionApiKey { get; set; }
         public string FaceApiDetectBaseUrl { get; set; }
         public string FaceApiKey { get; set; }
+
+        public string TableStorageConnectionString { get; set; }
     }
 }
