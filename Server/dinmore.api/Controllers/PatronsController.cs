@@ -52,7 +52,9 @@ namespace dinmore.api.Controllers
                     FaceRectangle = face.faceRectangle,
                     FaceAttributes = face.faceAttributes,
                     FaceLandmarks = face.faceLandmarks,
-                    PrimaryEmotion = GetTopEmotion(face.faceAttributes.emotion),
+                    PrimaryEmotion = (face.faceAttributes.emotion != null) ?
+                        GetTopEmotion(face.faceAttributes.emotion) :
+                        null,
                     TimeLastSeen = null,
                     DeviceLastSeen = "Not Implemented"
                 });
