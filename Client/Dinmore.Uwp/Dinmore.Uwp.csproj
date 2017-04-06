@@ -96,6 +96,9 @@
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
     <Compile Include="BoundingBoxCreator.cs" />
+    <Compile Include="Infrastructure\Media\PlayList.cs" />
+    <Compile Include="Infrastructure\Media\PlayListGroup.cs" />
+    <Compile Include="Infrastructure\Media\PlayListItem.cs" />
     <Compile Include="Infrastructure\Media\VoicePlayer.cs" />
     <Compile Include="Models\ApiRequestParameters.cs" />
     <Compile Include="Models\DetectionStates.cs" />
@@ -170,6 +173,8 @@
     <Content Include="Assets\squareTile-sdk.scale-150.png" />
     <Content Include="Assets\squareTile-sdk.scale-200.png" />
     <Content Include="Assets\squareTile-sdk.scale-400.png" />
+    <Content Include="Assets\Voice\0-12-17-helloeveryone.wav" />
+    <Content Include="Assets\Voice\0-12-17-hiya.wav" />
     <Content Include="Assets\Voice\goat.wav">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
