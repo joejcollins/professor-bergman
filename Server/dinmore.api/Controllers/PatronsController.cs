@@ -51,11 +51,23 @@ namespace dinmore.api.Controllers
             var faces = await _faceApiRepository.DetectFaces(bytes, returnFaceLandmarks, returnFaceAttributes);
             foreach (var face in faces)
             {
-                //check if similar faces are in the current face list
+                //get similar faces from the current face list
+                var similarPersistedFaces = await _faceApiRepository.FindSimilarFaces(currentFaceListId, face.faceId);
 
-                //add to face list
-                var persistedFaceId = await _faceApiRepository.AddFaceToFaceList(bytes, currentFaceListId, FaceRectangleToString(face.faceRectangle), string.Empty);
+                //get persisted face id by using the closest match or creating one.
+                var persistedFaceId = string.Empty;
+                if (similarPersistedFaces.Count() == 0)
+                {
+                    //this is a new face, add to face list
+                    persistedFaceId = await _faceApiRepository.AddFaceToFaceList(bytes, currentFaceListId, FaceRectangleToString(face.faceRectangle), string.Empty);
+                }
+                else {
+                    //get the closest matching face
+                    var sortedPersistedFaces = similarPersistedFaces.OrderByDescending(f => f.confidence);
+                    persistedFaceId = sortedPersistedFaces.FirstOrDefault().persistedFaceId;
+                }
 
+                //create a patron
                 patrons.Add(new Patron()
                 {
                     FaceId = face.faceId,
@@ -69,7 +81,8 @@ namespace dinmore.api.Controllers
                     TimeLastSeen = DateTime.UtcNow,
                     DeviceLastSeen = device,
                     ExhibitLastSeen = exhibit,
-                    CurrentFaceListId = currentFaceListId
+                    CurrentFaceListId = currentFaceListId,
+                    IsInList = (similarPersistedFaces.Count() > 0)
                 });
             }
 
