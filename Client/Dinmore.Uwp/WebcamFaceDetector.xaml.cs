@@ -9,6 +9,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.ApplicationModel.Resources;
 using Windows.Graphics.Imaging;
 using Windows.Media;
 using Windows.Media.Capture;
@@ -85,11 +86,15 @@ namespace Dinmore.Uwp
 
         private BoundingBoxCreator boundingBoxCreator = new BoundingBoxCreator();
 
+        private static ResourceLoader AppSettings;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="WebcamFaceDetector"/> class.
         /// </summary>
         public WebcamFaceDetector()
         {
+            AppSettings = ResourceLoader.GetForCurrentView();
+
             InitializeComponent();
 
             CurrentState = new DetectionState { State = DetectionStates.Idle };
@@ -304,7 +309,13 @@ namespace Dinmore.Uwp
                     var content = new StreamContent(new MemoryStream(image));
                     content.Headers.ContentType = new MediaTypeWithQualityHeaderValue("application/octet-stream");
 
-                    var responseMessage = await httpClient.PostAsync("http://dinmore-api.azurewebsites.net/api/patrons", content);
+                    //build url to pass to api, REFACTORING NEEDED
+                    var url = AppSettings.GetString("FaceApiUrl");
+                    var device = AppSettings.GetString("Device");
+                    var exhibit = AppSettings.GetString("Exhibit");
+                    var paramList = $"?device={device}&exhibit={exhibit}";
+
+                    var responseMessage = await httpClient.PostAsync(url, content);
 
                     var response = await responseMessage.Content.ReadAsStringAsync();
                     var result = JsonConvert.DeserializeObject<List<Face>>(response);
