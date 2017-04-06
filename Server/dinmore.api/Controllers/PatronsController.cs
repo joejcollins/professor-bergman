@@ -44,12 +44,17 @@ namespace dinmore.api.Controllers
             //setup patrons list
             var patrons = new List<Patron>();
 
+            //get the current facelist id
+            var currentFaceListId = await _faceApiRepository.GetCurrentFaceListId();
+
             //get faces 
             var faces = await _faceApiRepository.DetectFaces(bytes, returnFaceLandmarks, returnFaceAttributes);
             foreach (var face in faces)
             {
+                //check if similar faces are in the current face list
+
                 //add to face list
-                var persistedFaceId = await _faceApiRepository.AddFaceToFaceList(bytes, "87", FaceRectangleToString(face.faceRectangle), string.Empty);
+                var persistedFaceId = await _faceApiRepository.AddFaceToFaceList(bytes, currentFaceListId, FaceRectangleToString(face.faceRectangle), string.Empty);
 
                 patrons.Add(new Patron()
                 {
@@ -63,16 +68,13 @@ namespace dinmore.api.Controllers
                         null,
                     TimeLastSeen = DateTime.UtcNow,
                     DeviceLastSeen = device,
-                    ExhibitLastSeen = exhibit
+                    ExhibitLastSeen = exhibit,
+                    CurrentFaceListId = currentFaceListId
                 });
             }
 
             //log patron data to storage
             await _storeRepository.Store(patrons);
-            //await Task.Run(() =>
-            //{
-            //    _storeApiResults.Store(patrons);
-            //});
 
             return Json(patrons);
         }
