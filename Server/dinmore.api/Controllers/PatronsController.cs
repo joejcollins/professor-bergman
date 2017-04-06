@@ -22,10 +22,12 @@ namespace dinmore.api.Controllers
     {
         //private readonly AppSettings _appSettings;
         private readonly IFaceApiRepository _faceApiRepository;
+        private readonly IStoreRepository _storeRepository;
 
-        public PatronsController(IFaceApiRepository faceApiRepository)
+        public PatronsController(IFaceApiRepository faceApiRepository, IStoreRepository storeRepository)
         {
             _faceApiRepository = faceApiRepository;
+            _storeRepository = storeRepository;
         }
 
         // POST: api/Patrons
@@ -34,7 +36,7 @@ namespace dinmore.api.Controllers
         // 'returnFaceLandmarks' to return things like 'upperLipBottom', there are 27 landmarks in total. Defaults to false
         // 'returnFaceAttributes' to return specific attributes. Accepts a comma-delimited list. Defaults to age,gender,headPose,smile,facialHair,glasses,emotion
         [HttpPost]
-        public async Task<IActionResult> Post(string device, bool returnFaceLandmarks = false, string returnFaceAttributes = "age,gender,headPose,smile,facialHair,glasses,emotion")
+        public async Task<IActionResult> Post(string device = "Device not given", string exhibit = "Exhibit not given", bool returnFaceLandmarks = false, string returnFaceAttributes = "age,gender,headPose,smile,facialHair,glasses,emotion")
         {
             //read body of request into a byte array
             byte[] bytes = ReadFileStream(Request.Body);
@@ -59,10 +61,18 @@ namespace dinmore.api.Controllers
                     PrimaryEmotion = (face.faceAttributes.emotion != null) ?
                         GetTopEmotion(face.faceAttributes.emotion) :
                         null,
-                    TimeLastSeen = null,
-                    DeviceLastSeen = "Not Implemented"
+                    TimeLastSeen = DateTime.UtcNow,
+                    DeviceLastSeen = device,
+                    ExhibitLastSeen = exhibit
                 });
             }
+
+            //log patron data to storage
+            await _storeRepository.Store(patrons);
+            //await Task.Run(() =>
+            //{
+            //    _storeApiResults.Store(patrons);
+            //});
 
             return Json(patrons);
         }
