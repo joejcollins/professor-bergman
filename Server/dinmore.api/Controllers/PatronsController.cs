@@ -78,9 +78,9 @@ namespace dinmore.api.Controllers
                     PrimaryEmotion = (face.faceAttributes.emotion != null) ?
                         GetTopEmotion(face.faceAttributes.emotion) :
                         null,
-                    TimeLastSeen = DateTime.UtcNow,
-                    DeviceLastSeen = device,
-                    ExhibitLastSeen = exhibit,
+                    Time = DateTime.UtcNow,
+                    Device = device,
+                    Exhibit = exhibit,
                     CurrentFaceListId = currentFaceListId,
                     IsInList = (similarPersistedFaces.Count() > 0)
                 });
