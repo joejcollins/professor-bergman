@@ -15,6 +15,12 @@ namespace Dinmore.Uwp.Infrastructure.Media
 
         private static MediaPlayer mediaPlayer = new MediaPlayer();
         private static PlayListItem currentPlayListItem;
+        public bool IsCurrentlyPlaying;
+
+        internal void Stop() {
+            IsCurrentlyPlaying = false;
+            mediaPlayer.Pause();
+        }
 
         internal void Play(DetectionState currentState)
         {
@@ -22,9 +28,9 @@ namespace Dinmore.Uwp.Infrastructure.Media
             {
                 PlayWav(PlayList.List
                         .Where(w => w.PlayListGroup == PlayListGroup.SingleFace).ToList()
-                    );   
+                    );
             }
-             else
+            else
             {
                 PlayWav(PlayList.List
                         .Where(w => w.PlayListGroup == PlayListGroup.MultiFace).ToList()
@@ -36,8 +42,8 @@ namespace Dinmore.Uwp.Infrastructure.Media
         internal void PlayWav(List<PlayListItem> list)
         {
             mediaPlayer.PlaybackSession.PositionChanged += PositionChanged;
-               var session = mediaPlayer.PlaybackSession;
-            if (session.PlaybackState == MediaPlaybackState.None)           
+            var session = mediaPlayer.PlaybackSession;
+            if (session.PlaybackState == MediaPlaybackState.None)
 
                 //set back to zero
                 session.Position = TimeSpan.Zero;
@@ -51,22 +57,25 @@ namespace Dinmore.Uwp.Infrastructure.Media
                 var mediaSource = MediaSource.CreateFromUri(new Uri($"ms-appx:///{item.Name}"));
                 playbackList.Items.Add(new MediaPlaybackItem(mediaSource));
             }
-            
+
             mediaPlayer.Source = playbackList;
+            IsCurrentlyPlaying = true;
             mediaPlayer.Play();
 
-            }
+        }
 
         private void PositionChanged(MediaPlaybackSession sender, object args)
         {
-            
+
             if (sender.Position >= sender.NaturalDuration)
             {
                 sender.Position = new TimeSpan(0, 0, 0);
+                //IsCurrentlyPlaying = false;
+
             }
 
         }
-    
+
 
 
         private void Session_PlaybackStateChanged(MediaPlaybackSession sender, object args)

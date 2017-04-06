@@ -252,8 +252,6 @@ namespace Dinmore.Uwp
                             CurrentState.LastImageApiPush = DateTimeOffset.UtcNow;
                             CurrentState.FacesFoundByApi = await PostImageToApiAsync(CurrentState.ApiRequestParameters.Image);
                             ChangeDetectionState(DetectionStates.ApiResponseReceived);
-
-
                         }
                         break;
 
@@ -274,12 +272,15 @@ namespace Dinmore.Uwp
                         // You'd probably kick this off in a background thread and track it by putting a
                         // reference into the CurrentState object (new property).
 
-                        //play media
-                        var play = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                        //play media if we are not currently playing
+                        if (!vp.IsCurrentlyPlaying)
                         {
-                            //TODO This needs 
-                            vp.Play(CurrentState);
-                        });
+                            var play = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                            {
+                                //TODO This needs 
+                                vp.Play(CurrentState);
+                            });
+                        }
 
 
 
