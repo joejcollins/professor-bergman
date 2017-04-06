@@ -12,5 +12,8 @@ namespace dinmore.api.Interfaces
 
 
         Task<string> AddFaceToFaceList(byte[] image, string faceListId, string targetFace, string userData);
+
+
+        Task<string> GetCurrentFaceListId();
     }
 }
