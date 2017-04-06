@@ -19,11 +19,11 @@ namespace dinmore.api.Models
 
         public string PrimaryEmotion { get; set; }
 
-        public Nullable<DateTime> TimeLastSeen { get; set; }
+        public Nullable<DateTime> Time { get; set; }
 
-        public string DeviceLastSeen { get; set; }
+        public string Device { get; set; }
 
-        public string ExhibitLastSeen { get; set; }
+        public string Exhibit { get; set; }
 
         public string CurrentFaceListId { get; set; }
 
