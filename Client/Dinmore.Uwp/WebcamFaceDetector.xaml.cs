@@ -86,7 +86,7 @@ namespace Dinmore.Uwp
 
         public ObservableCollection<StatusMessage> StatusLog { get; set; } = new ObservableCollection<StatusMessage>();
 
-        private BoundingBoxCreator boundingBoxCreator = new BoundingBoxCreator();
+        //private BoundingBoxCreator boundingBoxCreator = new BoundingBoxCreator();
 
         private static ResourceLoader AppSettings;
 
@@ -378,6 +378,7 @@ namespace Dinmore.Uwp
                 {
                     await mediaCapture.GetPreviewFrameAsync(previewFrame);
 
+
                     // The returned VideoFrame should be in the supported NV12 format but we need to verify this.
                     if (!FaceDetector.IsBitmapPixelFormatSupported(previewFrame.SoftwareBitmap.BitmapPixelFormat))
                     {
@@ -396,16 +397,16 @@ namespace Dinmore.Uwp
                             var converted = SoftwareBitmap.Convert(previewFrame.SoftwareBitmap, BitmapPixelFormat.Rgba16);
 
                             encoder.SetSoftwareBitmap(converted);
-                            var bounds = boundingBoxCreator.BoundingBoxForFaces(faces, converted.PixelWidth, converted.PixelHeight);
-                            encoder.BitmapTransform.Bounds = bounds;
+                            //var bounds = boundingBoxCreator.BoundingBoxForFaces(faces, converted.PixelWidth, converted.PixelHeight);
+                            //encoder.BitmapTransform.Bounds = bounds;
                             await encoder.FlushAsync();
 
                             return new ApiRequestParameters
                             {
                                 Image = ms.ToArray(),
-                                ImageBounds = bounds,
-                                OriginalImageHeight = converted.PixelHeight,
-                                OriginalImageWidth = converted.PixelWidth,
+                                //ImageBounds = bounds,
+                                //OriginalImageHeight = converted.PixelHeight,
+                                //OriginalImageWidth = converted.PixelWidth,
                             };
                         }
                     }
@@ -423,40 +424,6 @@ namespace Dinmore.Uwp
             }
         }
 
-        /// <summary>
-        /// Takes the webcam image and FaceTracker results and assembles the visualization onto the Canvas.
-        /// </summary>
-        /// <param name="framePizelSize">Width and height (in pixels) of the video capture frame</param>
-        /// <param name="foundFaces">List of detected faces; output from FaceTracker</param>
-        private void SetupVisualization(DetectionState state)
-        {
-            VisualizationCanvas.Children.Clear();
-
-            double actualWidth = VisualizationCanvas.ActualWidth;
-            double actualHeight = VisualizationCanvas.ActualHeight;
-
-            if (state.FacesFoundByApi != null && actualWidth != 0 && actualHeight != 0)
-            {
-                double widthScale = state.ApiRequestParameters.OriginalImageWidth / actualWidth;
-                double heightScale = state.ApiRequestParameters.OriginalImageHeight / actualHeight;
-
-                foreach (var face in state.FacesFoundByApi)
-                {
-                    // Create a rectangle element for displaying the face box but since we're using a Canvas
-                    // we must scale the rectangles according to the frames's actual size.
-                    var box = new Rectangle()
-                    {
-                        Width = (uint)(face.faceRectangle.width / widthScale),
-                        Height = (uint)(face.faceRectangle.height / heightScale),
-                        Fill = fillBrush,
-                        Stroke = lineBrush,
-                        StrokeThickness = lineThickness,
-                        Margin = new Thickness((uint)(face.faceRectangle.left / widthScale), (uint)(face.faceRectangle.top / heightScale), 0, 0)
-                    };
-                    VisualizationCanvas.Children.Add(box);
-                }
-            }
-        }
 
         /// <summary>
         /// Manages the scenario's internal state. Invokes the internal methods and updates the UI according to the
