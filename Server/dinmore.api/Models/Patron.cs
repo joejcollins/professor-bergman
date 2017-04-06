@@ -24,5 +24,7 @@ namespace dinmore.api.Models
         public string DeviceLastSeen { get; set; }
 
         public string ExhibitLastSeen { get; set; }
+
+        public string CurrentFaceListId { get; set; }
     }
 }

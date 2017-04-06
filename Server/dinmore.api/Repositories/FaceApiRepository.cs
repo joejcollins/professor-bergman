@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace dinmore.api.Repositories
@@ -42,7 +43,7 @@ namespace dinmore.api.Repositories
                     { "returnFaceAttributes", returnFaceAttributes },
                 };
                 var apiUri = QueryHelpers.AddQueryString(_appSettings.FaceApiDetectBaseUrl, parameters);
-                
+
                 //make request
                 var responseMessage = await httpClient.PostAsync(apiUri, content);
 
@@ -65,6 +66,33 @@ namespace dinmore.api.Repositories
             return faces;
         }
 
+        public async Task<string> GetCurrentFaceListId()
+        {
+            var dateTimeLabel = DateTime.UtcNow.ToString("ddMMyyyy");
+
+            //try to create face list - if it is already created we'll get a 409 and just carry on
+            using (var httpClient = new HttpClient())
+            {
+                //setup HttpClient with content
+                var apiUrlBase = _appSettings.FaceApiCreateFaceListBaseUrl.Replace("[FaceListId]", dateTimeLabel);
+                httpClient.BaseAddress = new Uri(apiUrlBase);
+                httpClient.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", _appSettings.FaceApiKey);
+
+                //construct and body
+                var postData = new Dictionary<string, string>();
+                postData.Add("name", dateTimeLabel);
+                postData.Add("userData", $"Patrons for {DateTime.UtcNow.ToString("D")}");
+                var postDataJson = JsonConvert.SerializeObject(postData);
+                byte[] byteData = Encoding.UTF8.GetBytes(postDataJson);
+                var content = new ByteArrayContent(byteData);
+                content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+
+                //make request
+                var responseMessage = await httpClient.PutAsync(apiUrlBase, content);
+            }
+
+            return dateTimeLabel;
+        }
 
         public async Task<string> AddFaceToFaceList(byte[] image, string faceListId, string targetFace, string userData)
         {
