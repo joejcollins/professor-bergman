@@ -15,5 +15,8 @@ namespace dinmore.api.Interfaces
 
 
         Task<string> GetCurrentFaceListId();
+
+        Task<IEnumerable<PersistedFace>> FindSimilarFaces(string faceListId, string faceId);
+
     }
 }
