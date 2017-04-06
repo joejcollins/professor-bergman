@@ -11,8 +11,8 @@
         <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Margin="11,20,13,12">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="100"/>
+                <RowDefinition/>
+                <RowDefinition Height="327"/>
             </Grid.RowDefinitions>
 
             <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Grid.Row="1">

@@ -55,7 +55,7 @@ namespace Dinmore.Uwp.Infrastructure.Media
             if (sender.PlaybackState == MediaPlaybackState.Paused)
             {
                 //var session = mediaPlayer.PlaybackSession;
-                //mediaPlayer.CurrentState = MediaPlaybackState.None;
+                //mediaPlayer.C = MediaPlaybackState.None;
                 //TODO at this point we should be at the end
                 //session.PlaybackStateChanged += Session_PlaybackStateChanged;
                 //var session = mediaPlayer.PlaybackSession;
