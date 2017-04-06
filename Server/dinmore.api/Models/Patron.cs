@@ -22,5 +22,7 @@ namespace dinmore.api.Models
         public Nullable<DateTime> TimeLastSeen { get; set; }
 
         public string DeviceLastSeen { get; set; }
+
+        public string ExhibitLastSeen { get; set; }
     }
 }

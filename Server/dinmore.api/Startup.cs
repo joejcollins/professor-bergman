@@ -10,7 +10,6 @@ using Microsoft.Extensions.Logging;
 using dinmore.api.Models;
 using dinmore.api.Interfaces;
 using dinmore.api.Repositories;
-using dinmore.api.TableStorage;
 
 namespace dinmore.api
 {
@@ -48,7 +47,7 @@ namespace dinmore.api
 
             // Add repositories
             services.AddSingleton<IFaceApiRepository, FaceApiRepository>();
-            services.AddSingleton<IStoreApiResults, StoreApiResults>();
+            services.AddSingleton<IStoreRepository, StoreRepository>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

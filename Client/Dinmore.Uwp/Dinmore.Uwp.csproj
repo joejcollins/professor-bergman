@@ -89,6 +89,7 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include="project.json" />
+    <PRIResource Include="Resources.resw" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App.xaml.cs">
