@@ -1,3 +1,4 @@
+using Dinmore.Uwp.Infrastructure.Media;
 using Dinmore.Uwp.Models;
 using Newtonsoft.Json;
 using System;
@@ -13,6 +14,7 @@ using Windows.ApplicationModel.Resources;
 using Windows.Graphics.Imaging;
 using Windows.Media;
 using Windows.Media.Capture;
+using Windows.Media.Core;
 using Windows.Media.FaceAnalysis;
 using Windows.Media.MediaProperties;
 using Windows.System.Threading;
@@ -87,6 +89,8 @@ namespace Dinmore.Uwp
         private BoundingBoxCreator boundingBoxCreator = new BoundingBoxCreator();
 
         private static ResourceLoader AppSettings;
+
+        private VoicePlayer vp = new VoicePlayer();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WebcamFaceDetector"/> class.
@@ -239,34 +243,51 @@ namespace Dinmore.Uwp
                             ChangeDetectionState(DetectionStates.FaceDetectedOnDevice);
                         }
                         break;
+
                     case DetectionStates.FaceDetectedOnDevice:
                         LogStatusMessage("Just about to send API call for faces", StatusSeverity.Info);
+
                         if (CurrentState.LastImageApiPush.AddMilliseconds(ApiIntervalMs) < DateTimeOffset.UtcNow)
                         {
                             CurrentState.LastImageApiPush = DateTimeOffset.UtcNow;
                             CurrentState.FacesFoundByApi = await PostImageToApiAsync(CurrentState.ApiRequestParameters.Image);
                             ChangeDetectionState(DetectionStates.ApiResponseReceived);
+
+
                         }
                         break;
+
                     case DetectionStates.ApiResponseReceived:
                         LogStatusMessage("API response received", StatusSeverity.Info);
                         if (CurrentState.FacesFoundByApi != null && CurrentState.FacesFoundByApi.Any())
                         {
                             LogStatusMessage("Face(s) detected", StatusSeverity.Info);
                             ChangeDetectionState(DetectionStates.InterpretingApiResults);
+
                             break;
                         }
                         ChangeDetectionState(DetectionStates.WaitingForFaces);
                         break;
+
                     case DetectionStates.InterpretingApiResults:
                         // We have faces and data, so decide what to do here (play a sound etc).
                         // You'd probably kick this off in a background thread and track it by putting a
                         // reference into the CurrentState object (new property).
 
-                        var ignored = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                        //play media
+                        var play = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                         {
-                            SetupVisualization(CurrentState);
+                            //TODO This needs 
+                            vp.Play(CurrentState);
                         });
+
+
+
+                        //rectanngles post display, commenting for now
+                        //var ignored = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                        //{
+                        //    SetupVisualization(CurrentState);
+                        //});
 
                         // Check here if the media has finished playing or the people have walked away.
                         ChangeDetectionState(DetectionStates.WaitingForFaces);
