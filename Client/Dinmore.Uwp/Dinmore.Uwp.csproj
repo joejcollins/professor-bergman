@@ -94,11 +94,17 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="BoundingBoxCreator.cs" />
     <Compile Include="Models\ApiRequestParameters.cs" />
     <Compile Include="Models\DetectionStates.cs" />
+    <Compile Include="Models\Emotion.cs" />
+    <Compile Include="Models\FaceAttributes.cs" />
+    <Compile Include="Models\FaceLandmarks.cs" />
     <Compile Include="Models\FaceRectangle.cs" />
     <Compile Include="Models\DetectionState.cs" />
-    <Compile Include="Models\FaceWithMotion.cs" />
+    <Compile Include="Models\Face.cs" />
+    <Compile Include="Models\FacialHair.cs" />
+    <Compile Include="Models\HeadPose.cs" />
     <Compile Include="Models\Scores.cs" />
     <Compile Include="Models\StatusMessage.cs" />
     <Compile Include="Models\StatusSeverity.cs" />
@@ -168,6 +174,7 @@
     <Content Include="Assets\WideTile.scale-200.png" />
     <Content Include="Assets\WideTile.scale-400.png" />
     <Content Include="Properties\Default.rd.xml" />
+    <None Include="readme.md" />
   </ItemGroup>
   <ItemGroup />
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
