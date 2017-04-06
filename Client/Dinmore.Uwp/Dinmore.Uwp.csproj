@@ -22,6 +22,7 @@
     <AppxBundlePlatforms>arm</AppxBundlePlatforms>
     <PackageCertificateThumbprint>6C1CA19D22011E0F94A3AE4C4258B06FE4A57A06</PackageCertificateThumbprint>
     <PackageCertificateKeyFile>Dinmore.Uwp_TemporaryKey.pfx</PackageCertificateKeyFile>
+    <HockeyAppResourceId>508914dfa5e94e9280aacd818588588a</HockeyAppResourceId>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <DebugSymbols>true</DebugSymbols>
@@ -94,6 +95,7 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include="Dinmore.Uwp_TemporaryKey.pfx" />
+    <None Include="Connected Services\HockeyApp\ConnectedService.json" />
     <None Include="project.json" />
     <PRIResource Include="Resources.resw" />
   </ItemGroup>
@@ -101,7 +103,9 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
-    <Compile Include="BoundingBoxCreator.cs" />
+    <Compile Include="Infrastructure\Media\PlayList.cs" />
+    <Compile Include="Infrastructure\Media\PlayListGroup.cs" />
+    <Compile Include="Infrastructure\Media\PlayListItem.cs" />
     <Compile Include="Infrastructure\Media\VoicePlayer.cs" />
     <Compile Include="Models\ApiRequestParameters.cs" />
     <Compile Include="Models\DetectionStates.cs" />
@@ -181,6 +185,53 @@
     <Content Include="Assets\StoreLogo.scale-150.png" />
     <Content Include="Assets\StoreLogo.scale-200.png" />
     <Content Include="Assets\StoreLogo.scale-400.png" />
+    <Content Include="Assets\Voice\0-12-17-helloeveryone.wav" />
+    <Content Include="Assets\Voice\0-12-17-hiya.wav" />
+    <Content Include="Assets\Voice\0-55-64-hello.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Voice\0-55-64-helloall.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Voice\0-55-64-hellomadam.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Voice\0-55-64-hellosir.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Voice\1-12-17.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Voice\1-55-64.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Voice\2-12-17.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Voice\2-55-64.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Voice\3-12-17.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Voice\3-55-64.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Voice\4-12-17.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Voice\4-55-64.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Voice\5-12-17.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Voice\6-12-17.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Voice\7-12-17.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Assets\Voice\goat.wav">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -195,7 +246,9 @@
     <Content Include="Properties\Default.rd.xml" />
     <None Include="readme.md" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services\" />
+  </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
   </PropertyGroup>

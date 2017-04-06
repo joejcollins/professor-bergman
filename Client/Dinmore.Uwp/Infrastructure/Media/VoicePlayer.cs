@@ -3,43 +3,87 @@ using System.Linq;
 using Dinmore.Uwp.Models;
 using Windows.Media.Playback;
 using Windows.Media.Core;
+using System.Collections.Generic;
 
 namespace Dinmore.Uwp.Infrastructure.Media
 {
-    class VoicePlayer : IDisposable
+
+    internal class VoicePlayer : IDisposable
     {
         // see https://docs.microsoft.com/en-us/windows/uwp/audio-video-camera/play-audio-and-video-with-mediaplayer
 
 
         private static MediaPlayer mediaPlayer = new MediaPlayer();
+        private static PlayListItem currentPlayListItem;
+        public bool IsCurrentlyPlaying;
+
+        internal void Stop() {
+            IsCurrentlyPlaying = false;
+            mediaPlayer.Pause();
+        }
 
         internal void Play(DetectionState currentState)
         {
+            if (currentState.FacesFoundByApi.Count == 1)
+            {
+                PlayWav(PlayList.List
+                        .Where(w => w.PlayListGroup == PlayListGroup.SingleFace).ToList()
+                    );
+            }
+            else
+            {
+                PlayWav(PlayList.List
+                        .Where(w => w.PlayListGroup == PlayListGroup.MultiFace).ToList()
+                    );
+
+            }
+        }
+
+        internal void PlayWav(List<PlayListItem> list)
+        {
+            mediaPlayer.PlaybackSession.PositionChanged += PositionChanged;
             var session = mediaPlayer.PlaybackSession;
             if (session.PlaybackState == MediaPlaybackState.None)
-            {
-
-
-                var source = "Sheep.wav";
-                if (currentState.FacesFoundByApi.Count > 1)
-                    source = "Goat.wav";
 
                 //set back to zero
                 session.Position = TimeSpan.Zero;
-                session.PlaybackStateChanged += Session_PlaybackStateChanged;
+            // mediaPlayer.Source = MediaSource.CreateFromUri(new Uri($"ms-appx:///{item.Name}"));
 
-                mediaPlayer.Source = MediaSource.CreateFromUri(new Uri($"ms-appx:///Assets/Voice/{source}"));
+            // mediaPlayer.Play();
 
-                mediaPlayer.Play();
+            var playbackList = new MediaPlaybackList();
+            foreach (var item in list)
+            {
+                var mediaSource = MediaSource.CreateFromUri(new Uri($"ms-appx:///{item.Name}"));
+                playbackList.Items.Add(new MediaPlaybackItem(mediaSource));
             }
 
+            mediaPlayer.Source = playbackList;
+            IsCurrentlyPlaying = true;
+            mediaPlayer.Play();
 
         }
+
+        private void PositionChanged(MediaPlaybackSession sender, object args)
+        {
+
+            if (sender.Position >= sender.NaturalDuration)
+            {
+                sender.Position = new TimeSpan(0, 0, 0);
+                //IsCurrentlyPlaying = false;
+
+            }
+
+        }
+
+
 
         private void Session_PlaybackStateChanged(MediaPlaybackSession sender, object args)
         {
             if (sender.PlaybackState == MediaPlaybackState.Paused)
             {
+                //var session = mediaPlayer.PlaybackSession;
+                //mediaPlayer.C = MediaPlaybackState.None;
                 //TODO at this point we should be at the end
                 //session.PlaybackStateChanged += Session_PlaybackStateChanged;
                 //var session = mediaPlayer.PlaybackSession;
