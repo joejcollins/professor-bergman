@@ -7,20 +7,20 @@ namespace dinmore.api.Models
 {
     public class Scores
     {
-        public double anger { get; set; }
+        public float anger { get; set; }
 
-        public double contempt { get; set; }
+        public float contempt { get; set; }
 
-        public double disgust { get; set; }
+        public float disgust { get; set; }
 
-        public double fear { get; set; }
+        public float fear { get; set; }
 
-        public double happiness { get; set; }
+        public float happiness { get; set; }
 
-        public double neutral { get; set; }
+        public float neutral { get; set; }
 
-        public double sadness { get; set; }
+        public float sadness { get; set; }
 
-        public double surprise { get; set; }
+        public float surprise { get; set; }
     }
 }
