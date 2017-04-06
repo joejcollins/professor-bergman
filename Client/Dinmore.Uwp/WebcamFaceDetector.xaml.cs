@@ -313,7 +313,7 @@ namespace Dinmore.Uwp
                     var url = AppSettings.GetString("FaceApiUrl");
                     var device = AppSettings.GetString("Device");
                     var exhibit = AppSettings.GetString("Exhibit");
-                    var paramList = $"?device={device}&exhibit={exhibit}";
+                    url = $"{url}?device={device}&exhibit={exhibit}";
 
                     var responseMessage = await httpClient.PostAsync(url, content);
 
