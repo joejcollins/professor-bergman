@@ -1,4 +1,5 @@
-﻿using dinmore.api.Models;
+﻿using dinmore.api.Interfaces;
+using dinmore.api.Models;
 using Microsoft.Extensions.Options;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
@@ -6,19 +7,19 @@ using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace dinmore.api.TableStorage
+namespace dinmore.api.Repositories
 {
 
-    public class StoreApiResults : IStoreApiResults
+    public class StoreRepository : IStoreRepository
     {
         private readonly AppSettings _appSettings;
 
-        public StoreApiResults(IOptions<AppSettings> appSettings)
+        public StoreRepository(IOptions<AppSettings> appSettings)
         {
             _appSettings = appSettings.Value;
         }
 
-        public async Task Store(List<Face> faces)
+        public async Task Store(List<Patron> patrons)
         {
             var storageAccount = CloudStorageAccount.Parse(_appSettings.TableStorageConnectionString);
 
@@ -26,15 +27,15 @@ namespace dinmore.api.TableStorage
             var blobClient = storageAccount.CreateCloudBlobClient();
 
             // Retrieve a reference to a container.
-            var container = blobClient.GetContainerReference("facesdata");
+            var container = blobClient.GetContainerReference("patronsdata");
             //Create the container if it doesn't already exist.
             await container.CreateIfNotExistsAsync();
 
-            foreach (var face in faces)
+            foreach (var patron in patrons)
             {
-                var blockBlob = container.GetBlockBlobReference(face.faceId.ToString());
+                var blockBlob = container.GetBlockBlobReference(patron.PersistedFaceId.ToString());
 
-                string output = JsonConvert.SerializeObject(face);
+                string output = JsonConvert.SerializeObject(patron);
                 await blockBlob.UploadTextAsync(output);
             }
 

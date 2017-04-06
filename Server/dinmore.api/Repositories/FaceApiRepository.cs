@@ -1,6 +1,5 @@
 ﻿using dinmore.api.Interfaces;
 using dinmore.api.Models;
-using dinmore.api.TableStorage;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -17,12 +16,10 @@ namespace dinmore.api.Repositories
     public class FaceApiRepository : IFaceApiRepository
     {
         private readonly AppSettings _appSettings;
-        private readonly IStoreApiResults _storeApiResults;
 
-        public FaceApiRepository(IOptions<AppSettings> appSettings, IStoreApiResults storeResults)
+        public FaceApiRepository(IOptions<AppSettings> appSettings)
         {
             _appSettings = appSettings.Value;
-            _storeApiResults = storeResults;
         }
 
         public async Task<IEnumerable<Face>> DetectFaces(byte[] image, bool returnFaceLandmarks, string returnFaceAttributes)
@@ -64,11 +61,6 @@ namespace dinmore.api.Repositories
                 //add face to faces list
                 faces.Add(face);
             }
-
-            await Task.Run(() =>
-            {
-                _storeApiResults.Store(faces);
-            });
 
             return faces;
         }
