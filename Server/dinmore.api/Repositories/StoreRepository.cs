@@ -27,21 +27,22 @@ namespace dinmore.api.Repositories
             var blobClient = storageAccount.CreateCloudBlobClient();
 
             // Retrieve a reference to a container.
-            var container = blobClient.GetContainerReference("patronsdata");
+            var container = blobClient.GetContainerReference(_appSettings.StoreContainerName);
+
             //Create the container if it doesn't already exist.
             await container.CreateIfNotExistsAsync();
 
+            //add the json blob for each patron as a new blob in storage
             foreach (var patron in patrons)
             {
                 var blockBlob = container.GetBlockBlobReference(patron.PersistedFaceId.ToString());
 
                 string output = JsonConvert.SerializeObject(patron);
+
                 await blockBlob.UploadTextAsync(output);
             }
 
         }
-
-
 
     }
 }

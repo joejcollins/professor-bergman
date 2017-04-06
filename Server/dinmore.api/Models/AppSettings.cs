@@ -17,5 +17,7 @@ namespace dinmore.api.Models
         public string FaceApiCreateFaceListBaseUrl { get; set; }
 
         public string TableStorageConnectionString { get; set; }
+
+        public string StoreContainerName { get; set; }
     }
 }
