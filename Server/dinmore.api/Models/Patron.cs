@@ -26,5 +26,7 @@ namespace dinmore.api.Models
         public string ExhibitLastSeen { get; set; }
 
         public string CurrentFaceListId { get; set; }
+
+        public bool IsInList { get; set; }
     }
 }

@@ -51,7 +51,7 @@ namespace dinmore.api.Repositories
                 responseString = await responseMessage.Content.ReadAsStringAsync();
             }
 
-            //create emotion scores object. parse json string to object and enumerate
+            //parse json string and cast to list of faces
             var responseArray = JArray.Parse(responseString);
             var faces = new List<Face>();
             foreach (var faceResponse in responseArray)
@@ -126,6 +126,49 @@ namespace dinmore.api.Repositories
             }
 
             return responseString;
+        }
+
+        public async Task<IEnumerable<PersistedFace>> FindSimilarFaces(string faceListId, string faceId)
+        {
+            //call face api
+            var responseString = string.Empty;
+            using (var httpClient = new HttpClient())
+            {
+                //setup HttpClient with content
+                httpClient.BaseAddress = new Uri(_appSettings.FaceApiFindSimilarBaseUrl);
+                httpClient.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", _appSettings.FaceApiKey);
+
+                //construct and body
+                var postData = new Dictionary<string, string>();
+                postData.Add("faceId", faceId);
+                postData.Add("faceListId", faceListId);
+                postData.Add("maxNumOfCandidatesReturned", "10");
+                postData.Add("mode", "matchPerson");
+                var postDataJson = JsonConvert.SerializeObject(postData);
+                byte[] byteData = Encoding.UTF8.GetBytes(postDataJson);
+                var content = new ByteArrayContent(byteData);
+                content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+
+                //make request
+                var responseMessage = await httpClient.PostAsync(_appSettings.FaceApiFindSimilarBaseUrl, content);
+
+                //read response as a json string
+                responseString = await responseMessage.Content.ReadAsStringAsync();
+            }
+
+            //parse json string and cast to list of faces
+            var responseArray = JArray.Parse(responseString);
+            var persistedFaces = new List<PersistedFace>();
+            foreach (var faceResponse in responseArray)
+            {
+                //deserialise json to face
+                var persistedFace = JsonConvert.DeserializeObject<PersistedFace>(faceResponse.ToString());
+
+                //add face to faces list
+                persistedFaces.Add(persistedFace);
+            }
+
+            return persistedFaces;
         }
     }
 }
