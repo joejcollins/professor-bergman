@@ -7,7 +7,7 @@ namespace Dinmore.Uwp.Models
     {
         public ApiRequestParameters ApiRequestParameters { get; internal set; }
 
-        public List<FaceWithEmotion> FacesFoundByApi { get; internal set; }
+        public List<Face> FacesFoundByApi { get; internal set; }
 
         /// <summary>
         /// Tracks the last time we asked the API anything so we don't get too chatty.

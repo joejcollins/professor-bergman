@@ -46,9 +46,13 @@ namespace dinmore.api.Controllers
             var faces = await _faceApiRepository.DetectFaces(bytes, returnFaceLandmarks, returnFaceAttributes);
             foreach (var face in faces)
             {
+                //add to face list
+                var persistedFaceId = await _faceApiRepository.AddFaceToFaceList(bytes, "87", FaceRectangleToString(face.faceRectangle), string.Empty);
+
                 patrons.Add(new Patron()
                 {
-                    FaceId = Guid.NewGuid().ToString(),
+                    FaceId = face.faceId,
+                    PersistedFaceId = persistedFaceId,
                     FaceRectangle = face.faceRectangle,
                     FaceAttributes = face.faceAttributes,
                     FaceLandmarks = face.faceLandmarks,
@@ -103,6 +107,16 @@ namespace dinmore.api.Controllers
                 }
                 return ms.ToArray();
             }
+        }
+
+        private static string FaceRectangleToString(FaceRectangle faceRectangle)
+        {
+            var result = string.Empty;
+            result += faceRectangle.left + ",";
+            result += faceRectangle.top + ",";
+            result += faceRectangle.width + ",";
+            result += faceRectangle.height;
+            return result;
         }
 
     }

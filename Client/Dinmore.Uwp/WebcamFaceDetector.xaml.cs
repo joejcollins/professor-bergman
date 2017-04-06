@@ -18,7 +18,6 @@ using Windows.System.Threading;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Media;
-using Windows.UI.Xaml.Media.Imaging;
 using Windows.UI.Xaml.Navigation;
 using Windows.UI.Xaml.Shapes;
 
@@ -83,6 +82,8 @@ namespace Dinmore.Uwp
         public DetectionState CurrentState { get; set; }
 
         public ObservableCollection<StatusMessage> StatusLog { get; set; } = new ObservableCollection<StatusMessage>();
+
+        private BoundingBoxCreator boundingBoxCreator = new BoundingBoxCreator();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WebcamFaceDetector"/> class.
@@ -294,7 +295,7 @@ namespace Dinmore.Uwp
             });
         }
 
-        private async Task<List<FaceWithEmotion>> PostImageToApiAsync(byte[] image)
+        private async Task<List<Face>> PostImageToApiAsync(byte[] image)
         {
             try
             {
@@ -306,7 +307,7 @@ namespace Dinmore.Uwp
                     var responseMessage = await httpClient.PostAsync("http://dinmore-api.azurewebsites.net/api/patrons", content);
 
                     var response = await responseMessage.Content.ReadAsStringAsync();
-                    var result = JsonConvert.DeserializeObject<List<FaceWithEmotion>>(response);
+                    var result = JsonConvert.DeserializeObject<List<Face>>(response);
 
                     return result;
                 }
@@ -319,7 +320,8 @@ namespace Dinmore.Uwp
         }
 
         /// <summary>
-        /// This method is invoked by a ThreadPoolTimer to execute the FaceTracker and Visualization logic at approximately 15 frames per second.
+        /// Extracts a frame from the camera stream and detects if any faces are found. Used as a precursor to making an expensive API
+        /// call to get proper face details.
         /// </summary>
         /// <remarks>
         /// Keep in mind this method is called from a Timer and not synchronized with the camera stream. Also, the processing time of FaceTracker
@@ -339,7 +341,6 @@ namespace Dinmore.Uwp
             {
                 // Create a VideoFrame object specifying the pixel format we want our capture image to be (NV12 bitmap in this case).
                 // GetPreviewFrame will convert the native webcam frame into this format.
-                // TODO: Might be possible to side step the convert below by using RGBa16.
                 const BitmapPixelFormat InputPixelFormat = BitmapPixelFormat.Nv12;
                 using (var previewFrame = new VideoFrame(InputPixelFormat, (int)videoProperties.Width, (int)videoProperties.Height))
                 {
@@ -353,26 +354,19 @@ namespace Dinmore.Uwp
                     var faces = await faceTracker.ProcessNextFrameAsync(previewFrame);
                     if (faces.Any())
                     {
+                        // Found faces so create a bounding rectangle and store the parameters to make the API call and process the response.
                         using (var ms = new MemoryStream())
                         {
-                            // Create an encoder with the desired format
+                            // It'll be faster to send a smaller rectangle of the faces found instead of the whole image. This is what we do here.
                             var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.JpegEncoderId, ms.AsRandomAccessStream());
 
-                            // To use the encoder to resize we need to change the bitmap format. Might be a better way to do this.
+                            // To use the encoder to resize we need to change the bitmap format. Might be a better way to do this, I can't see it.
                             var converted = SoftwareBitmap.Convert(previewFrame.SoftwareBitmap, BitmapPixelFormat.Rgba16);
 
-                            // Set the software bitmap
                             encoder.SetSoftwareBitmap(converted);
-
-                            var bounds = BoundingBoxForFaces(faces, converted.PixelWidth, converted.PixelHeight);
-
+                            var bounds = boundingBoxCreator.BoundingBoxForFaces(faces, converted.PixelWidth, converted.PixelHeight);
                             encoder.BitmapTransform.Bounds = bounds;
-
                             await encoder.FlushAsync();
-
-                            //var copied = new MemoryStream(ms.ToArray());
-                            //var bs64 = Convert.ToBase64String(copied.ToArray());
-                            //ms.Position = 0;
 
                             return new ApiRequestParameters
                             {
@@ -397,42 +391,6 @@ namespace Dinmore.Uwp
             }
         }
 
-        private BitmapBounds BoundingBoxForFaces(IList<DetectedFace> faces, int pixelWidth, int pixelHeight)
-        {
-            var bounds = new BitmapBounds
-            {
-                X = faces.Min(x => x.FaceBox.X),
-                Y = faces.Min(y => y.FaceBox.Y),
-            };
-            bounds.Height = faces.Max(y => y.FaceBox.Y + y.FaceBox.Height) - bounds.Y;
-            bounds.Width = faces.Max(x => x.FaceBox.X + x.FaceBox.Width) - bounds.X;
-
-            var expanded = new BitmapBounds();
-            expanded.X = bounds.X - (bounds.Width / 2);
-            expanded.Y = bounds.Y - (bounds.Height / 2);
-            expanded.Width = bounds.Width * 2;
-            expanded.Height = bounds.Height * 2;
-
-            if (expanded.X < 0)
-            {
-                expanded.X = 0;
-            }
-            if (expanded.Y < 0)
-            {
-                expanded.Y = 0;
-            }
-            if (expanded.X + expanded.Width > pixelWidth)
-            {
-                expanded.Width = (uint)pixelWidth - expanded.X;
-            }
-            if (expanded.Y + expanded.Height > pixelHeight)
-            {
-                expanded.Height = (uint)pixelHeight - expanded.Y;
-            }
-
-            return expanded;
-        }
-
         /// <summary>
         /// Takes the webcam image and FaceTracker results and assembles the visualization onto the Canvas.
         /// </summary>
@@ -445,7 +403,7 @@ namespace Dinmore.Uwp
             double actualWidth = VisualizationCanvas.ActualWidth;
             double actualHeight = VisualizationCanvas.ActualHeight;
 
-            if (CurrentState.State == DetectionStates.WaitingForFaces && state.FacesFoundByApi != null && actualWidth != 0 && actualHeight != 0)
+            if (state.FacesFoundByApi != null && actualWidth != 0 && actualHeight != 0)
             {
                 double widthScale = state.ApiRequestParameters.OriginalImageWidth / actualWidth;
                 double heightScale = state.ApiRequestParameters.OriginalImageHeight / actualHeight;
@@ -455,7 +413,7 @@ namespace Dinmore.Uwp
                     // Create a rectangle element for displaying the face box but since we're using a Canvas
                     // we must scale the rectangles according to the frames's actual size.
                     var box = new Rectangle()
-                    {                         
+                    {
                         Width = (uint)(face.faceRectangle.width / widthScale),
                         Height = (uint)(face.faceRectangle.height / heightScale),
                         Fill = fillBrush,

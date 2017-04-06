@@ -72,5 +72,40 @@ namespace dinmore.api.Repositories
 
             return faces;
         }
+
+
+        public async Task<string> AddFaceToFaceList(byte[] image, string faceListId, string targetFace, string userData)
+        {
+            //call face api
+            var responseString = string.Empty;
+            using (var httpClient = new HttpClient())
+            {
+                //setup HttpClient with content
+                var apiUrlBase = _appSettings.FaceApiFaceListsPersistedFacesBaseUrl.Replace("[FaceListId]", faceListId);
+                httpClient.BaseAddress = new Uri(apiUrlBase);
+                httpClient.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", _appSettings.FaceApiKey);
+                var content = new StreamContent(new MemoryStream(image));
+                content.Headers.ContentType = new MediaTypeWithQualityHeaderValue("application/octet-stream");
+
+                //construct full API endpoint uri
+                var parameters = new Dictionary<string, string> {
+                    { "targetFace", targetFace},
+                    { "userData", userData }
+                };
+                var apiUri = QueryHelpers.AddQueryString(apiUrlBase, parameters);
+
+                //make request
+                var responseMessage = await httpClient.PostAsync(apiUri, content);
+
+                //read response as a json string
+                responseString = await responseMessage.Content.ReadAsStringAsync();
+
+                //parse to dynamic object and extract persisited face id
+                dynamic d = JObject.Parse(responseString);
+                responseString = d.persistedFaceId;
+            }
+
+            return responseString;
+        }
     }
 }
