@@ -20,7 +20,7 @@
     <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
     <AppxBundle>Always</AppxBundle>
     <AppxBundlePlatforms>arm</AppxBundlePlatforms>
-    <PackageCertificateThumbprint>6DC2C97FE1E5B46E364A6E3C7A2B85F81FCF07C4</PackageCertificateThumbprint>
+    <PackageCertificateThumbprint>6C1CA19D22011E0F94A3AE4C4258B06FE4A57A06</PackageCertificateThumbprint>
     <PackageCertificateKeyFile>Dinmore.Uwp_TemporaryKey.pfx</PackageCertificateKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
