@@ -54,6 +54,7 @@ namespace dinmore.api.Repositories
                 patronSighting.TimeOfSighting = (DateTime)patron.Time;
                 patronSighting.Smile = patron.FaceAttributes.smile;
                 patronSighting.Glasses = patron.FaceAttributes.glasses;
+                patronSighting.FaceMatchConfidence = (double)patron.FaceMatchConfidence;
 
                 TableOperation insertOperation = TableOperation.Insert(patronSighting);
 
