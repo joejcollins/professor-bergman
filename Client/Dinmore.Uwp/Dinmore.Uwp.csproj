@@ -185,9 +185,11 @@
     <Content Include="Assets\StoreLogo.scale-150.png" />
     <Content Include="Assets\StoreLogo.scale-200.png" />
     <Content Include="Assets\StoreLogo.scale-400.png" />
+    <Content Include="Assets\Voice\hello.wav" />
     <Content Include="Assets\Voice\helloall.wav">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="Assets\Voice\helloeveryone.wav" />
     <Content Include="Assets\Voice\hellomadam.wav">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -230,6 +232,7 @@
     <Content Include="Assets\Voice\goat.wav">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="Assets\Voice\hiya.wav" />
     <Content Include="Assets\Voice\sheep.wav">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

@@ -254,6 +254,7 @@ namespace Dinmore.Uwp
 
                         if (CurrentState.LastImageApiPush.AddMilliseconds(ApiIntervalMs) < DateTimeOffset.UtcNow)
                         {
+                            vp.PlayIntroduction();
 
                             CurrentState.LastImageApiPush = DateTimeOffset.UtcNow;
                             CurrentState.FacesFoundByApi = await PostImageToApiAsync(CurrentState.ApiRequestParameters.Image);
