@@ -76,6 +76,7 @@ namespace Dinmore.Uwp
         /// </summary>
         private const double ApiIntervalMs = 1000; // Ryan set this to 500;
         private const int NumberSecsForFacesToDisappear = 5;
+        private const int NumberSecsToWaitForHello = 2;
 
         // Use a 66 millisecond interval for our timer, i.e. 15 frames per second
         private TimeSpan timerInterval = TimeSpan.FromMilliseconds(250);
@@ -254,6 +255,9 @@ namespace Dinmore.Uwp
 
                         if (CurrentState.LastImageApiPush.AddMilliseconds(ApiIntervalMs) < DateTimeOffset.UtcNow)
                         {
+                            ThreadPoolTimer.CreateTimer(
+                                new TimerElapsedHandler(HelloAudioHandler),
+                                TimeSpan.FromSeconds(NumberSecsToWaitForHello));
 
                             CurrentState.LastImageApiPush = DateTimeOffset.UtcNow;
                             CurrentState.FacesFoundByApi = await PostImageToApiAsync(CurrentState.ApiRequestParameters.Image);
@@ -330,6 +334,11 @@ namespace Dinmore.Uwp
             }
         }
 
+        private void HelloAudioHandler(ThreadPoolTimer timer)
+        {
+            vp.PlayIntroduction();
+            timer.Cancel();
+        }
 
         private void StopAudioHandler(ThreadPoolTimer timer)
         { 
