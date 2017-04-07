@@ -74,10 +74,11 @@ namespace Dinmore.Uwp
         /// <summary>
         /// The minimum interval required between API calls.
         /// </summary>
-        private const double ApiIntervalMs = 500;
+        private const double ApiIntervalMs = 1000; // Ryan set this to 500;
 
         // Use a 66 millisecond interval for our timer, i.e. 15 frames per second
-        private TimeSpan timerInterval = TimeSpan.FromMilliseconds(66);
+        private TimeSpan timerInterval = TimeSpan.FromMilliseconds(250);
+            //Ryan set this TimeSpan.FromMilliseconds(66);
 
         /// <summary>
         /// The current step of the state machine for detecting faces, playing sounds etc.
@@ -189,7 +190,8 @@ namespace Dinmore.Uwp
 
         private void RunTimer()
         {
-            frameProcessingTimer = ThreadPoolTimer.CreateTimer(new TimerElapsedHandler(ProcessCurrentStateAsync), timerInterval);
+            frameProcessingTimer = ThreadPoolTimer.CreateTimer(
+                new TimerElapsedHandler(ProcessCurrentStateAsync), timerInterval);
         }
 
         /// <summary>
@@ -231,8 +233,10 @@ namespace Dinmore.Uwp
                 {
                     case DetectionStates.Idle:
                         break;
+
                     case DetectionStates.Startup:
                         break;
+
                     case DetectionStates.WaitingForFaces:
                         LogStatusMessage("Waiting for faces", StatusSeverity.Info);
                         CurrentState.ApiRequestParameters = await ProcessCurrentVideoFrameAsync();
@@ -249,14 +253,20 @@ namespace Dinmore.Uwp
 
                         if (CurrentState.LastImageApiPush.AddMilliseconds(ApiIntervalMs) < DateTimeOffset.UtcNow)
                         {
+
                             CurrentState.LastImageApiPush = DateTimeOffset.UtcNow;
                             CurrentState.FacesFoundByApi = await PostImageToApiAsync(CurrentState.ApiRequestParameters.Image);
+
+                            //LogStatusMessage($"Sending {CurrentState.FacesFoundByApi.Count()} faces to api",
+                            //    StatusSeverity.Info);
+
                             ChangeDetectionState(DetectionStates.ApiResponseReceived);
                         }
                         break;
 
                     case DetectionStates.ApiResponseReceived:
                         LogStatusMessage("API response received", StatusSeverity.Info);
+
                         if (CurrentState.FacesFoundByApi != null && CurrentState.FacesFoundByApi.Any())
                         {
                             LogStatusMessage("Face(s) detected", StatusSeverity.Info);
@@ -264,7 +274,8 @@ namespace Dinmore.Uwp
 
                             break;
                         }
-                        ChangeDetectionState(DetectionStates.WaitingForFaces);
+                        //ChangeDetectionState(DetectionStates.WaitingForFaces);
+                        ChangeDetectionState(DetectionStates.WaitingForFacesToDisappear);
                         break;
 
                     case DetectionStates.InterpretingApiResults:
@@ -282,18 +293,28 @@ namespace Dinmore.Uwp
                             });
                         }
 
-
-
-                        //rectanngles post display, commenting for now
-                        //var ignored = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                        //{
-                        //    SetupVisualization(CurrentState);
-                        //});
-
                         // Check here if the media has finished playing or the people have walked away.
-                        ChangeDetectionState(DetectionStates.WaitingForFaces);
+                        //ChangeDetectionState(DetectionStates.WaitingForFaces);
+                        ChangeDetectionState(DetectionStates.WaitingForFacesToDisappear);
 
                         break;
+
+                    //Some faces are on the device and the api has been called, and maybe the audio
+                    //  is now playing
+                    case DetectionStates.WaitingForFacesToDisappear:
+                        LogStatusMessage("Waiting for faces to disappear", StatusSeverity.Info);
+
+                        var result = await AreFacesStillPresent();
+
+                        if (!result)
+                        {
+                            LogStatusMessage($"Faces has gone, stop the audio playback", StatusSeverity.Info);
+                            vp.Stop();
+                            ChangeDetectionState(DetectionStates.WaitingForFaces);
+                        }
+
+                        break;
+
                     default:
                         ChangeDetectionState(DetectionStates.Idle);
                         break;
@@ -379,12 +400,13 @@ namespace Dinmore.Uwp
                 {
                     await mediaCapture.GetPreviewFrameAsync(previewFrame);
 
-
                     // The returned VideoFrame should be in the supported NV12 format but we need to verify this.
                     if (!FaceDetector.IsBitmapPixelFormatSupported(previewFrame.SoftwareBitmap.BitmapPixelFormat))
                     {
                         throw new NotSupportedException("PixelFormat '" + InputPixelFormat.ToString() + "' is not supported by FaceDetector");
                     }
+
+
                     var faces = await faceTracker.ProcessNextFrameAsync(previewFrame);
                     if (faces.Any())
                     {
@@ -418,6 +440,31 @@ namespace Dinmore.Uwp
             {
                 LogStatusMessage("Unable to process current frame: " + ex.ToString(), StatusSeverity.Error);
                 return null;
+            }
+            finally
+            {
+                frameProcessingSemaphore.Release();
+            }
+        }
+
+        private async Task<bool> AreFacesStillPresent()
+        {
+
+            try
+            {
+                const BitmapPixelFormat InputPixelFormat = BitmapPixelFormat.Nv12;
+                using (var previewFrame = new VideoFrame(InputPixelFormat, (int)videoProperties.Width, (int)videoProperties.Height))
+                {
+                    await mediaCapture.GetPreviewFrameAsync(previewFrame);
+
+                    var faces = await faceTracker.ProcessNextFrameAsync(previewFrame);
+                    return faces.Any();
+                }
+            }
+            catch (Exception ex)
+            {
+                LogStatusMessage("Unable to process current frame: " + ex.ToString(), StatusSeverity.Error);
+                return false;  //TODO ? true or false?
             }
             finally
             {
