@@ -15,16 +15,28 @@ namespace Dinmore.Uwp.Infrastructure.Media
 
         private static MediaPlayer mediaPlayer = new MediaPlayer();
         private static PlayListItem currentPlayListItem;
+        public bool IsCurrentlyPlaying;
+
+        internal void Stop() {
+            IsCurrentlyPlaying = false;
+            mediaPlayer.Pause();
+        }
 
         internal void Play(DetectionState currentState)
         {
            // TODO: Get Average Age
 
                 PlayWav(PlayList.List
-                        .Where(w => w.PlayListGroup == PlayListGroup.Demographic55to64).ToList()
-                 );
+                        .Where(w => w.PlayListGroup == PlayListGroup.SingleFace).ToList()
+                    );   
+            }
+             else
+            {
+                PlayWav(PlayList.List
+                        .Where(w => w.PlayListGroup == PlayListGroup.MultiFace).ToList()
+                    );
 
-            
+            }
         }
 
         internal void PlayWav(List<PlayListItem> list)
@@ -35,9 +47,9 @@ namespace Dinmore.Uwp.Infrastructure.Media
 
                 //set back to zero
                 session.Position = TimeSpan.Zero;
-                // mediaPlayer.Source = MediaSource.CreateFromUri(new Uri($"ms-appx:///{item.Name}"));
+            // mediaPlayer.Source = MediaSource.CreateFromUri(new Uri($"ms-appx:///{item.Name}"));
 
-                // mediaPlayer.Play();
+            // mediaPlayer.Play();
 
             var playbackList = new MediaPlaybackList();
             foreach (var item in list)
@@ -45,22 +57,25 @@ namespace Dinmore.Uwp.Infrastructure.Media
                 var mediaSource = MediaSource.CreateFromUri(new Uri($"ms-appx:///{item.Name}"));
                 playbackList.Items.Add(new MediaPlaybackItem(mediaSource));
             }
-            
+
             mediaPlayer.Source = playbackList;
+            IsCurrentlyPlaying = true;
             mediaPlayer.Play();
 
-            }
+        }
 
         private void PositionChanged(MediaPlaybackSession sender, object args)
         {
-            
+
             if (sender.Position >= sender.NaturalDuration)
             {
                 sender.Position = new TimeSpan(0, 0, 0);
+                //IsCurrentlyPlaying = false;
+
             }
 
         }
-    
+
 
 
         private void Session_PlaybackStateChanged(MediaPlaybackSession sender, object args)
