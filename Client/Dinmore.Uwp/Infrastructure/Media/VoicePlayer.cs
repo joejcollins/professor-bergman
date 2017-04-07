@@ -22,6 +22,12 @@ namespace Dinmore.Uwp.Infrastructure.Media
             mediaPlayer.Pause();
         }
 
+        internal void PlayIntroduction() {
+            PlayWav(PlayList.List
+                        .Where(w => w.PlayListGroup == PlayListGroup.HelloSingleFace).ToList()
+                    );
+        }
+
         internal void Play(DetectionState currentState)
         {
            // TODO: Get Average Age
