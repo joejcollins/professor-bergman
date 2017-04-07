@@ -75,8 +75,10 @@ namespace Dinmore.Uwp
         /// The minimum interval required between API calls.
         /// </summary>
         private const double ApiIntervalMs = 1000; // Ryan set this to 500;
+        //TODO DESC SHOVE INTO RESOURCE FILE
         private const int NumberMilliSecsForFacesToDisappear = 5000;
         private const int NumberMilliSecsToWaitForHello = 2500;
+        private const int NumberMillSecsBeforeWePlayAgain = 10000;
 
         // Use a 66 millisecond interval for our timer, i.e. 15 frames per second
         private TimeSpan timerInterval = TimeSpan.FromMilliseconds(250);
@@ -245,7 +247,6 @@ namespace Dinmore.Uwp
 
                         if (CurrentState.ApiRequestParameters != null)
                         {
-                            LogStatusMessage("Detected face(s)", StatusSeverity.Info);
                             ChangeDetectionState(DetectionStates.FaceDetectedOnDevice);
                         }
                         break;
@@ -253,7 +254,9 @@ namespace Dinmore.Uwp
                     case DetectionStates.FaceDetectedOnDevice:
                         //LogStatusMessage("Just about to send API call for faces", StatusSeverity.Info);
 
-                        if (CurrentState.LastImageApiPush.AddMilliseconds(ApiIntervalMs) < DateTimeOffset.UtcNow)
+                        //Should we play? MORE DESC REQUIRED
+                        if (CurrentState.LastImageApiPush.AddMilliseconds(ApiIntervalMs) < DateTimeOffset.UtcNow
+                            && CurrentState.TimeVideoWasStopped.AddMilliseconds(NumberMillSecsBeforeWePlayAgain) < DateTimeOffset.UtcNow)
                         {
                             ThreadPoolTimer.CreateTimer(
                                 new TimerElapsedHandler(HelloAudioHandler),
@@ -293,6 +296,8 @@ namespace Dinmore.Uwp
 
                         if (!vp.IsCurrentlyPlaying)
                         {
+                            LogStatusMessage("Starting playlist", StatusSeverity.Info);
+
                             var play = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                             {
                                 //TODO This needs 
@@ -311,7 +316,7 @@ namespace Dinmore.Uwp
                     case DetectionStates.WaitingForFacesToDisappear:
 
                         CurrentState.FacesStillPresent = await AreFacesStillPresent();
-                        LogStatusMessage($"{CurrentState.FacesStillPresent}", StatusSeverity.Info);
+                        LogStatusMessage($"Faces present: {CurrentState.FacesStillPresent}", StatusSeverity.Info);
 
                         //we dont have a face
                         if (!CurrentState.FacesStillPresent)
@@ -319,6 +324,7 @@ namespace Dinmore.Uwp
 
                             LogStatusMessage(CurrentState.FacesStillPresent.ToString(), StatusSeverity.Info);
 
+                            //TODO Refactor this out.
                             await Task.Delay(NumberMilliSecsForFacesToDisappear)
                                 .ContinueWith((t =>
                                 {
@@ -328,6 +334,7 @@ namespace Dinmore.Uwp
                                         LogStatusMessage($"Faces has gone for a few or more secs, stop the audio playback", StatusSeverity.Info);
                                         ChangeDetectionState(DetectionStates.WaitingForFaces);
                                         vp.Stop();
+                                        CurrentState.TimeVideoWasStopped = DateTimeOffset.UtcNow;
                                         return;
                                     }
                                 }
@@ -355,6 +362,7 @@ namespace Dinmore.Uwp
 
         private void HelloAudioHandler(ThreadPoolTimer timer)
         {
+            LogStatusMessage("Starting introduction", StatusSeverity.Info);
             vp.PlayIntroduction();
             timer.Cancel();
         }
