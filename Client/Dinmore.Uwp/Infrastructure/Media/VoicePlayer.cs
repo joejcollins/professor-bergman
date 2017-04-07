@@ -20,6 +20,7 @@ namespace Dinmore.Uwp.Infrastructure.Media
 
         internal void Stop() {
             StopOnNextTrack = true;
+            IsCurrentlyPlaying = false;
         }
 
         internal void PlayIntroduction(PlayListGroup playlistGroup) {

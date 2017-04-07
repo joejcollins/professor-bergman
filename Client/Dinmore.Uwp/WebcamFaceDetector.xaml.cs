@@ -273,8 +273,7 @@ namespace Dinmore.Uwp
                             CurrentState.LastImageApiPush = DateTimeOffset.UtcNow;
                             CurrentState.FacesFoundByApi = await PostImageToApiAsync(CurrentState.ApiRequestParameters.Image);
 
-                            //LogStatusMessage($"Sending {CurrentState.FacesFoundByApi.Count()} faces to api",
-                            //    StatusSeverity.Info);
+                            LogStatusMessage($"Sending faces to api",StatusSeverity.Info);
 
                             ChangeDetectionState(DetectionStates.ApiResponseReceived);
                         }
@@ -330,7 +329,6 @@ namespace Dinmore.Uwp
                         if (!CurrentState.FacesStillPresent)
                         {
 
-                            LogStatusMessage(CurrentState.FacesStillPresent.ToString(), StatusSeverity.Info);
 
                             //TODO Refactor this out.
                             await Task.Delay(NumberMilliSecsForFacesToDisappear)
@@ -339,7 +337,7 @@ namespace Dinmore.Uwp
                                     CurrentState.FacesStillPresent = AreFacesStillPresent().Result;
                                     if (!CurrentState.FacesStillPresent)
                                     {
-                                        LogStatusMessage($"Faces has gone for a few or more secs, stop the audio playback", StatusSeverity.Info);
+                                        LogStatusMessage($"Faces have gone for a few or more secs, stop the audio playback", StatusSeverity.Info);
                                         ChangeDetectionState(DetectionStates.WaitingForFaces);
                                         vp.Stop();
                                         CurrentState.TimeVideoWasStopped = DateTimeOffset.UtcNow;
@@ -419,6 +417,7 @@ namespace Dinmore.Uwp
             }
             catch (Exception ex)
             {
+                vp.IsCurrentlyPlaying = false;
                 LogStatusMessage("Exception: " + ex.ToString(), StatusSeverity.Error);
                 return null;
             }
