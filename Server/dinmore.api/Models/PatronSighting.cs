@@ -27,5 +27,9 @@ namespace dinmore.api.Models
         public double Age { get; set; }
 
         public string PrimaryEmotion { get; set; }
+
+        public double Smile { get; set; }
+
+        public string Glasses { get; set; }
     }
 }
