@@ -185,18 +185,13 @@
     <Content Include="Assets\StoreLogo.scale-150.png" />
     <Content Include="Assets\StoreLogo.scale-200.png" />
     <Content Include="Assets\StoreLogo.scale-400.png" />
-    <Content Include="Assets\Voice\0-12-17-helloeveryone.wav" />
-    <Content Include="Assets\Voice\0-12-17-hiya.wav" />
-    <Content Include="Assets\Voice\0-55-64-hello.wav">
+    <Content Include="Assets\Voice\helloall.wav">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Assets\Voice\0-55-64-helloall.wav">
+    <Content Include="Assets\Voice\hellomadam.wav">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Assets\Voice\0-55-64-hellomadam.wav">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Assets\Voice\0-55-64-hellosir.wav">
+    <Content Include="Assets\Voice\hellosir.wav">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Assets\Voice\1-12-17.wav">

@@ -24,26 +24,19 @@ namespace Dinmore.Uwp.Infrastructure.Media
 
         internal void Play(DetectionState currentState)
         {
-            if (currentState.FacesFoundByApi.Count == 1)
-            {
-                PlayWav(PlayList.List
-                        .Where(w => w.PlayListGroup == PlayListGroup.SingleFace).ToList()
-                    );
-            }
-            else
-            {
-                PlayWav(PlayList.List
-                        .Where(w => w.PlayListGroup == PlayListGroup.MultiFace).ToList()
-                    );
+           // TODO: Get Average Age
 
-            }
+                PlayWav(PlayList.List
+                        .Where(w => w.PlayListGroup == PlayListGroup.Demographic12to17).ToList()
+                    );   
+           
         }
 
         internal void PlayWav(List<PlayListItem> list)
         {
             mediaPlayer.PlaybackSession.PositionChanged += PositionChanged;
-            var session = mediaPlayer.PlaybackSession;
-            if (session.PlaybackState == MediaPlaybackState.None)
+               var session = mediaPlayer.PlaybackSession;
+            if (session.PlaybackState == MediaPlaybackState.None)           
 
                 //set back to zero
                 session.Position = TimeSpan.Zero;
@@ -83,7 +76,7 @@ namespace Dinmore.Uwp.Infrastructure.Media
             if (sender.PlaybackState == MediaPlaybackState.Paused)
             {
                 //var session = mediaPlayer.PlaybackSession;
-                //mediaPlayer.C = MediaPlaybackState.None;
+                //mediaPlayer.CurrentState = MediaPlaybackState.None;
                 //TODO at this point we should be at the end
                 //session.PlaybackStateChanged += Session_PlaybackStateChanged;
                 //var session = mediaPlayer.PlaybackSession;
