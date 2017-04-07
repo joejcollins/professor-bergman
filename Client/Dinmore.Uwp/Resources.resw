@@ -118,10 +118,10 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="Device" xml:space="preserve">
-    <value>RipPi</value>
+    <value>RipPi-DEV-Cubby</value>
   </data>
   <data name="Exhibit" xml:space="preserve">
-    <value>panoramic view of Shrewsbury 1630</value>
+    <value>Panoramic view of Shrewsbury 1630</value>
   </data>
   <data name="FaceApiUrl" xml:space="preserve">
     <value>http://dinmore-api.azurewebsites.net/api/patrons</value>
