@@ -34,7 +34,7 @@ namespace Dinmore.Uwp.Infrastructure.Media
             PlayListGroup playListGroup = GetPlayListGroupByDemographic(avgAge);
 
                 PlayWav(PlayList.List
-                        .Where(w => w.PlayListGroup == PlayListGroup.Demographic12to17).ToList()
+                        .Where(w => w.PlayListGroup == playListGroup).ToList()
                     );   
            
         }
@@ -45,9 +45,9 @@ namespace Dinmore.Uwp.Infrastructure.Media
             if (avgAge < 24) { return PlayListGroup.Demographic18to24; }
             if (avgAge < 34) { return PlayListGroup.Demographic25to34; }
             if (avgAge < 44) { return PlayListGroup.Demographic35to44; }
-            if (avgAge < 64) { return PlayListGroup.Demographic55to64; }
+            if (avgAge < 150) { return PlayListGroup.Demographic55to64; }
 
-            return PlayListGroup.Demographic55to64;
+            return PlayListGroup.Demographic12to17;
         }
 
         internal void PlayWav(List<PlayListItem> list)
