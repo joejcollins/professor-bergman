@@ -117,6 +117,10 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="ApiIntervalMilliSecs" xml:space="preserve">
+    <value>1000</value>
+    <comment>The minimum interval required between API calls.</comment>
+  </data>
   <data name="Device" xml:space="preserve">
     <value>RipPi-DEV-Cubby</value>
   </data>
@@ -125,6 +129,22 @@
   </data>
   <data name="FaceApiUrl" xml:space="preserve">
     <value>http://dinmore-api.azurewebsites.net/api/patrons</value>
+  </data>
+  <data name="NumberMilliSecsForFacesToDisappear" xml:space="preserve">
+    <value>5000</value>
+    <comment>Dont stop voice until this time has elapsed if no faces are detected</comment>
+  </data>
+  <data name="NumberMilliSecsToWaitForHello" xml:space="preserve">
+    <value>2000</value>
+    <comment>Wait this time before we say hello, pre ai call</comment>
+  </data>
+  <data name="NumberMillSecsBeforeWePlayAgain" xml:space="preserve">
+    <value>10000</value>
+    <comment>If face goes away and we stop don't start the next hello until this time has elapsed</comment>
+  </data>
+  <data name="TimerIntervalMilliSecs" xml:space="preserve">
+    <value>250</value>
+    <comment>Every 250ms poll the face detction api</comment>
   </data>
   <data name="TurnOnDisplay" xml:space="preserve">
     <value>true</value>
