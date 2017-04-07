@@ -132,6 +132,9 @@ namespace dinmore.api.Repositories
         {
             //call face api
             var responseString = string.Empty;
+            var persistedFaces = new List<PersistedFace>();
+
+            //get the face list
             using (var httpClient = new HttpClient())
             {
                 //setup HttpClient with content
@@ -143,7 +146,7 @@ namespace dinmore.api.Repositories
                 postData.Add("faceId", faceId);
                 postData.Add("faceListId", faceListId);
                 postData.Add("maxNumOfCandidatesReturned", "10");
-                postData.Add("mode", "matchPerson");
+                postData.Add("mode", "matchFace");
                 var postDataJson = JsonConvert.SerializeObject(postData);
                 byte[] byteData = Encoding.UTF8.GetBytes(postDataJson);
                 var content = new ByteArrayContent(byteData);
@@ -156,16 +159,23 @@ namespace dinmore.api.Repositories
                 responseString = await responseMessage.Content.ReadAsStringAsync();
             }
 
-            //parse json string and cast to list of faces
-            var responseArray = JArray.Parse(responseString);
-            var persistedFaces = new List<PersistedFace>();
-            foreach (var faceResponse in responseArray)
+            //if the face list is empty, this will throw an exception. Should check for specific error codes from the face list api first but this is just a quick hacky way of doing it
+            try
             {
-                //deserialise json to face
-                var persistedFace = JsonConvert.DeserializeObject<PersistedFace>(faceResponse.ToString());
+                //parse json string and cast to list of faces
+                var responseArray = JArray.Parse(responseString);
+                foreach (var faceResponse in responseArray)
+                {
+                    //deserialise json to face
+                    var persistedFace = JsonConvert.DeserializeObject<PersistedFace>(faceResponse.ToString());
 
-                //add face to faces list
-                persistedFaces.Add(persistedFace);
+                    //add face to faces list
+                    persistedFaces.Add(persistedFace);
+                }
+            }
+            catch
+            {
+                //do something with the exception
             }
 
             return persistedFaces;
