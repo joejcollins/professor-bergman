@@ -30,12 +30,24 @@ namespace Dinmore.Uwp.Infrastructure.Media
 
         internal void Play(DetectionState currentState)
         {
-           // TODO: Get Average Age
+            var avgAge = currentState.FacesFoundByApi.OrderByDescending(x => x.faceAttributes.age).First().faceAttributes.age;
+            PlayListGroup playListGroup = GetPlayListGroupByDemographic(avgAge);
 
                 PlayWav(PlayList.List
                         .Where(w => w.PlayListGroup == PlayListGroup.Demographic12to17).ToList()
                     );   
            
+        }
+
+        private PlayListGroup GetPlayListGroupByDemographic(double avgAge)
+        {
+            if (avgAge < 17) { return PlayListGroup.Demographic12to17; }
+            if (avgAge < 24) { return PlayListGroup.Demographic18to24; }
+            if (avgAge < 34) { return PlayListGroup.Demographic25to34; }
+            if (avgAge < 44) { return PlayListGroup.Demographic35to44; }
+            if (avgAge < 64) { return PlayListGroup.Demographic55to64; }
+
+            return PlayListGroup.Demographic55to64;
         }
 
         internal void PlayWav(List<PlayListItem> list)
