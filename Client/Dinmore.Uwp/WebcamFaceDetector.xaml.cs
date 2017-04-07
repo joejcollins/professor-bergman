@@ -75,6 +75,7 @@ namespace Dinmore.Uwp
         /// The minimum interval required between API calls.
         /// </summary>
         private const double ApiIntervalMs = 1000; // Ryan set this to 500;
+        private const int NumberSecsForFacesToDisappear = 5;
 
         // Use a 66 millisecond interval for our timer, i.e. 15 frames per second
         private TimeSpan timerInterval = TimeSpan.FromMilliseconds(250);
@@ -271,7 +272,7 @@ namespace Dinmore.Uwp
                         {
                             LogStatusMessage("Face(s) detected", StatusSeverity.Info);
                             ChangeDetectionState(DetectionStates.InterpretingApiResults);
-
+                            CurrentState.FacesStillPresent = true;
                             break;
                         }
                         //ChangeDetectionState(DetectionStates.WaitingForFaces);
@@ -284,6 +285,8 @@ namespace Dinmore.Uwp
                         // reference into the CurrentState object (new property).
 
                         //play media if we are not currently playing
+                        CurrentState.FacesStillPresent = true;
+
                         if (!vp.IsCurrentlyPlaying)
                         {
                             var play = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
@@ -304,14 +307,11 @@ namespace Dinmore.Uwp
                     case DetectionStates.WaitingForFacesToDisappear:
                         LogStatusMessage("Waiting for faces to disappear", StatusSeverity.Info);
 
-                        var result = await AreFacesStillPresent();
+                        CurrentState.FacesStillPresent = await AreFacesStillPresent();
 
-                        if (!result)
-                        {
-                            LogStatusMessage($"Faces has gone, stop the audio playback", StatusSeverity.Info);
-                            vp.Stop();
-                            ChangeDetectionState(DetectionStates.WaitingForFaces);
-                        }
+                        ThreadPoolTimer.CreateTimer(
+                            new TimerElapsedHandler(StopAudioHandler), 
+                            TimeSpan.FromSeconds(NumberSecsForFacesToDisappear));
 
                         break;
 
@@ -327,6 +327,18 @@ namespace Dinmore.Uwp
             finally
             {
                 RunTimer();
+            }
+        }
+
+
+        private void StopAudioHandler(ThreadPoolTimer timer)
+        { 
+            if (!CurrentState.FacesStillPresent)
+            {
+                LogStatusMessage($"Faces has gone for a few or more secs, stop the audio playback", StatusSeverity.Info);
+                ChangeDetectionState(DetectionStates.WaitingForFaces);
+                vp.Stop();
+                timer.Cancel();
             }
         }
 
