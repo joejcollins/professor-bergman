@@ -146,7 +146,7 @@ namespace dinmore.api.Repositories
                 postData.Add("faceId", faceId);
                 postData.Add("faceListId", faceListId);
                 postData.Add("maxNumOfCandidatesReturned", "10");
-                postData.Add("mode", "matchPerson");
+                postData.Add("mode", "matchFace");
                 var postDataJson = JsonConvert.SerializeObject(postData);
                 byte[] byteData = Encoding.UTF8.GetBytes(postDataJson);
                 var content = new ByteArrayContent(byteData);
