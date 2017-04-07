@@ -21,6 +21,11 @@
         WaitingForFaces,
 
         /// <summary>
+        /// Webcam has detected faces, now we want to wait for them to disappear
+        /// </summary>
+        WaitingForFacesToDisappear,
+
+        /// <summary>
         /// At least one face has been detected by the IoT device.
         /// </summary>
         FaceDetectedOnDevice,
