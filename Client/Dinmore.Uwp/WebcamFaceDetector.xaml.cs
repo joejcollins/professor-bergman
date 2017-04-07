@@ -371,7 +371,7 @@ namespace Dinmore.Uwp
         private void HelloAudioHandler(ThreadPoolTimer timer)
         {
             LogStatusMessage("Starting introduction", StatusSeverity.Info);
-            vp.PlayIntroduction();
+            vp.PlayIntroduction(PlayListGroup.HelloSingleFace);
             timer.Cancel();
         }
 
