@@ -17,6 +17,11 @@
     <EnableDotNetNativeCompatibleProfile>true</EnableDotNetNativeCompatibleProfile>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{A5A43C5B-DE2A-4C0C-9213-0A381AF9435A};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
+    <AppxBundle>Always</AppxBundle>
+    <AppxBundlePlatforms>arm</AppxBundlePlatforms>
+    <PackageCertificateThumbprint>6C1CA19D22011E0F94A3AE4C4258B06FE4A57A06</PackageCertificateThumbprint>
+    <PackageCertificateKeyFile>Dinmore.Uwp_TemporaryKey.pfx</PackageCertificateKeyFile>
     <HockeyAppResourceId>508914dfa5e94e9280aacd818588588a</HockeyAppResourceId>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
@@ -89,6 +94,7 @@
     <UseDotNetNativeToolchain>true</UseDotNetNativeToolchain>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="Dinmore.Uwp_TemporaryKey.pfx" />
     <None Include="Connected Services\HockeyApp\ConnectedService.json" />
     <None Include="project.json" />
     <PRIResource Include="Resources.resw" />
@@ -174,9 +180,15 @@
     <Content Include="Assets\squareTile-sdk.scale-150.png" />
     <Content Include="Assets\squareTile-sdk.scale-200.png" />
     <Content Include="Assets\squareTile-sdk.scale-400.png" />
-    <Content Include="Assets\Voice\helloeveryone.wav" />
-    <Content Include="Assets\Voice\hiya.wav" />
-    <Content Include="Assets\Voice\hello.wav">
+	<Content Include="Assets\StoreLogo.scale-100.png" />
+    <Content Include="Assets\StoreLogo.scale-125.png" />
+    <Content Include="Assets\StoreLogo.scale-150.png" />
+    <Content Include="Assets\StoreLogo.scale-200.png" />
+    <Content Include="Assets\StoreLogo.scale-400.png" />  
+
+    <Content Include="Assets\Voice\0-12-17-helloeveryone.wav" />
+    <Content Include="Assets\Voice\0-12-17-hiya.wav" />
+    <Content Include="Assets\Voice\0-55-64-hello.wav">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Assets\Voice\helloall.wav">
