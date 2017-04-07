@@ -180,17 +180,11 @@
     <Content Include="Assets\squareTile-sdk.scale-150.png" />
     <Content Include="Assets\squareTile-sdk.scale-200.png" />
     <Content Include="Assets\squareTile-sdk.scale-400.png" />
-	<Content Include="Assets\StoreLogo.scale-100.png" />
+    <Content Include="Assets\StoreLogo.scale-100.png" />
     <Content Include="Assets\StoreLogo.scale-125.png" />
     <Content Include="Assets\StoreLogo.scale-150.png" />
     <Content Include="Assets\StoreLogo.scale-200.png" />
-    <Content Include="Assets\StoreLogo.scale-400.png" />  
-
-    <Content Include="Assets\Voice\0-12-17-helloeveryone.wav" />
-    <Content Include="Assets\Voice\0-12-17-hiya.wav" />
-    <Content Include="Assets\Voice\0-55-64-hello.wav">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    <Content Include="Assets\StoreLogo.scale-400.png" />
     <Content Include="Assets\Voice\helloall.wav">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

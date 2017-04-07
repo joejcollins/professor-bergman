@@ -27,16 +27,9 @@ namespace Dinmore.Uwp.Infrastructure.Media
            // TODO: Get Average Age
 
                 PlayWav(PlayList.List
-                        .Where(w => w.PlayListGroup == PlayListGroup.SingleFace).ToList()
+                        .Where(w => w.PlayListGroup == PlayListGroup.Demographic12to17).ToList()
                     );   
-            }
-             else
-            {
-                PlayWav(PlayList.List
-                        .Where(w => w.PlayListGroup == PlayListGroup.MultiFace).ToList()
-                    );
-
-            }
+           
         }
 
         internal void PlayWav(List<PlayListItem> list)
