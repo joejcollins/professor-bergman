@@ -18,8 +18,7 @@ namespace Dinmore.Uwp.Infrastructure.Media
         public bool IsCurrentlyPlaying;
 
         internal void Stop() {
-            IsCurrentlyPlaying = false;
-            mediaPlayer.Pause();
+            StopOnNextTrack = true;
         }
 
         internal void PlayIntroduction() {
@@ -57,6 +56,9 @@ namespace Dinmore.Uwp.Infrastructure.Media
                 playbackList.Items.Add(new MediaPlaybackItem(mediaSource));
             }
 
+            // Check if playlist changes track and stop if the viewer has exited
+            playbackList.CurrentItemChanged += PlaybackList_CurrentItemChanged;
+
             mediaPlayer.Source = playbackList;
             IsCurrentlyPlaying = true;
             mediaPlayer.Play();
@@ -68,14 +70,23 @@ namespace Dinmore.Uwp.Infrastructure.Media
 
             if (sender.Position >= sender.NaturalDuration)
             {
-                sender.Position = new TimeSpan(0, 0, 0);
-                //IsCurrentlyPlaying = false;
+                sender.Position = TimeSpan.Zero;
+                IsCurrentlyPlaying = false;
 
             }
 
         }
 
-
+        private void PlaybackList_CurrentItemChanged(MediaPlaybackList sender, CurrentMediaPlaybackItemChangedEventArgs args)
+        {
+            if (StopOnNextTrack)
+            {
+                mediaPlayer.PlaybackSession.Position = TimeSpan.Zero;
+                mediaPlayer.Pause();
+                IsCurrentlyPlaying = false;
+                StopOnNextTrack = false;
+            }
+        }
 
         private void Session_PlaybackStateChanged(MediaPlaybackSession sender, object args)
         {
@@ -95,6 +106,7 @@ namespace Dinmore.Uwp.Infrastructure.Media
         }
 
         private bool disposedValue = false; // To detect redundant calls
+        private bool StopOnNextTrack;
 
         protected virtual void Dispose(bool disposing)
         {
