@@ -31,5 +31,7 @@ namespace dinmore.api.Models
         public double Smile { get; set; }
 
         public string Glasses { get; set; }
+
+        public double FaceMatchConfidence { get; set; }
     }
 }

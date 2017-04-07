@@ -71,18 +71,11 @@ namespace Dinmore.Uwp
         /// </summary>
         private SemaphoreSlim frameProcessingSemaphore = new SemaphoreSlim(1);
 
-        /// <summary>
-        /// The minimum interval required between API calls.
-        /// </summary>
-        private const double ApiIntervalMs = 1000; // Ryan set this to 500;
-        //TODO DESC SHOVE INTO RESOURCE FILE
-        private const int NumberMilliSecsForFacesToDisappear = 5000;
-        private const int NumberMilliSecsToWaitForHello = 2500;
-        private const int NumberMillSecsBeforeWePlayAgain = 10000;
-
-        // Use a 66 millisecond interval for our timer, i.e. 15 frames per second
-        private TimeSpan timerInterval = TimeSpan.FromMilliseconds(250);
-        //Ryan set this TimeSpan.FromMilliseconds(66);
+        private double ApiIntervalMs;
+        private int NumberMilliSecsForFacesToDisappear;
+        private int NumberMilliSecsToWaitForHello;
+        private int NumberMillSecsBeforeWePlayAgain;
+        private TimeSpan timerInterval;
 
         /// <summary>
         /// The current step of the state machine for detecting faces, playing sounds etc.
@@ -102,7 +95,22 @@ namespace Dinmore.Uwp
         /// </summary>
         public WebcamFaceDetector()
         {
+            //Defaults
             AppSettings = ResourceLoader.GetForCurrentView();
+            NumberMilliSecsForFacesToDisappear = 
+                int.Parse(AppSettings.GetString("NumberMilliSecsForFacesToDisappear"));
+            NumberMilliSecsToWaitForHello =
+                int.Parse(AppSettings.GetString("NumberMilliSecsToWaitForHello"));
+            NumberMillSecsBeforeWePlayAgain = 
+                int.Parse(AppSettings.GetString("NumberMillSecsBeforeWePlayAgain"));
+
+            var timerIntervalMilliSecs =
+                int.Parse(AppSettings.GetString("TimerIntervalMilliSecs"));
+            timerInterval = TimeSpan.FromMilliseconds(timerIntervalMilliSecs);
+
+            ApiIntervalMs = 
+                double.Parse(AppSettings.GetString("ApiIntervalMilliSecs"));
+            
 
             InitializeComponent();
 
@@ -363,7 +371,7 @@ namespace Dinmore.Uwp
         private void HelloAudioHandler(ThreadPoolTimer timer)
         {
             LogStatusMessage("Starting introduction", StatusSeverity.Info);
-            vp.PlayIntroduction();
+            vp.PlayIntroduction(PlayListGroup.HelloSingleFace);
             timer.Cancel();
         }
 

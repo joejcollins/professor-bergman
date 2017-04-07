@@ -54,8 +54,9 @@ namespace dinmore.api.Controllers
                 //get similar faces from the current face list
                 var similarPersistedFaces = await _faceApiRepository.FindSimilarFaces(currentFaceListId, face.faceId);
 
-                //get persisted face id by using the closest match or creating one.
+                //get persisted face id and confidence by using the closest match or creating one.
                 var persistedFaceId = string.Empty;
+                var persistedFaceConfidence = 0.0;
                 if (similarPersistedFaces.Count() == 0)
                 {
                     //this is a new face, add to face list
@@ -65,6 +66,7 @@ namespace dinmore.api.Controllers
                     //get the closest matching face
                     var sortedPersistedFaces = similarPersistedFaces.OrderByDescending(f => f.confidence);
                     persistedFaceId = sortedPersistedFaces.FirstOrDefault().persistedFaceId;
+                    persistedFaceConfidence = sortedPersistedFaces.FirstOrDefault().confidence;
                 }
 
                 //create a patron
@@ -82,7 +84,8 @@ namespace dinmore.api.Controllers
                     Device = device,
                     Exhibit = exhibit,
                     CurrentFaceListId = currentFaceListId,
-                    IsInList = (similarPersistedFaces.Count() > 0)
+                    IsInList = (similarPersistedFaces.Count() > 0),
+                    FaceMatchConfidence = persistedFaceConfidence
                 });
             }
 
