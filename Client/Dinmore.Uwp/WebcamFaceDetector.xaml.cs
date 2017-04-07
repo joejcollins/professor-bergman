@@ -371,7 +371,12 @@ namespace Dinmore.Uwp
         private void HelloAudioHandler(ThreadPoolTimer timer)
         {
             LogStatusMessage("Starting introduction", StatusSeverity.Info);
-            vp.PlayIntroduction(PlayListGroup.HelloSingleFace);
+
+            var playListGroup = PlayListGroup.HelloSingleFace;
+            if (CurrentState.ApiRequestParameters.Faces.Count() > 1)
+                playListGroup = PlayListGroup.HelloMultipleFace;
+
+            vp.PlayIntroduction(playListGroup);
             timer.Cancel();
         }
 
@@ -470,9 +475,13 @@ namespace Dinmore.Uwp
                             //encoder.BitmapTransform.Bounds = bounds;
                             await encoder.FlushAsync();
 
+                            LogStatusMessage($"Found face(s) on camera: {faces.Count}", StatusSeverity.Info);
+
+
                             return new ApiRequestParameters
                             {
                                 Image = ms.ToArray(),
+                                Faces = faces,
                                 //ImageBounds = bounds,
                                 //OriginalImageHeight = converted.PixelHeight,
                                 //OriginalImageWidth = converted.PixelWidth,
