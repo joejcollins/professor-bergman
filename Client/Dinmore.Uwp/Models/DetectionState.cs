@@ -18,5 +18,7 @@ namespace Dinmore.Uwp.Models
         /// Holds the current state machine value for the detection of faces.
         /// </summary>
         public DetectionStates State { get; set; }
+
+        public bool FacesStillPresent { get; set; }
     }
 }
