@@ -19,6 +19,14 @@ namespace Dinmore.Uwp.Models
         /// </summary>
         public DetectionStates State { get; set; }
 
+
+        /// <summary>
+        /// Are faces still present on the video? If not after an amount elasped time
+        ///   we will stop the audio
+        /// </summary>
         public bool FacesStillPresent { get; set; }
+
+        public DateTimeOffset TimeVideoWasStopped { get; set; }
+
     }
 }

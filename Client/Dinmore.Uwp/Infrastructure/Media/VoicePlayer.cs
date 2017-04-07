@@ -69,13 +69,11 @@ namespace Dinmore.Uwp.Infrastructure.Media
             if (sender.Position >= sender.NaturalDuration)
             {
                 sender.Position = new TimeSpan(0, 0, 0);
-                //IsCurrentlyPlaying = false;
+                IsCurrentlyPlaying = false;
 
             }
 
         }
-
-
 
         private void Session_PlaybackStateChanged(MediaPlaybackSession sender, object args)
         {
