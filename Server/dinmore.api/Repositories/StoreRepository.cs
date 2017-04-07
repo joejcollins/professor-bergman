@@ -1,11 +1,15 @@
 ﻿using dinmore.api.Interfaces;
 using dinmore.api.Models;
 using Microsoft.Extensions.Options;
+
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
+using Microsoft.WindowsAzure.Storage.Table;
 using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+
 
 namespace dinmore.api.Repositories
 {
@@ -20,6 +24,44 @@ namespace dinmore.api.Repositories
         }
 
         public async Task Store(List<Patron> patrons)
+        {
+            await StoreBlob(patrons);
+            await StoreTable(patrons);
+        }
+
+        private async Task StoreTable(List<Patron> patrons)
+        {
+            var storageAccount = CloudStorageAccount.Parse(_appSettings.TableStorageConnectionString);
+
+            var blobClient = storageAccount.CreateCloudTableClient();
+
+            var table = blobClient.GetTableReference(_appSettings.StoreContainerName);
+
+            await table.CreateIfNotExistsAsync();
+
+            //insert an entity (row) per patron
+            foreach (var patron in patrons)
+            {
+                var persistedFaceId = patron.PersistedFaceId;
+                var sightingId = Guid.NewGuid().ToString(); //This is a unique ID for the sighting
+
+                PatronSighting patronSighting = new PatronSighting(persistedFaceId, sightingId);
+                patronSighting.Device = patron.Device;
+                patronSighting.Exhibit = patron.Exhibit;
+                patronSighting.Gender = patron.FaceAttributes.gender;
+                patronSighting.Age = patron.FaceAttributes.age;
+                patronSighting.PrimaryEmotion = patron.PrimaryEmotion;
+                patronSighting.TimeOfSighting = (DateTime)patron.Time;
+
+                TableOperation insertOperation = TableOperation.Insert(patronSighting);
+
+                await table.ExecuteAsync(insertOperation);
+            }
+
+
+        }
+
+        private async Task StoreBlob(List<Patron> patrons)
         {
             var storageAccount = CloudStorageAccount.Parse(_appSettings.TableStorageConnectionString);
 
@@ -41,8 +83,9 @@ namespace dinmore.api.Repositories
 
                 await blockBlob.UploadTextAsync(output);
             }
-
         }
+
+
 
     }
 }
