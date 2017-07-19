@@ -9,6 +9,7 @@ kramdown:
   hard_wrap: false
 
 url: https://www.blackradley.com
+basurl: /dinmore
 timezone: GMT
 
 # Permalinks

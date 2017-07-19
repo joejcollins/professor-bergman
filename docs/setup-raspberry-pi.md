@@ -2,13 +2,13 @@
 
 2. Stick the SD card into your laptop.
 
-![SD Card](/dinmore/img/SDCard.jpg)
+![SD Card](/img/SDCard.jpg)
 
 3. Set up new device
 
-![SD Card](/dinmore/img/SetupSD.png)
+![SD Card](/img/SetupSD.png)
 
-![SD Card](/dinmore/img/FlashingSD.png)
+![SD Card](/img/FlashingSD.png)
 
 4. Put the Micro SD in the Raspberry Pi and plug in the 
 
