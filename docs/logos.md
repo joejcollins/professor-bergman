@@ -14,12 +14,12 @@ Arrow 20 px
 
 ## White Background
 
-![Insight 2 (White Background)](Logos/Insight2LogoWhiteBackground.png)
+![Insight 2 (White Background)]({{ site.baseurl }}/Logos/Insight2LogoWhiteBackground.png)
 
 ## Transparent Background
 
-![Insight 2 (Transparent Background)](Logos/Insight2LogoTransparentBackground.png)
+![Insight 2 (Transparent Background)]({{ site.baseurl }}/Logos/Insight2LogoTransparentBackground.png)
 
 ## Black and White
 
-![Insight 2 (Black and White)](Logos/Insight2LogoBlackAndWhite.png)
+![Insight 2 (Black and White)]({{ site.baseurl }}/Logos/Insight2LogoBlackAndWhite.png)
