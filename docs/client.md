@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Home
+title: Client
 ---
 <ul class="nav navbar-nav">
     <li>
