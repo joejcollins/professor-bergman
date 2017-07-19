@@ -1,3 +1,8 @@
+---
+layout: default
+title: Set up Pi
+---
+
 1. Download and install the [Windows IoT Dashboard](https://developer.microsoft.com/en-us/windows/iot/docs/iotdashboard)
 
 2. Stick the SD card into your laptop.
