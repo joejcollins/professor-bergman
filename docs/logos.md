@@ -2,8 +2,6 @@
 layout: default
 title: Logos
 ---
-# Logos
-
 ## Paint.Net Notes
 
 Image size 800 x 600
