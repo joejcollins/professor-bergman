@@ -1,0 +1,23 @@
+# Conversion
+markdown:         kramdown
+highlighter:      rouge
+
+# Markdown Processor
+kramdown:
+  auto_ids: true
+  input: GFM
+  hard_wrap: false
+
+url: https://www.blackradley.com
+timezone: GMT
+
+# Permalinks
+permalink:        pretty
+
+# Social
+title: Insight 2 
+description: Intelligent Museum Exhibit
+
+gems:
+   - jekyll-paginate
+   - jekyll-sitemap
