@@ -2,13 +2,13 @@
 
 2. Stick the SD card into your laptop.
 
-![SD Card](/img/SDCard.jpg)
+![SD Card]({{ site.baseurl }}/img/SDCard.jpg)
 
 3. Set up new device
 
-![SD Card](/img/SetupSD.png)
+![SD Card]({{ site.baseurl }}/img/SetupSD.png)
 
-![SD Card](/img/FlashingSD.png)
+![SD Card]({{ site.baseurl }}/img/FlashingSD.png)
 
 4. Put the Micro SD in the Raspberry Pi and plug in the 
 
