@@ -1,9 +1,4 @@
-# Intelligent Museum Exhibits (Patron Interactive Engagement)
+# Insight 2 - Enhancing Museum Visitor Experience.
 
-A project which enables two key capabilities within the context of museums:
+Making exhibits come alive using Windows Iot and the Raspberry Pi 3.
 
-1. Intelligent exhibits which can react to the person looking at it based on age and gender
-
-2. Tracking and data analytics for vistors as they traverse around museums
-
-# Raspberry Pi
