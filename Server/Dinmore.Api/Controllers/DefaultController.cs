@@ -9,9 +9,9 @@ namespace Dinmore.Api.Controllers
     public class DefaultController : Controller
     {
         [Route("/")]
-        public String Index()
+        public IActionResult Index()
         {
-            return "Default page for information";
+            return View();
         }
     }
 }
