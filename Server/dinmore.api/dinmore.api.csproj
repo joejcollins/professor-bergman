@@ -6,6 +6,10 @@
 	<UserSecretsId>e6a4d621-9576-4a11-aa11-21f768f831c4</UserSecretsId>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DocumentationFile>bin\Debug\netcoreapp1.1\dinmore.api.xml</DocumentationFile>
+  </PropertyGroup>
+
   <ItemGroup>
     <Compile Remove="TableStorage\**" />
     <Compile Remove="wwwroot\**" />
@@ -28,6 +32,7 @@
     <PackageReference Include="Microsoft.VisualStudio.Web.BrowserLink" Version="1.1.0" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="1.1.0" />
 	<PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="1.1.1" />
+	<PackageReference Include="Swashbuckle.AspNetCore" Version="1.0.0" />
 	<PackageReference Include="WindowsAzure.Storage" Version="8.1.1" />
   </ItemGroup>
   <ItemGroup>
