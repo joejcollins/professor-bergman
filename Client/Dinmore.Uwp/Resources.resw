@@ -128,7 +128,7 @@
     <value>Panoramic view of Shrewsbury 1630</value>
   </data>
   <data name="FaceApiUrl" xml:space="preserve">
-    <value>http://dinmore-api.azurewebsites.net/api/patrons</value>
+    <value>http://blackradley-dinmore-api.azurewebsites.net/api/patrons</value>
   </data>
   <data name="NumberMilliSecsForFacesToDisappear" xml:space="preserve">
     <value>5000</value>
