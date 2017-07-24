@@ -10,7 +10,6 @@ using Microsoft.Extensions.Logging;
 using dinmore.api.Models;
 using dinmore.api.Interfaces;
 using dinmore.api.Repositories;
-using Swashbuckle.AspNetCore.Swagger;
 
 namespace dinmore.api
 {
