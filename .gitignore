@@ -285,15 +285,12 @@ __pycache__/
 *.btp.cs
 *.btm.cs
 *.odx.cs
-<<<<<<< HEAD
 *.xsd.cs
 
 # Secret
 *.Secret.*
 *.secret.*
-=======
 *.xsd.cs
->>>>>>> master
 Junk/
 
 Gemfile.lock
