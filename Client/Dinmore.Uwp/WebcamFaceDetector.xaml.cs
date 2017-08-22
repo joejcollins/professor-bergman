@@ -273,8 +273,7 @@ namespace Dinmore.Uwp
                             CurrentState.LastImageApiPush = DateTimeOffset.UtcNow;
                             CurrentState.FacesFoundByApi = await PostImageToApiAsync(CurrentState.ApiRequestParameters.Image);
 
-                            //LogStatusMessage($"Sending {CurrentState.FacesFoundByApi.Count()} faces to api",
-                            //    StatusSeverity.Info);
+                            LogStatusMessage($"Sending faces to api",StatusSeverity.Info);
 
                             ChangeDetectionState(DetectionStates.ApiResponseReceived);
                         }
@@ -330,7 +329,6 @@ namespace Dinmore.Uwp
                         if (!CurrentState.FacesStillPresent)
                         {
 
-                            LogStatusMessage(CurrentState.FacesStillPresent.ToString(), StatusSeverity.Info);
 
                             //TODO Refactor this out.
                             await Task.Delay(NumberMilliSecsForFacesToDisappear)
@@ -339,7 +337,7 @@ namespace Dinmore.Uwp
                                     CurrentState.FacesStillPresent = AreFacesStillPresent().Result;
                                     if (!CurrentState.FacesStillPresent)
                                     {
-                                        LogStatusMessage($"Faces has gone for a few or more secs, stop the audio playback", StatusSeverity.Info);
+                                        LogStatusMessage($"Faces have gone for a few or more secs, stop the audio playback", StatusSeverity.Info);
                                         ChangeDetectionState(DetectionStates.WaitingForFaces);
                                         vp.Stop();
                                         CurrentState.TimeVideoWasStopped = DateTimeOffset.UtcNow;
@@ -371,7 +369,12 @@ namespace Dinmore.Uwp
         private void HelloAudioHandler(ThreadPoolTimer timer)
         {
             LogStatusMessage("Starting introduction", StatusSeverity.Info);
-            vp.PlayIntroduction(PlayListGroup.HelloSingleFace);
+
+            var playListGroup = PlayListGroup.HelloSingleFace;
+            if (CurrentState.ApiRequestParameters.Faces.Count() > 1)
+                playListGroup = PlayListGroup.HelloMultipleFace;
+
+            vp.PlayIntroduction(playListGroup);
             timer.Cancel();
         }
 
@@ -414,6 +417,7 @@ namespace Dinmore.Uwp
             }
             catch (Exception ex)
             {
+                vp.IsCurrentlyPlaying = false;
                 LogStatusMessage("Exception: " + ex.ToString(), StatusSeverity.Error);
                 return null;
             }
@@ -470,9 +474,13 @@ namespace Dinmore.Uwp
                             //encoder.BitmapTransform.Bounds = bounds;
                             await encoder.FlushAsync();
 
+                            LogStatusMessage($"Found face(s) on camera: {faces.Count}", StatusSeverity.Info);
+
+
                             return new ApiRequestParameters
                             {
                                 Image = ms.ToArray(),
+                                Faces = faces,
                                 //ImageBounds = bounds,
                                 //OriginalImageHeight = converted.PixelHeight,
                                 //OriginalImageWidth = converted.PixelWidth,

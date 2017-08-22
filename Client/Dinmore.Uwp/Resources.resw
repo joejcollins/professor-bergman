@@ -122,13 +122,13 @@
     <comment>The minimum interval required between API calls.</comment>
   </data>
   <data name="Device" xml:space="preserve">
-    <value>RipPi-DEV-Cubby</value>
+    <value>Panorama </value>
   </data>
   <data name="Exhibit" xml:space="preserve">
     <value>Panoramic view of Shrewsbury 1630</value>
   </data>
   <data name="FaceApiUrl" xml:space="preserve">
-    <value>http://dinmore-api.azurewebsites.net/api/patrons</value>
+    <value>http://blackradley-dinmore-api.azurewebsites.net/api/patrons</value>
   </data>
   <data name="NumberMilliSecsForFacesToDisappear" xml:space="preserve">
     <value>5000</value>
@@ -147,6 +147,6 @@
     <comment>Every 250ms poll the face detction api</comment>
   </data>
   <data name="TurnOnDisplay" xml:space="preserve">
-    <value>true</value>
+    <value>false</value>
   </data>
 </root>
