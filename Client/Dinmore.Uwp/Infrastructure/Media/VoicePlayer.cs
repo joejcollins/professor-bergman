@@ -54,14 +54,10 @@ namespace Dinmore.Uwp.Infrastructure.Media
         {
             mediaPlayer.PlaybackSession.PositionChanged += PositionChanged;
                var session = mediaPlayer.PlaybackSession;
-            if (session.PlaybackState == MediaPlaybackState.None)           
-
-                //set back to zero
+            if (session.PlaybackState == MediaPlaybackState.None)
+            {
                 session.Position = TimeSpan.Zero;
-            // mediaPlayer.Source = MediaSource.CreateFromUri(new Uri($"ms-appx:///{item.Name}"));
-
-            // mediaPlayer.Play();
-
+            }
             playbackList.Items.Clear();
             foreach (var item in list)
             {

@@ -9,7 +9,6 @@ namespace Dinmore.Uwp.Infrastructure.Media
         bool IsCurrentlyPlaying { get; set; }
         void Play(DetectionState currentState);
         void PlayIntroduction(PlayListGroup playlistGroup);
-        void PlayWav(List<PlayListItem> list);
         void Stop();
     }
 }
