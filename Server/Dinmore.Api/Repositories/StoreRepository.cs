@@ -49,9 +49,12 @@ namespace dinmore.api.Repositories
                 patronSighting.Device = patron.Device;
                 patronSighting.Exhibit = patron.Exhibit;
                 patronSighting.Gender = patron.FaceAttributes.gender;
-                patronSighting.Age = patron.FaceAttributes.age;
+                patronSighting.Age = Math.Round(patron.FaceAttributes.age,0);
                 patronSighting.PrimaryEmotion = patron.PrimaryEmotion;
                 patronSighting.TimeOfSighting = (DateTime)patron.Time;
+                patronSighting.Smile = patron.FaceAttributes.smile;
+                patronSighting.Glasses = patron.FaceAttributes.glasses;
+                patronSighting.FaceMatchConfidence = (double)patron.FaceMatchConfidence;
 
                 TableOperation insertOperation = TableOperation.Insert(patronSighting);
 

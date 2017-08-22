@@ -1,17 +1,11 @@
+using dinmore.api.Interfaces;
+using dinmore.api.Models;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using dinmore.api.Models;
-using System.IO;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using Microsoft.Extensions.Options;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json;
-using dinmore.api.Interfaces;
 
 namespace dinmore.api.Controllers
 {
@@ -30,11 +24,18 @@ namespace dinmore.api.Controllers
             _storeRepository = storeRepository;
         }
 
-        // POST: api/Patrons
-        // To post in PostMan set 'Content-Type' to 'application/octet-stream' and attach a file as a binary body
-        // 'device' is a unique identifier for the device that sent the photo 
-        // 'returnFaceLandmarks' to return things like 'upperLipBottom', there are 27 landmarks in total. Defaults to false
-        // 'returnFaceAttributes' to return specific attributes. Accepts a comma-delimited list. Defaults to age,gender,headPose,smile,facialHair,glasses,emotion
+        /// <summary>
+        /// POST: api/Patrons
+        /// To post in PostMan set 'Content-Type' to 'application/octet-stream' and attach a file as a binary body
+        /// 'device' is a unique identifier for the device that sent the photo 
+        /// 'returnFaceLandmarks' to return things like 'upperLipBottom', there are 27 landmarks in total. Defaults to false
+        /// 'returnFaceAttributes' to return specific attributes. Accepts a comma-delimited list. Defaults to age,gender,headPose,smile,facialHair,glasses,emotion
+        /// </summary>
+        /// <param name="device"></param>
+        /// <param name="exhibit"></param>
+        /// <param name="returnFaceLandmarks"></param>
+        /// <param name="returnFaceAttributes"></param>
+        /// <returns></returns>
         [HttpPost]
         public async Task<IActionResult> Post(string device = "Device not given", string exhibit = "Exhibit not given", bool returnFaceLandmarks = false, string returnFaceAttributes = "age,gender,headPose,smile,facialHair,glasses,emotion")
         {
@@ -54,8 +55,9 @@ namespace dinmore.api.Controllers
                 //get similar faces from the current face list
                 var similarPersistedFaces = await _faceApiRepository.FindSimilarFaces(currentFaceListId, face.faceId);
 
-                //get persisted face id by using the closest match or creating one.
+                //get persisted face id and confidence by using the closest match or creating one.
                 var persistedFaceId = string.Empty;
+                var persistedFaceConfidence = 0.0;
                 if (similarPersistedFaces.Count() == 0)
                 {
                     //this is a new face, add to face list
@@ -65,6 +67,7 @@ namespace dinmore.api.Controllers
                     //get the closest matching face
                     var sortedPersistedFaces = similarPersistedFaces.OrderByDescending(f => f.confidence);
                     persistedFaceId = sortedPersistedFaces.FirstOrDefault().persistedFaceId;
+                    persistedFaceConfidence = sortedPersistedFaces.FirstOrDefault().confidence;
                 }
 
                 //create a patron
@@ -82,7 +85,8 @@ namespace dinmore.api.Controllers
                     Device = device,
                     Exhibit = exhibit,
                     CurrentFaceListId = currentFaceListId,
-                    IsInList = (similarPersistedFaces.Count() > 0)
+                    IsInList = (similarPersistedFaces.Count() > 0),
+                    FaceMatchConfidence = persistedFaceConfidence
                 });
             }
 

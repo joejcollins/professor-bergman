@@ -28,5 +28,7 @@ namespace dinmore.api.Models
         public string CurrentFaceListId { get; set; }
 
         public bool IsInList { get; set; }
+
+        public Nullable<double> FaceMatchConfidence { get; set; }
     }
 }

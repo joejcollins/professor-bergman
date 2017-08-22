@@ -71,16 +71,11 @@ namespace Dinmore.Uwp
         /// </summary>
         private SemaphoreSlim frameProcessingSemaphore = new SemaphoreSlim(1);
 
-        /// <summary>
-        /// The minimum interval required between API calls.
-        /// </summary>
-        private const double ApiIntervalMs = 1000; // Ryan set this to 500;
-        private const int NumberMilliSecsForFacesToDisappear = 5000;
-        private const int NumberMilliSecsToWaitForHello = 2500;
-
-        // Use a 66 millisecond interval for our timer, i.e. 15 frames per second
-        private TimeSpan timerInterval = TimeSpan.FromMilliseconds(250);
-        //Ryan set this TimeSpan.FromMilliseconds(66);
+        private double ApiIntervalMs;
+        private int NumberMilliSecsForFacesToDisappear;
+        private int NumberMilliSecsToWaitForHello;
+        private int NumberMillSecsBeforeWePlayAgain;
+        private TimeSpan timerInterval;
 
         /// <summary>
         /// The current step of the state machine for detecting faces, playing sounds etc.
@@ -100,7 +95,22 @@ namespace Dinmore.Uwp
         /// </summary>
         public WebcamFaceDetector()
         {
+            //Defaults
             AppSettings = ResourceLoader.GetForCurrentView();
+            NumberMilliSecsForFacesToDisappear = 
+                int.Parse(AppSettings.GetString("NumberMilliSecsForFacesToDisappear"));
+            NumberMilliSecsToWaitForHello =
+                int.Parse(AppSettings.GetString("NumberMilliSecsToWaitForHello"));
+            NumberMillSecsBeforeWePlayAgain = 
+                int.Parse(AppSettings.GetString("NumberMillSecsBeforeWePlayAgain"));
+
+            var timerIntervalMilliSecs =
+                int.Parse(AppSettings.GetString("TimerIntervalMilliSecs"));
+            timerInterval = TimeSpan.FromMilliseconds(timerIntervalMilliSecs);
+
+            ApiIntervalMs = 
+                double.Parse(AppSettings.GetString("ApiIntervalMilliSecs"));
+            
 
             InitializeComponent();
 
@@ -245,7 +255,6 @@ namespace Dinmore.Uwp
 
                         if (CurrentState.ApiRequestParameters != null)
                         {
-                            LogStatusMessage("Detected face(s)", StatusSeverity.Info);
                             ChangeDetectionState(DetectionStates.FaceDetectedOnDevice);
                         }
                         break;
@@ -253,7 +262,9 @@ namespace Dinmore.Uwp
                     case DetectionStates.FaceDetectedOnDevice:
                         //LogStatusMessage("Just about to send API call for faces", StatusSeverity.Info);
 
-                        if (CurrentState.LastImageApiPush.AddMilliseconds(ApiIntervalMs) < DateTimeOffset.UtcNow)
+                        //Should we play? MORE DESC REQUIRED
+                        if (CurrentState.LastImageApiPush.AddMilliseconds(ApiIntervalMs) < DateTimeOffset.UtcNow
+                            && CurrentState.TimeVideoWasStopped.AddMilliseconds(NumberMillSecsBeforeWePlayAgain) < DateTimeOffset.UtcNow)
                         {
                             ThreadPoolTimer.CreateTimer(
                                 new TimerElapsedHandler(HelloAudioHandler),
@@ -262,8 +273,7 @@ namespace Dinmore.Uwp
                             CurrentState.LastImageApiPush = DateTimeOffset.UtcNow;
                             CurrentState.FacesFoundByApi = await PostImageToApiAsync(CurrentState.ApiRequestParameters.Image);
 
-                            //LogStatusMessage($"Sending {CurrentState.FacesFoundByApi.Count()} faces to api",
-                            //    StatusSeverity.Info);
+                            LogStatusMessage($"Sending faces to api",StatusSeverity.Info);
 
                             ChangeDetectionState(DetectionStates.ApiResponseReceived);
                         }
@@ -293,6 +303,8 @@ namespace Dinmore.Uwp
 
                         if (!vp.IsCurrentlyPlaying)
                         {
+                            LogStatusMessage("Starting playlist", StatusSeverity.Info);
+
                             var play = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                             {
                                 //TODO This needs 
@@ -311,23 +323,24 @@ namespace Dinmore.Uwp
                     case DetectionStates.WaitingForFacesToDisappear:
 
                         CurrentState.FacesStillPresent = await AreFacesStillPresent();
-                        LogStatusMessage($"{CurrentState.FacesStillPresent}", StatusSeverity.Info);
+                        LogStatusMessage($"Faces present: {CurrentState.FacesStillPresent}", StatusSeverity.Info);
 
                         //we dont have a face
                         if (!CurrentState.FacesStillPresent)
                         {
 
-                            LogStatusMessage(CurrentState.FacesStillPresent.ToString(), StatusSeverity.Info);
 
+                            //TODO Refactor this out.
                             await Task.Delay(NumberMilliSecsForFacesToDisappear)
                                 .ContinueWith((t =>
                                 {
                                     CurrentState.FacesStillPresent = AreFacesStillPresent().Result;
                                     if (!CurrentState.FacesStillPresent)
                                     {
-                                        LogStatusMessage($"Faces has gone for a few or more secs, stop the audio playback", StatusSeverity.Info);
+                                        LogStatusMessage($"Faces have gone for a few or more secs, stop the audio playback", StatusSeverity.Info);
                                         ChangeDetectionState(DetectionStates.WaitingForFaces);
                                         vp.Stop();
+                                        CurrentState.TimeVideoWasStopped = DateTimeOffset.UtcNow;
                                         return;
                                     }
                                 }
@@ -355,7 +368,13 @@ namespace Dinmore.Uwp
 
         private void HelloAudioHandler(ThreadPoolTimer timer)
         {
-            vp.PlayIntroduction();
+            LogStatusMessage("Starting introduction", StatusSeverity.Info);
+
+            var playListGroup = PlayListGroup.HelloSingleFace;
+            if (CurrentState.ApiRequestParameters.Faces.Count() > 1)
+                playListGroup = PlayListGroup.HelloMultipleFace;
+
+            vp.PlayIntroduction(playListGroup);
             timer.Cancel();
         }
 
@@ -398,6 +417,7 @@ namespace Dinmore.Uwp
             }
             catch (Exception ex)
             {
+                vp.IsCurrentlyPlaying = false;
                 LogStatusMessage("Exception: " + ex.ToString(), StatusSeverity.Error);
                 return null;
             }
@@ -454,9 +474,13 @@ namespace Dinmore.Uwp
                             //encoder.BitmapTransform.Bounds = bounds;
                             await encoder.FlushAsync();
 
+                            LogStatusMessage($"Found face(s) on camera: {faces.Count}", StatusSeverity.Info);
+
+
                             return new ApiRequestParameters
                             {
                                 Image = ms.ToArray(),
+                                Faces = faces,
                                 //ImageBounds = bounds,
                                 //OriginalImageHeight = converted.PixelHeight,
                                 //OriginalImageWidth = converted.PixelWidth,
