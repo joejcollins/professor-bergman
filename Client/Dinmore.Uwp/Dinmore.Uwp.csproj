@@ -103,10 +103,12 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Infrastructure\Media\IVoicePlayer.cs" />
     <Compile Include="Infrastructure\Media\PlayList.cs" />
     <Compile Include="Infrastructure\Media\PlayListGroup.cs" />
     <Compile Include="Infrastructure\Media\PlayListItem.cs" />
     <Compile Include="Infrastructure\Media\VoicePlayer.cs" />
+    <Compile Include="Infrastructure\Media\VoicePlayerGenerated.cs" />
     <Compile Include="Models\ApiRequestParameters.cs" />
     <Compile Include="Models\DetectionStates.cs" />
     <Compile Include="Models\Emotion.cs" />

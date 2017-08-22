@@ -88,7 +88,7 @@ namespace Dinmore.Uwp
 
         private static ResourceLoader AppSettings;
 
-        private VoicePlayer vp = new VoicePlayer();
+        private IVoicePlayer vp = new VoicePlayer();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WebcamFaceDetector"/> class.

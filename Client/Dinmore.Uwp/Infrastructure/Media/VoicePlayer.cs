@@ -8,28 +8,27 @@ using System.Collections.Generic;
 namespace Dinmore.Uwp.Infrastructure.Media
 {
 
-    internal class VoicePlayer : IDisposable
+    internal class VoicePlayer : IDisposable, IVoicePlayer
     {
         // see https://docs.microsoft.com/en-us/windows/uwp/audio-video-camera/play-audio-and-video-with-mediaplayer
 
 
         private static MediaPlayer mediaPlayer = new MediaPlayer();
-        private static PlayListItem currentPlayListItem;
         private MediaPlaybackList playbackList = new MediaPlaybackList();
-        public bool IsCurrentlyPlaying;
+        public bool IsCurrentlyPlaying { get; set; }
 
-        internal void Stop() {
+        public void Stop() {
             StopOnNextTrack = true;
             IsCurrentlyPlaying = false;
         }
 
-        internal void PlayIntroduction(PlayListGroup playlistGroup) {
+        public void PlayIntroduction(PlayListGroup playlistGroup) {
             PlayWav(PlayList.List
                         .Where(w => w.PlayListGroup == playlistGroup).ToList()
                     );
         }
 
-        internal void Play(DetectionState currentState)
+        public void Play(DetectionState currentState)
         {
             var avgAge = currentState.FacesFoundByApi.OrderByDescending(x => x.faceAttributes.age).First().faceAttributes.age;
             PlayListGroup playListGroup = GetPlayListGroupByDemographic(avgAge);
@@ -51,7 +50,7 @@ namespace Dinmore.Uwp.Infrastructure.Media
             return PlayListGroup.Demographic12to17;
         }
 
-        internal void PlayWav(List<PlayListItem> list)
+        public void PlayWav(List<PlayListItem> list)
         {
             mediaPlayer.PlaybackSession.PositionChanged += PositionChanged;
                var session = mediaPlayer.PlaybackSession;
