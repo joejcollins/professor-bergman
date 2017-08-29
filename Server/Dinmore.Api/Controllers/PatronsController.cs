@@ -91,7 +91,7 @@ namespace dinmore.api.Controllers
             }
 
             //log patron data to storage
-            await _storeRepository.Store(patrons);
+            await _storeRepository.StorePatrons(patrons);
 
             return Json(patrons);
         }

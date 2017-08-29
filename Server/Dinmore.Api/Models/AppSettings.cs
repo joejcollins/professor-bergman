@@ -18,6 +18,7 @@ namespace dinmore.api.Models
 
         public string TableStorageConnectionString { get; set; }
 
-        public string StoreContainerName { get; set; }
+        public string StorePatronContainerName { get; set; }
+        public string StoreDeviceContainerName { get; set; }
     }
 }
