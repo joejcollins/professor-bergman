@@ -20,7 +20,7 @@ namespace Dinmore.Api.Models
 
         public string Exhibit { get; set; }
 
-        public string Device { get; set; }
+        public string DeviceLabel { get; set; }
 
         public string Venue { get; set; }
     }

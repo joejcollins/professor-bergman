@@ -35,7 +35,7 @@ namespace dinmore.api.Repositories
             await table.CreateIfNotExistsAsync();
 
             DeviceStorageTableEntity deviceStorageTableEntity = new DeviceStorageTableEntity(device.Id.ToString(), _appSettings.StoreDevicePartitionKey);
-            deviceStorageTableEntity.Device = device.Label;
+            deviceStorageTableEntity.DeviceLabel = device.DeviceLabel;
             deviceStorageTableEntity.Exhibit = device.Exhibit;
             deviceStorageTableEntity.Venue = device.Venue;
 
@@ -61,13 +61,51 @@ namespace dinmore.api.Repositories
             // Assign the result to a CustomerEntity.
             var deleteEntity = (DeviceStorageTableEntity)retrievedResult.Result;
 
+
             // Create the Delete TableOperation.
             if (deleteEntity != null)
             {
+                // Create the Delete TableOperation.
                 TableOperation deleteOperation = TableOperation.Delete(deleteEntity);
 
                 // Execute the operation.
                 await table.ExecuteAsync(deleteOperation);
+            }
+
+        }
+
+        public async Task<Device> GetDevice(string deviceId)
+        {
+            var storageAccount = CloudStorageAccount.Parse(_appSettings.TableStorageConnectionString);
+
+            var blobClient = storageAccount.CreateCloudTableClient();
+
+            var table = blobClient.GetTableReference(_appSettings.StoreDeviceContainerName);
+
+            // Create a retrieve operation that takes a customer entity.
+            TableOperation retrieveOperation = TableOperation.Retrieve<DeviceStorageTableEntity>(_appSettings.StoreDevicePartitionKey, deviceId);
+
+            // Execute the retrieve operation.
+            TableResult retrievedResult = await table.ExecuteAsync(retrieveOperation);
+
+            if (retrievedResult.Result != null)
+            {
+                // get the result and create a new device from the data
+                var deviceResult = (DeviceStorageTableEntity)retrievedResult.Result;
+
+                var device = new Device()
+                {
+                    Id = new Guid(deviceResult.RowKey),
+                    Exhibit = deviceResult.Exhibit,
+                    DeviceLabel = deviceResult.DeviceLabel,
+                    Venue = deviceResult.Venue
+                };
+
+                return device;
+            }
+            else
+            {
+                return null;
             }
         }
 

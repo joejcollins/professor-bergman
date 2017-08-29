@@ -9,7 +9,7 @@ namespace Dinmore.Api.Models
     {
         public Guid Id { get; set; }
 
-        public string Label { get; set; }
+        public string DeviceLabel { get; set; }
 
         public string Exhibit { get; set; }
 

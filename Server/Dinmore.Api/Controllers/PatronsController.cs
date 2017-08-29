@@ -1,5 +1,6 @@
 using dinmore.api.Interfaces;
 using dinmore.api.Models;
+using Dinmore.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -37,8 +38,14 @@ namespace dinmore.api.Controllers
         /// <param name="returnFaceAttributes"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<IActionResult> Post(string device = "Device not given", string exhibit = "Exhibit not given", bool returnFaceLandmarks = false, string returnFaceAttributes = "age,gender,headPose,smile,facialHair,glasses,emotion")
+        public async Task<IActionResult> Post(string deviceId, bool returnFaceLandmarks = false, string returnFaceAttributes = "age,gender,headPose,smile,facialHair,glasses,emotion")
         {
+            if (string.IsNullOrEmpty(deviceId)) return BadRequest();
+
+            //get the device from storage based on the device id
+            var device = await _storeRepository.GetDevice(deviceId);
+            if (device == null) return BadRequest();
+
             //read body of request into a byte array
             byte[] bytes = ReadFileStream(Request.Body);
 
@@ -82,8 +89,8 @@ namespace dinmore.api.Controllers
                         GetTopEmotion(face.faceAttributes.emotion) :
                         null,
                     Time = DateTime.UtcNow,
-                    Device = device,
-                    Exhibit = exhibit,
+                    Device = device.DeviceLabel,
+                    Exhibit = device.Exhibit,
                     CurrentFaceListId = currentFaceListId,
                     IsInList = (similarPersistedFaces.Count() > 0),
                     FaceMatchConfidence = persistedFaceConfidence
