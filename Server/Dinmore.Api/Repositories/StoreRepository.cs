@@ -87,18 +87,18 @@ namespace dinmore.api.Repositories
                 var persistedFaceId = patron.PersistedFaceId;
                 var sightingId = Guid.NewGuid().ToString(); //This is a unique ID for the sighting
 
-                PatronSighting patronSighting = new PatronSighting(persistedFaceId, sightingId);
-                patronSighting.Device = patron.Device;
-                patronSighting.Exhibit = patron.Exhibit;
-                patronSighting.Gender = patron.FaceAttributes.gender;
-                patronSighting.Age = Math.Round(patron.FaceAttributes.age,0);
-                patronSighting.PrimaryEmotion = patron.PrimaryEmotion;
-                patronSighting.TimeOfSighting = (DateTime)patron.Time;
-                patronSighting.Smile = patron.FaceAttributes.smile;
-                patronSighting.Glasses = patron.FaceAttributes.glasses;
-                patronSighting.FaceMatchConfidence = (double)patron.FaceMatchConfidence;
+                PatronStorageTableEntity patronStorageTableEntity = new PatronStorageTableEntity(persistedFaceId, sightingId);
+                patronStorageTableEntity.Device = patron.Device;
+                patronStorageTableEntity.Exhibit = patron.Exhibit;
+                patronStorageTableEntity.Gender = patron.FaceAttributes.gender;
+                patronStorageTableEntity.Age = Math.Round(patron.FaceAttributes.age,0);
+                patronStorageTableEntity.PrimaryEmotion = patron.PrimaryEmotion;
+                patronStorageTableEntity.TimeOfSighting = (DateTime)patron.Time;
+                patronStorageTableEntity.Smile = patron.FaceAttributes.smile;
+                patronStorageTableEntity.Glasses = patron.FaceAttributes.glasses;
+                patronStorageTableEntity.FaceMatchConfidence = (double)patron.FaceMatchConfidence;
 
-                TableOperation insertOperation = TableOperation.Insert(patronSighting);
+                TableOperation insertOperation = TableOperation.Insert(patronStorageTableEntity);
 
                 await table.ExecuteAsync(insertOperation);
             }
