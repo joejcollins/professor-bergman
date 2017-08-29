@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace Dinmore.Api.Models
 {
-    public class DeviceTE : TableEntity
+    public class DeviceStorageTableEntity : TableEntity
     {
-        public DeviceTE(string deviceId, string venue)
+        public DeviceStorageTableEntity(string deviceId, string venue)
         {
             this.PartitionKey = venue;
             this.RowKey = deviceId;

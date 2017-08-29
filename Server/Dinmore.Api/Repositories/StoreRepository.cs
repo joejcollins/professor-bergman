@@ -34,12 +34,12 @@ namespace dinmore.api.Repositories
 
             await table.CreateIfNotExistsAsync();
 
-            DeviceTE deviceTe = new DeviceTE(device.Id.ToString(), device.Venue);
-            deviceTe.Device = device.Label;
-            deviceTe.Exhibit = device.Exhibit;
-            deviceTe.Venue = device.Venue;
+            DeviceStorageTableEntity deviceStorageTableEntity = new DeviceStorageTableEntity(device.Id.ToString(), device.Venue);
+            deviceStorageTableEntity.Device = device.Label;
+            deviceStorageTableEntity.Exhibit = device.Exhibit;
+            deviceStorageTableEntity.Venue = device.Venue;
 
-            TableOperation insertOperation = TableOperation.Insert(deviceTe);
+            TableOperation insertOperation = TableOperation.Insert(deviceStorageTableEntity);
 
             await table.ExecuteAsync(insertOperation);
         }
