@@ -1,17 +1,11 @@
+using dinmore.api.Interfaces;
+using dinmore.api.Models;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using dinmore.api.Models;
-using System.IO;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using Microsoft.Extensions.Options;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json;
-using dinmore.api.Interfaces;
 
 namespace dinmore.api.Controllers
 {
@@ -30,11 +24,18 @@ namespace dinmore.api.Controllers
             _storeRepository = storeRepository;
         }
 
-        // POST: api/Patrons
-        // To post in PostMan set 'Content-Type' to 'application/octet-stream' and attach a file as a binary body
-        // 'device' is a unique identifier for the device that sent the photo 
-        // 'returnFaceLandmarks' to return things like 'upperLipBottom', there are 27 landmarks in total. Defaults to false
-        // 'returnFaceAttributes' to return specific attributes. Accepts a comma-delimited list. Defaults to age,gender,headPose,smile,facialHair,glasses,emotion
+        /// <summary>
+        /// POST: api/Patrons
+        /// To post in PostMan set 'Content-Type' to 'application/octet-stream' and attach a file as a binary body
+        /// 'device' is a unique identifier for the device that sent the photo 
+        /// 'returnFaceLandmarks' to return things like 'upperLipBottom', there are 27 landmarks in total. Defaults to false
+        /// 'returnFaceAttributes' to return specific attributes. Accepts a comma-delimited list. Defaults to age,gender,headPose,smile,facialHair,glasses,emotion
+        /// </summary>
+        /// <param name="device"></param>
+        /// <param name="exhibit"></param>
+        /// <param name="returnFaceLandmarks"></param>
+        /// <param name="returnFaceAttributes"></param>
+        /// <returns></returns>
         [HttpPost]
         public async Task<IActionResult> Post(string device = "Device not given", string exhibit = "Exhibit not given", bool returnFaceLandmarks = false, string returnFaceAttributes = "age,gender,headPose,smile,facialHair,glasses,emotion")
         {

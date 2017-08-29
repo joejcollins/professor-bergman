@@ -6,6 +6,10 @@
 	<UserSecretsId>e6a4d621-9576-4a11-aa11-21f768f831c4</UserSecretsId>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DocumentationFile></DocumentationFile>
+  </PropertyGroup>
+
   <ItemGroup>
     <Compile Remove="TableStorage\**" />
     <Compile Remove="wwwroot\**" />

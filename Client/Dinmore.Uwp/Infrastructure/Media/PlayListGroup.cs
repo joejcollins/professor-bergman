@@ -8,6 +8,7 @@
         Demographic45to54,
         Demographic55to64,
         HelloSingleFace,
-        HelloMultipleFace
+        HelloMultipleFace,
+        Demographic18to24
     }
 }
