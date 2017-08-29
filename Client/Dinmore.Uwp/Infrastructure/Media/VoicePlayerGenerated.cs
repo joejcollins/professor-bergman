@@ -7,6 +7,8 @@ using Dinmore.Uwp.Models;
 using Windows.Media.Playback;
 using Windows.Media.SpeechSynthesis;
 using Windows.Media.Core;
+using System.IO;
+using Windows.Storage;
 
 namespace Dinmore.Uwp.Infrastructure.Media
 {
@@ -37,9 +39,13 @@ namespace Dinmore.Uwp.Infrastructure.Media
             Say(new List<string>() { "Hello this is the start of a playlist" });
         }
 
-        public void PlayIntroduction(PlayListGroup playlistGroup)
+        public async void PlayIntroduction(PlayListGroup playlistGroup)
         {
-            Say(new List<string>() { "This is the first paragraph", "This is the second paragraph" });
+            StorageFolder appInstalledFolder = Windows.ApplicationModel.Package.Current.InstalledLocation;
+            var file = await appInstalledFolder.GetFileAsync(@"Assets\Voice\12-17.txt");
+            var thingstosay = await FileIO.ReadLinesAsync(file);
+           
+            Say(thingstosay.ToList());
         }
 
         private async void Say(List<string> list)

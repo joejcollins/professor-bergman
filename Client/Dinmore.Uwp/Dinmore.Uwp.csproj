@@ -187,6 +187,7 @@
     <Content Include="Assets\StoreLogo.scale-150.png" />
     <Content Include="Assets\StoreLogo.scale-200.png" />
     <Content Include="Assets\StoreLogo.scale-400.png" />
+    <Content Include="Assets\Voice\12-17.txt" />
     <Content Include="Assets\Voice\hello.wav">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
