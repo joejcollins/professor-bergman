@@ -10,5 +10,7 @@ namespace dinmore.api.Interfaces
         Task StorePatrons(List<Patron> patrons);
 
         Task StoreDevice(Device device);
+
+        Task DeleteDevice(string deviceId);
     }
 }

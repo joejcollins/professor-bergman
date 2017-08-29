@@ -20,5 +20,7 @@ namespace dinmore.api.Models
 
         public string StorePatronContainerName { get; set; }
         public string StoreDeviceContainerName { get; set; }
+
+        public string StoreDevicePartitionKey { get; set; }
     }
 }

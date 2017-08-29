@@ -8,10 +8,14 @@ namespace Dinmore.Api.Models
 {
     public class DeviceStorageTableEntity : TableEntity
     {
-        public DeviceStorageTableEntity(string deviceId, string venue)
+        public DeviceStorageTableEntity(string deviceId, string partitionKey)
         {
-            this.PartitionKey = venue;
+            this.PartitionKey = partitionKey;
             this.RowKey = deviceId;
+        }
+
+        public DeviceStorageTableEntity()
+        {
         }
 
         public string Exhibit { get; set; }
