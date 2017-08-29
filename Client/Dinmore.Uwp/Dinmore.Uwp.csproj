@@ -242,6 +242,7 @@
     <Content Include="Assets\Voice\hiya.wav">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="Assets\Voice\intro.txt" />
     <Content Include="Assets\Voice\sheep.wav">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

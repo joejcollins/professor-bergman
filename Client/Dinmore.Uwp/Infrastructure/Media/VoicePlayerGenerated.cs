@@ -34,18 +34,41 @@ namespace Dinmore.Uwp.Infrastructure.Media
             }
         }
 
-        public void Play(DetectionState currentState)
+        public async void Play(DetectionState currentState)
         {
-            Say(new List<string>() { "Hello this is the start of a playlist" });
+            var avgAge = currentState.FacesFoundByApi.OrderByDescending(x => x.faceAttributes.age).First().faceAttributes.age;
+
+            var demographic = GetDemographicFromAge(avgAge);
+            StorageFile file = await GetScriptFromDemographic(demographic);
+            var thingstosay = await FileIO.ReadLinesAsync(file);
+            Say(thingstosay.ToList());
+
+        }
+
+        private string GetDemographicFromAge(double avgAge)
+        {
+            if (avgAge < 17) { return "12-17"; }
+            if (avgAge < 24) { return "12-17"; }
+            if (avgAge < 34) { return "12-17"; }
+            if (avgAge < 44) { return "12-17"; }
+            if (avgAge < 150) { return "12-17"; }
+
+            return "12-17";
         }
 
         public async void PlayIntroduction(PlayListGroup playlistGroup)
         {
-            StorageFolder appInstalledFolder = Windows.ApplicationModel.Package.Current.InstalledLocation;
-            var file = await appInstalledFolder.GetFileAsync(@"Assets\Voice\12-17.txt");
+            var demographic = "intro";
+            StorageFile file = await GetScriptFromDemographic(demographic);
             var thingstosay = await FileIO.ReadLinesAsync(file);
-           
             Say(thingstosay.ToList());
+        }
+
+        private static async Task<StorageFile> GetScriptFromDemographic(string demographic)
+        {
+            StorageFolder appInstalledFolder = Windows.ApplicationModel.Package.Current.InstalledLocation;
+            var file = await appInstalledFolder.GetFileAsync($"Assets\\Voice\\{demographic}.txt");
+            return file;
         }
 
         private async void Say(List<string> list)
