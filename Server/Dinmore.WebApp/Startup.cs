@@ -8,6 +8,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Dinmore.WebApp.Models;
+using Dinmore.WebApp.Interfaces;
+using Dinmore.WebApp.Repositories;
 
 namespace Dinmore.WebApp
 {
@@ -35,6 +37,9 @@ namespace Dinmore.WebApp
             // Add app settings
             var appSettings = Configuration.GetSection("AppSettings");
             services.Configure<AppSettings>(appSettings);
+
+            // Add repositories
+            services.AddSingleton<IApiRepository, ApiRepository>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

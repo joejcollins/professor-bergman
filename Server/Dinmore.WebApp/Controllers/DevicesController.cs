@@ -4,22 +4,28 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Dinmore.WebApp.Interfaces;
+using Dinmore.WebApp.Models;
 
 namespace Dinmore.WebApp.Controllers
 {
     public class DevicesController : Controller
     {
-        // GET: Devices
-        public ActionResult Index()
+        private readonly IApiRepository _apiRepository;
+
+        public DevicesController(IApiRepository apiRepository)
         {
-            return View();
+            _apiRepository = apiRepository;
         }
 
-        // GET: Devices/Details/5
-        public ActionResult Details(int id)
+        // GET: Devices
+        public async Task<ActionResult> Index()
         {
-            return View();
+            var data = await _apiRepository.GetDevices();
+
+            return View(data);
         }
+
 
         // GET: Devices/Create
         public ActionResult Create()
@@ -34,7 +40,15 @@ namespace Dinmore.WebApp.Controllers
         {
             try
             {
-                // TODO: Add insert logic here
+                var device = new Device()
+                {
+                    DeviceLabel = collection["DeviceLabel"],
+                    Exhibit = collection["Exhibit"],
+                    Venue = collection["Venue"],
+                    Id = Guid.NewGuid(),
+                };
+
+                var result = _apiRepository.StoreDevice(device);
 
                 return RedirectToAction("Index");
             }
@@ -44,39 +58,22 @@ namespace Dinmore.WebApp.Controllers
             }
         }
 
-        // GET: Devices/Edit/5
-        public ActionResult Edit(int id)
-        {
-            return View();
-        }
-
-        // POST: Devices/Edit/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
-        {
-            try
-            {
-                // TODO: Add update logic here
-
-                return RedirectToAction("Index");
-            }
-            catch
-            {
-                return View();
-            }
-        }
 
         // GET: Devices/Delete/5
-        public ActionResult Delete(int id)
+        public async Task<ActionResult> Delete(Guid id)
         {
-            return View();
+            var data = await _apiRepository.GetDevices();
+            var device = from d in data.ToList()
+                         where d.Id == id
+                         select d;
+
+            return View(device);
         }
 
         // POST: Devices/Delete/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, IFormCollection collection)
+        public ActionResult Delete(Guid id, IFormCollection collection)
         {
             try
             {
