@@ -14,15 +14,16 @@ namespace Dinmore.Uwp.Infrastructure.Media
 {
     class VoicePlayerGenerated : IDisposable, IVoicePlayer
     {
-        private bool disposedValue = false; // To detect redundant calls
+        private bool disposedValue = false; 
         private static MediaPlayer mediaPlayer = new MediaPlayer();
         private MediaPlaybackList playbackList = new MediaPlaybackList();
         private bool StopOnNextTrack;
 
         public VoicePlayerGenerated() {
             mediaPlayer.PlaybackSession.PositionChanged += PositionChanged;
-            playbackList.CurrentItemChanged += PlaybackList_CurrentItemChanged;
         }
+
+        private Queue<string> speechlist = new Queue<string>();
 
         public bool IsCurrentlyPlaying { get; set; }
 
@@ -47,6 +48,7 @@ namespace Dinmore.Uwp.Infrastructure.Media
             StorageFile file = await GetScriptFromDemographic(demographic);
             var thingstosay = await FileIO.ReadLinesAsync(file);
             Say(thingstosay.ToList());
+
 
         }
 
@@ -85,61 +87,42 @@ namespace Dinmore.Uwp.Infrastructure.Media
 
         private async void Say(List<string> list)
         {
-            var synth = new Windows.Media.SpeechSynthesis.SpeechSynthesizer();           
-            SpeechSynthesisStream stream;
-            
-            var session = mediaPlayer.PlaybackSession;
-            if (session.PlaybackState == MediaPlaybackState.None)
-            {
-                session.Position = TimeSpan.Zero;
-            }
-            // Not sure if this is required
-            //playbackList.Items.Clear();
             foreach (var item in list)
             {
-                stream = await synth.SynthesizeTextToStreamAsync(item);
-                var mediaSource = MediaSource.CreateFromStream(stream, stream.ContentType);
-                playbackList.Items.Add(new MediaPlaybackItem(mediaSource));
+                speechlist.Enqueue(item);
             }
-            
-                
-        
-            if (!IsCurrentlyPlaying)
+            await PlayNext();
+        }
+
+        public async Task<bool> PlayNext() {
+
+            if (!this.IsCurrentlyPlaying && mediaPlayer.PlaybackSession.PlaybackState != MediaPlaybackState.Playing && speechlist.Count > 0)
             {
-                mediaPlayer.Source = playbackList;
-                IsCurrentlyPlaying = true;
+                this.IsCurrentlyPlaying = true;
+                var item = speechlist.Dequeue();
+                var synth = new Windows.Media.SpeechSynthesis.SpeechSynthesizer();
+                SpeechSynthesisStream stream = await synth.SynthesizeTextToStreamAsync(item);
+                MediaSource mediaSource = MediaSource.CreateFromStream(stream, stream.ContentType);
+                mediaPlayer.Source = mediaSource;
                 mediaPlayer.Play();
+                return true;
             }
+            return false;
         }
 
         public void Stop()
         {
-            StopOnNextTrack = true;
-            IsCurrentlyPlaying = false;
+            speechlist.Clear();
         }
 
-        private void PositionChanged(MediaPlaybackSession sender, object args)
+        private async void PositionChanged(MediaPlaybackSession sender, object args)
         {
-
-            if (sender.Position >= sender.NaturalDuration && playbackList.CurrentItemIndex == playbackList.Items.Count - 1)
+            if (sender.Position >= sender.NaturalDuration && sender.NaturalDuration > new TimeSpan(0))
             {
                 IsCurrentlyPlaying = false;
-                playbackList.Items.Clear();
-            }
-
-        }
-
-        private void PlaybackList_CurrentItemChanged(MediaPlaybackList sender, CurrentMediaPlaybackItemChangedEventArgs args)
-        {
-
-            if (StopOnNextTrack)
-            {
-                mediaPlayer.Pause();
-                IsCurrentlyPlaying = false;
-                StopOnNextTrack = false;
+                await PlayNext();
             }
         }
-        // This code added to correctly implement the disposable pattern.
         public void Dispose()
         {
             Dispose(true);

@@ -182,7 +182,10 @@ namespace Dinmore.Uwp
         /// <returns>Async Task object returning true if initialization and streaming were successful and false if an exception occurred.</returns>
         private async Task<bool> StartWebcamStreaming()
         {
-            Say("The application is now starting. Please be patiant.");
+            Say("Testing 1.");
+            Say("Testing 2.");
+            Say("Testing 3.");
+            Say("Testing 4.");
             // Speak the IP Out loud
             Say($"The IP Address is: {GetLocalIp()}");
           
