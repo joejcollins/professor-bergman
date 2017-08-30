@@ -71,6 +71,10 @@ namespace Dinmore.Uwp.Infrastructure.Media
             return file;
         }
 
+        public void Say(string phrase) {
+        ;
+            this.Say(new List<string>() { phrase });
+        }
         private async void Say(List<string> list)
         {
             var synth = new Windows.Media.SpeechSynthesis.SpeechSynthesizer();           

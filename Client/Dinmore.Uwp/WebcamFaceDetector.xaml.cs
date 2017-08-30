@@ -187,17 +187,29 @@ namespace Dinmore.Uwp
             }
             catch (UnauthorizedAccessException)
             {
+                // There is now webcam present. Please Intall One.
+
+                Say("There is no webcam present, please add a USB webcam and restart the exhibit");
+
                 // If the user has disabled their webcam this exception is thrown; provide a descriptive message to inform the user of this fact.
-                LogStatusMessage("Webcam is disabled or access to the webcam is disabled for this app.\nEnsure Privacy Settings allow webcam usage.", StatusSeverity.Error);
+                //LogStatusMessage("Webcam is disabled or access to the webcam is disabled for this app.\nEnsure Privacy Settings allow webcam usage.", StatusSeverity.Error);
                 successful = false;
+
             }
             catch (Exception ex)
             {
-                LogStatusMessage("Unable to start camera: " + ex.ToString(), StatusSeverity.Error);
+                Say("There is no webcam present, please add a USB webcam and restart the exhibit");
+                //LogStatusMessage("Unable to start camera: " + ex.ToString(), StatusSeverity.Error);
                 successful = false;
             }
 
             return successful;
+        }
+
+        private void Say(string phrase)
+        {
+            var vp = new VoicePlayerGenerated();
+            vp.Say(phrase);
         }
 
         private void RunTimer()
