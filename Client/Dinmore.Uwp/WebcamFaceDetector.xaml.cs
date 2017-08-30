@@ -18,6 +18,7 @@ using Windows.Media.Core;
 using Windows.Media.FaceAnalysis;
 using Windows.Media.MediaProperties;
 using Windows.Networking.Connectivity;
+using Windows.Storage;
 using Windows.System.Threading;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -93,6 +94,8 @@ namespace Dinmore.Uwp
         private IVoicePlayer vp = new VoicePlayerGenerated();
         
         private VoicePlayerGenerated vpGenerated = new VoicePlayerGenerated();
+
+        private const string _DeviceIdKey = "DeviceId";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WebcamFaceDetector"/> class.
@@ -295,9 +298,16 @@ namespace Dinmore.Uwp
 
                     case DetectionStates.OnBoarding:
                         var result = await ProcessCurrentVideoFrameForQRCodeAsync();
-                        //if we now have a GUID then change the state
-                        if (result.Length > 0)
+                        //if we now have a GUID, store it and then change the state
+                        if (!string.IsNullOrEmpty(result))
                         {
+                            //store the device id guid
+                            ApplicationData.Current.LocalSettings.Values[_DeviceIdKey] = result;
+
+                            LogStatusMessage($"Found a QR code with device id {result} which has been stored to app storage.", StatusSeverity.Info);
+
+                            Say("I found a QR code, thanks.");
+
                             ChangeDetectionState(DetectionStates.WaitingForFaces);
                         }
                         break;
@@ -454,11 +464,24 @@ namespace Dinmore.Uwp
 
                     //build url to pass to api, REFACTORING NEEDED
                     var url = AppSettings.GetString("FaceApiUrl");
-                    var device = AppSettings.GetString("Device");
-                    var exhibit = AppSettings.GetString("Exhibit");
-                    url = $"{url}?device={device}&exhibit={exhibit}";
+                    var deviceId = ApplicationData.Current.LocalSettings.Values[_DeviceIdKey];
+                    url = $"{url}?deviceid={deviceId}";
 
                     var responseMessage = await httpClient.PostAsync(url, content);
+
+                    if (!responseMessage.IsSuccessStatusCode)
+                    {
+                        switch (responseMessage.StatusCode.ToString())
+                        {
+                            case "BadRequest":
+                                LogStatusMessage("The API returned a 400 Bad Request. This is caused by either a missing DeviceId parameter or one containig a GUID that is not already registered with the device API.", StatusSeverity.Error);
+                                break;
+                            default:
+                                LogStatusMessage($"The API returned a non-sucess status {responseMessage.ReasonPhrase}", StatusSeverity.Error);
+                                break;
+                        }
+                        return null;
+                    }
 
                     var response = await responseMessage.Content.ReadAsStringAsync();
                     var result = JsonConvert.DeserializeObject<List<Face>>(response);
@@ -492,7 +515,9 @@ namespace Dinmore.Uwp
                 {
                     await mediaCapture.GetPreviewFrameAsync(previewFrame);
                     var decoded = br.Decode(previewFrame.SoftwareBitmap);
-                    return decoded.Text;
+                    return (decoded != null) ?
+                        decoded.Text :
+                        null;
                 }
             }
            
@@ -629,8 +654,10 @@ namespace Dinmore.Uwp
                     }
                     VisualizationCanvas.Children.Clear();
                     //this needs to test for ifGUID as stored
-                    if (true)
+                    var deviceId = ApplicationData.Current.LocalSettings.Values[_DeviceIdKey];
+                    if (deviceId == null)
                     {
+                        Say("I have no device ID. I'm now onboarding which means I am looking for a QR code containing a device ID GUID, you can get this from the device API.");
                         ChangeDetectionState(DetectionStates.OnBoarding);
                     }
                     else
