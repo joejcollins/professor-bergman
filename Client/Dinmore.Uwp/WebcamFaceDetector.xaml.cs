@@ -24,6 +24,7 @@ using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 using Windows.UI.Xaml.Shapes;
+using ZXing;
 
 namespace Dinmore.Uwp
 {
@@ -286,6 +287,16 @@ namespace Dinmore.Uwp
                         break;
 
                     case DetectionStates.Startup:
+
+                        break;
+
+                    case DetectionStates.OnBoarding:
+                        var result = await ProcessCurrentVideoFrameForQRCodeAsync();
+                        //if we now have a GUID then change the state
+                        if (result.Length > 0)
+                        {
+                            ChangeDetectionState(DetectionStates.WaitingForFaces);
+                        }
                         break;
 
                     case DetectionStates.WaitingForFaces:
@@ -460,6 +471,35 @@ namespace Dinmore.Uwp
             }
         }
 
+        private async Task<String> ProcessCurrentVideoFrameForQRCodeAsync()
+        {
+            // If a lock is being held it means we're still waiting for processing work on the previous frame to complete.
+            // In this situation, don't wait on the semaphore but exit immediately.
+            if (!frameProcessingSemaphore.Wait(0))
+            {
+                return null;
+            }
+
+            var br = new BarcodeReader();
+
+            try
+            {
+                const BitmapPixelFormat InputPixelFormat = BitmapPixelFormat.Nv12;
+                using (var previewFrame = new VideoFrame(InputPixelFormat, (int)videoProperties.Width, (int)videoProperties.Height))
+                {
+                    await mediaCapture.GetPreviewFrameAsync(previewFrame);
+                    var decoded = br.Decode(previewFrame.SoftwareBitmap);
+                    return decoded.Text;
+                }
+            }
+           
+            finally
+            {
+                frameProcessingSemaphore.Release();
+            }
+        }
+
+
         /// <summary>
         /// Extracts a frame from the camera stream and detects if any faces are found. Used as a precursor to making an expensive API
         /// call to get proper face details.
@@ -585,7 +625,15 @@ namespace Dinmore.Uwp
                         break;
                     }
                     VisualizationCanvas.Children.Clear();
-                    ChangeDetectionState(DetectionStates.WaitingForFaces);
+                    //this needs to test for ifGUID as stored
+                    if (true)
+                    {
+                        ChangeDetectionState(DetectionStates.OnBoarding);
+                    }
+                    else
+                    {
+                        ChangeDetectionState(DetectionStates.WaitingForFaces);
+                    }
                     break;
                 default:
                     CurrentState.State = newState;

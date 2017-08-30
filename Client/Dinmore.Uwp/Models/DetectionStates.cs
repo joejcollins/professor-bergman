@@ -16,6 +16,11 @@
         Startup,
 
         /// <summary>
+        /// The device dosen't have a device ID GUID
+        /// </summary>
+        OnBoarding,
+
+        /// <summary>
         /// Webcam is running and looking for faces.
         /// </summary>
         WaitingForFaces,
