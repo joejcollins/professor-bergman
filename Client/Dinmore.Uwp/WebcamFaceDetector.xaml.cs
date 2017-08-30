@@ -17,12 +17,15 @@ using Windows.Media.Capture;
 using Windows.Media.Core;
 using Windows.Media.FaceAnalysis;
 using Windows.Media.MediaProperties;
+using Windows.Networking.Connectivity;
+using Windows.Storage;
 using Windows.System.Threading;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 using Windows.UI.Xaml.Shapes;
+using ZXing;
 
 namespace Dinmore.Uwp
 {
@@ -88,7 +91,11 @@ namespace Dinmore.Uwp
 
         private static ResourceLoader AppSettings;
 
-        private VoicePlayer vp = new VoicePlayer();
+        private IVoicePlayer vp = new VoicePlayerGenerated();
+        
+        private VoicePlayerGenerated vpGenerated = new VoicePlayerGenerated();
+
+        private const string _DeviceIdKey = "DeviceId";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WebcamFaceDetector"/> class.
@@ -124,6 +131,7 @@ namespace Dinmore.Uwp
         /// <param name="e">Event data</param>
         protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
+
             // The 'await' operation can only be used from within an async method but class constructors
             // cannot be labeled as async, and so we'll initialize FaceTracker here.
             if (faceTracker == null)
@@ -132,6 +140,23 @@ namespace Dinmore.Uwp
                 ChangeDetectionState(DetectionStates.Startup);
             }
         }
+
+        private string GetLocalIp()
+        {
+            var icp = NetworkInformation.GetInternetConnectionProfile();
+
+            if (icp?.NetworkAdapter == null) return null;
+            var hostname =
+                NetworkInformation.GetHostNames()
+                    .SingleOrDefault(
+                        hn =>
+                            hn.IPInformation?.NetworkAdapter != null && hn.IPInformation.NetworkAdapter.NetworkAdapterId
+                            == icp.NetworkAdapter.NetworkAdapterId);
+
+            // the ip address
+            return hostname?.CanonicalName;
+        }
+
 
         /// <summary>
         /// Responds to App Suspend event to stop/release MediaCapture object if it's running and return to Idle state.
@@ -160,10 +185,16 @@ namespace Dinmore.Uwp
         /// <returns>Async Task object returning true if initialization and streaming were successful and false if an exception occurred.</returns>
         private async Task<bool> StartWebcamStreaming()
         {
+            Say("The application is now starting. Please be patiant.");
+            // Speak the IP Out loud
+            Say($"The IP Address is: {GetLocalIp()}");
+          
+
             bool successful = true;
 
             try
             {
+                
                 mediaCapture = new MediaCapture();
 
                 // For this scenario, we only need Video (not microphone) so specify this in the initializer.
@@ -184,20 +215,32 @@ namespace Dinmore.Uwp
                 await mediaCapture.StartPreviewAsync();
 
                 RunTimer();
+               
             }
             catch (UnauthorizedAccessException)
             {
+                // There is now webcam present. Please Intall One.
+
+                Say("There is no webcam present, please add a USB webcam and restart the exhibit");
+
                 // If the user has disabled their webcam this exception is thrown; provide a descriptive message to inform the user of this fact.
-                LogStatusMessage("Webcam is disabled or access to the webcam is disabled for this app.\nEnsure Privacy Settings allow webcam usage.", StatusSeverity.Error);
+                //LogStatusMessage("Webcam is disabled or access to the webcam is disabled for this app.\nEnsure Privacy Settings allow webcam usage.", StatusSeverity.Error);
                 successful = false;
+
             }
             catch (Exception ex)
             {
-                LogStatusMessage("Unable to start camera: " + ex.ToString(), StatusSeverity.Error);
+                Say("There is no webcam present, please add a USB webcam and restart the exhibit");
+                //LogStatusMessage("Unable to start camera: " + ex.ToString(), StatusSeverity.Error);
                 successful = false;
             }
 
             return successful;
+        }
+
+        private void Say(string phrase)
+        {
+            vpGenerated.Say(phrase);
         }
 
         private void RunTimer()
@@ -247,6 +290,23 @@ namespace Dinmore.Uwp
                         break;
 
                     case DetectionStates.Startup:
+
+                        break;
+
+                    case DetectionStates.OnBoarding:
+                        var result = await ProcessCurrentVideoFrameForQRCodeAsync();
+                        //if we now have a GUID, store it and then change the state
+                        if (!string.IsNullOrEmpty(result))
+                        {
+                            //store the device id guid
+                            ApplicationData.Current.LocalSettings.Values[_DeviceIdKey] = result;
+
+                            LogStatusMessage($"Found a QR code with device id {result} which has been stored to app storage.", StatusSeverity.Info);
+
+                            Say("I found a QR code, thanks.");
+
+                            ChangeDetectionState(DetectionStates.WaitingForFaces);
+                        }
                         break;
 
                     case DetectionStates.WaitingForFaces:
@@ -266,9 +326,11 @@ namespace Dinmore.Uwp
                         if (CurrentState.LastImageApiPush.AddMilliseconds(ApiIntervalMs) < DateTimeOffset.UtcNow
                             && CurrentState.TimeVideoWasStopped.AddMilliseconds(NumberMillSecsBeforeWePlayAgain) < DateTimeOffset.UtcNow)
                         {
-                            ThreadPoolTimer.CreateTimer(
-                                new TimerElapsedHandler(HelloAudioHandler),
-                                TimeSpan.FromMilliseconds(NumberMilliSecsToWaitForHello));
+                            //ThreadPoolTimer.CreateTimer(
+                            //    new TimerElapsedHandler(HelloAudioHandler),
+                            //    TimeSpan.FromMilliseconds(NumberMilliSecsToWaitForHello));
+
+                            HelloAudio();
 
                             CurrentState.LastImageApiPush = DateTimeOffset.UtcNow;
                             CurrentState.FacesFoundByApi = await PostImageToApiAsync(CurrentState.ApiRequestParameters.Image);
@@ -366,16 +428,12 @@ namespace Dinmore.Uwp
             }
         }
 
-        private void HelloAudioHandler(ThreadPoolTimer timer)
+        private void HelloAudio()
         {
             LogStatusMessage("Starting introduction", StatusSeverity.Info);
-
-            var playListGroup = PlayListGroup.HelloSingleFace;
-            if (CurrentState.ApiRequestParameters.Faces.Count() > 1)
-                playListGroup = PlayListGroup.HelloMultipleFace;
-
-            vp.PlayIntroduction(playListGroup);
-            timer.Cancel();
+        
+            vp.PlayIntroduction(CurrentState.ApiRequestParameters.Faces.Count());
+            //timer.Cancel();
         }
 
 
@@ -403,11 +461,24 @@ namespace Dinmore.Uwp
 
                     //build url to pass to api, REFACTORING NEEDED
                     var url = AppSettings.GetString("FaceApiUrl");
-                    var device = AppSettings.GetString("Device");
-                    var exhibit = AppSettings.GetString("Exhibit");
-                    url = $"{url}?device={device}&exhibit={exhibit}";
+                    var deviceId = ApplicationData.Current.LocalSettings.Values[_DeviceIdKey];
+                    url = $"{url}?deviceid={deviceId}";
 
                     var responseMessage = await httpClient.PostAsync(url, content);
+
+                    if (!responseMessage.IsSuccessStatusCode)
+                    {
+                        switch (responseMessage.StatusCode.ToString())
+                        {
+                            case "BadRequest":
+                                LogStatusMessage("The API returned a 400 Bad Request. This is caused by either a missing DeviceId parameter or one containig a GUID that is not already registered with the device API.", StatusSeverity.Error);
+                                break;
+                            default:
+                                LogStatusMessage($"The API returned a non-sucess status {responseMessage.ReasonPhrase}", StatusSeverity.Error);
+                                break;
+                        }
+                        return null;
+                    }
 
                     var response = await responseMessage.Content.ReadAsStringAsync();
                     var result = JsonConvert.DeserializeObject<List<Face>>(response);
@@ -422,6 +493,37 @@ namespace Dinmore.Uwp
                 return null;
             }
         }
+
+        private async Task<String> ProcessCurrentVideoFrameForQRCodeAsync()
+        {
+            // If a lock is being held it means we're still waiting for processing work on the previous frame to complete.
+            // In this situation, don't wait on the semaphore but exit immediately.
+            if (!frameProcessingSemaphore.Wait(0))
+            {
+                return null;
+            }
+
+            var br = new BarcodeReader();
+
+            try
+            {
+                const BitmapPixelFormat InputPixelFormat = BitmapPixelFormat.Nv12;
+                using (var previewFrame = new VideoFrame(InputPixelFormat, (int)videoProperties.Width, (int)videoProperties.Height))
+                {
+                    await mediaCapture.GetPreviewFrameAsync(previewFrame);
+                    var decoded = br.Decode(previewFrame.SoftwareBitmap);
+                    return (decoded != null) ?
+                        decoded.Text :
+                        null;
+                }
+            }
+           
+            finally
+            {
+                frameProcessingSemaphore.Release();
+            }
+        }
+
 
         /// <summary>
         /// Extracts a frame from the camera stream and detects if any faces are found. Used as a precursor to making an expensive API
@@ -548,7 +650,17 @@ namespace Dinmore.Uwp
                         break;
                     }
                     VisualizationCanvas.Children.Clear();
-                    ChangeDetectionState(DetectionStates.WaitingForFaces);
+                    //this needs to test for ifGUID as stored
+                    var deviceId = ApplicationData.Current.LocalSettings.Values[_DeviceIdKey];
+                    if (deviceId == null)
+                    {
+                        Say("I have no device ID. I'm now onboarding which means I am looking for a QR code containing a device ID GUID, you can get this from the device API.");
+                        ChangeDetectionState(DetectionStates.OnBoarding);
+                    }
+                    else
+                    {
+                        ChangeDetectionState(DetectionStates.WaitingForFaces);
+                    }
                     break;
                 default:
                     CurrentState.State = newState;
