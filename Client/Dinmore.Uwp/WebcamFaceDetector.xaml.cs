@@ -461,11 +461,24 @@ namespace Dinmore.Uwp
 
                     //build url to pass to api, REFACTORING NEEDED
                     var url = AppSettings.GetString("FaceApiUrl");
-                    var device = AppSettings.GetString("Device");
-                    var exhibit = AppSettings.GetString("Exhibit");
-                    url = $"{url}?device={device}&exhibit={exhibit}";
+                    var deviceId = ApplicationData.Current.LocalSettings.Values[_DeviceIdKey];
+                    url = $"{url}?deviceid={deviceId}";
 
                     var responseMessage = await httpClient.PostAsync(url, content);
+
+                    if (!responseMessage.IsSuccessStatusCode)
+                    {
+                        switch (responseMessage.StatusCode.ToString())
+                        {
+                            case "BadRequest":
+                                LogStatusMessage("The API returned a 400 Bad Request. This is caused by either a missing DeviceId parameter or one containig a GUID that is not already registered with the device API.", StatusSeverity.Error);
+                                break;
+                            default:
+                                LogStatusMessage($"The API returned a non-sucess status {responseMessage.ReasonPhrase}", StatusSeverity.Error);
+                                break;
+                        }
+                        return null;
+                    }
 
                     var response = await responseMessage.Content.ReadAsStringAsync();
                     var result = JsonConvert.DeserializeObject<List<Face>>(response);
