@@ -19,6 +19,11 @@ namespace Dinmore.Uwp.Infrastructure.Media
         private MediaPlaybackList playbackList = new MediaPlaybackList();
         private bool StopOnNextTrack;
 
+        public VoicePlayerGenerated() {
+            mediaPlayer.PlaybackSession.PositionChanged += PositionChanged;
+            playbackList.CurrentItemChanged += PlaybackList_CurrentItemChanged;
+        }
+
         public bool IsCurrentlyPlaying { get; set; }
 
         protected virtual void Dispose(bool disposing)
@@ -56,9 +61,12 @@ namespace Dinmore.Uwp.Infrastructure.Media
             return "12-17";
         }
 
-        public async void PlayIntroduction(PlayListGroup playlistGroup)
+        public async void PlayIntroduction(int numberOfPeople)
         {
             var demographic = "intro";
+            if (numberOfPeople > 1)
+                demographic = "introGroup";
+
             StorageFile file = await GetScriptFromDemographic(demographic);
             var thingstosay = await FileIO.ReadLinesAsync(file);
             Say(thingstosay.ToList());
@@ -71,32 +79,37 @@ namespace Dinmore.Uwp.Infrastructure.Media
             return file;
         }
 
-        public void Say(string phrase) {
-        ;
+        public void Say(string phrase) {        
             this.Say(new List<string>() { phrase });
         }
+
         private async void Say(List<string> list)
         {
             var synth = new Windows.Media.SpeechSynthesis.SpeechSynthesizer();           
             SpeechSynthesisStream stream;
-            mediaPlayer.PlaybackSession.PositionChanged += PositionChanged;
+            
             var session = mediaPlayer.PlaybackSession;
             if (session.PlaybackState == MediaPlaybackState.None)
             {
                 session.Position = TimeSpan.Zero;
             }
-            playbackList.Items.Clear();
+            // Not sure if this is required
+            //playbackList.Items.Clear();
             foreach (var item in list)
             {
                 stream = await synth.SynthesizeTextToStreamAsync(item);
                 var mediaSource = MediaSource.CreateFromStream(stream, stream.ContentType);
                 playbackList.Items.Add(new MediaPlaybackItem(mediaSource));
             }
-            // Check if playlist changes track and stop if the viewer has exited
-            playbackList.CurrentItemChanged += PlaybackList_CurrentItemChanged;
-            mediaPlayer.Source = playbackList;
-            IsCurrentlyPlaying = true;
-            mediaPlayer.Play();
+            
+                
+        
+            if (!IsCurrentlyPlaying)
+            {
+                mediaPlayer.Source = playbackList;
+                IsCurrentlyPlaying = true;
+                mediaPlayer.Play();
+            }
         }
 
         public void Stop()
@@ -111,6 +124,7 @@ namespace Dinmore.Uwp.Infrastructure.Media
             if (sender.Position >= sender.NaturalDuration && playbackList.CurrentItemIndex == playbackList.Items.Count - 1)
             {
                 IsCurrentlyPlaying = false;
+                playbackList.Items.Clear();
             }
 
         }

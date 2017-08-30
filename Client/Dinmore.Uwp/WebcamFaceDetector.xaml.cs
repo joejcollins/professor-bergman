@@ -17,6 +17,7 @@ using Windows.Media.Capture;
 using Windows.Media.Core;
 using Windows.Media.FaceAnalysis;
 using Windows.Media.MediaProperties;
+using Windows.Networking.Connectivity;
 using Windows.System.Threading;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -89,6 +90,8 @@ namespace Dinmore.Uwp
         private static ResourceLoader AppSettings;
 
         private IVoicePlayer vp = new VoicePlayerGenerated();
+        
+        private VoicePlayerGenerated vpGenerated = new VoicePlayerGenerated();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WebcamFaceDetector"/> class.
@@ -124,6 +127,7 @@ namespace Dinmore.Uwp
         /// <param name="e">Event data</param>
         protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
+
             // The 'await' operation can only be used from within an async method but class constructors
             // cannot be labeled as async, and so we'll initialize FaceTracker here.
             if (faceTracker == null)
@@ -132,6 +136,23 @@ namespace Dinmore.Uwp
                 ChangeDetectionState(DetectionStates.Startup);
             }
         }
+
+        private string GetLocalIp()
+        {
+            var icp = NetworkInformation.GetInternetConnectionProfile();
+
+            if (icp?.NetworkAdapter == null) return null;
+            var hostname =
+                NetworkInformation.GetHostNames()
+                    .SingleOrDefault(
+                        hn =>
+                            hn.IPInformation?.NetworkAdapter != null && hn.IPInformation.NetworkAdapter.NetworkAdapterId
+                            == icp.NetworkAdapter.NetworkAdapterId);
+
+            // the ip address
+            return hostname?.CanonicalName;
+        }
+
 
         /// <summary>
         /// Responds to App Suspend event to stop/release MediaCapture object if it's running and return to Idle state.
@@ -160,10 +181,16 @@ namespace Dinmore.Uwp
         /// <returns>Async Task object returning true if initialization and streaming were successful and false if an exception occurred.</returns>
         private async Task<bool> StartWebcamStreaming()
         {
+            Say("The application is now starting. Please be patiant.");
+            // Speak the IP Out loud
+            Say($"The IP Address is: {GetLocalIp()}");
+          
+
             bool successful = true;
 
             try
             {
+                
                 mediaCapture = new MediaCapture();
 
                 // For this scenario, we only need Video (not microphone) so specify this in the initializer.
@@ -184,6 +211,7 @@ namespace Dinmore.Uwp
                 await mediaCapture.StartPreviewAsync();
 
                 RunTimer();
+               
             }
             catch (UnauthorizedAccessException)
             {
@@ -208,8 +236,7 @@ namespace Dinmore.Uwp
 
         private void Say(string phrase)
         {
-            var vp = new VoicePlayerGenerated();
-            vp.Say(phrase);
+            vpGenerated.Say(phrase);
         }
 
         private void RunTimer()
@@ -278,9 +305,11 @@ namespace Dinmore.Uwp
                         if (CurrentState.LastImageApiPush.AddMilliseconds(ApiIntervalMs) < DateTimeOffset.UtcNow
                             && CurrentState.TimeVideoWasStopped.AddMilliseconds(NumberMillSecsBeforeWePlayAgain) < DateTimeOffset.UtcNow)
                         {
-                            ThreadPoolTimer.CreateTimer(
-                                new TimerElapsedHandler(HelloAudioHandler),
-                                TimeSpan.FromMilliseconds(NumberMilliSecsToWaitForHello));
+                            //ThreadPoolTimer.CreateTimer(
+                            //    new TimerElapsedHandler(HelloAudioHandler),
+                            //    TimeSpan.FromMilliseconds(NumberMilliSecsToWaitForHello));
+
+                            HelloAudio();
 
                             CurrentState.LastImageApiPush = DateTimeOffset.UtcNow;
                             CurrentState.FacesFoundByApi = await PostImageToApiAsync(CurrentState.ApiRequestParameters.Image);
@@ -378,16 +407,12 @@ namespace Dinmore.Uwp
             }
         }
 
-        private void HelloAudioHandler(ThreadPoolTimer timer)
+        private void HelloAudio()
         {
             LogStatusMessage("Starting introduction", StatusSeverity.Info);
-
-            var playListGroup = PlayListGroup.HelloSingleFace;
-            if (CurrentState.ApiRequestParameters.Faces.Count() > 1)
-                playListGroup = PlayListGroup.HelloMultipleFace;
-
-            vp.PlayIntroduction(playListGroup);
-            timer.Cancel();
+        
+            vp.PlayIntroduction(CurrentState.ApiRequestParameters.Faces.Count());
+            //timer.Cancel();
         }
 
 

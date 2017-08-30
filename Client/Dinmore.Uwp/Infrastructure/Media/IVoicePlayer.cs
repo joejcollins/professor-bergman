@@ -8,7 +8,8 @@ namespace Dinmore.Uwp.Infrastructure.Media
         void Dispose();
         bool IsCurrentlyPlaying { get; set; }
         void Play(DetectionState currentState);
-        void PlayIntroduction(PlayListGroup playlistGroup);
+        void PlayIntroduction(int numberOfPeople);
         void Stop();
+        
     }
 }
