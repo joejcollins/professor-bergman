@@ -22,9 +22,14 @@ namespace Dinmore.Uwp.Infrastructure.Media
             IsCurrentlyPlaying = false;
         }
 
-        public void PlayIntroduction(PlayListGroup playlistGroup) {
+        public void PlayIntroduction(int numberOfPeople) {
+
+            var playListGroup = PlayListGroup.HelloSingleFace;
+            if (numberOfPeople > 1)
+                playListGroup = PlayListGroup.HelloMultipleFace;
+
             PlayWav(PlayList.List
-                        .Where(w => w.PlayListGroup == playlistGroup).ToList()
+                        .Where(w => w.PlayListGroup == playListGroup).ToList()
                     );
         }
 
@@ -37,6 +42,10 @@ namespace Dinmore.Uwp.Infrastructure.Media
                         .Where(w => w.PlayListGroup == playListGroup).ToList()
                     );   
            
+        }
+
+        public void Say(string phrase) {
+            throw new NotImplementedException("Not sure how to do this yet. We can't generate voices with Wavs after all.");
         }
 
         private PlayListGroup GetPlayListGroupByDemographic(double avgAge)
