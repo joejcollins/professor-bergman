@@ -110,7 +110,6 @@ namespace Dinmore.Uwp
                 int.Parse(AppSettings.GetString("NumberMilliSecsToWaitForHello"));
             NumberMillSecsBeforeWePlayAgain = 
                 int.Parse(AppSettings.GetString("NumberMillSecsBeforeWePlayAgain"));
-
             var timerIntervalMilliSecs =
                 int.Parse(AppSettings.GetString("TimerIntervalMilliSecs"));
             timerInterval = TimeSpan.FromMilliseconds(timerIntervalMilliSecs);
@@ -194,13 +193,10 @@ namespace Dinmore.Uwp
         {
             // Speak the IP Out loud
             Say($"The IP Address is: {GetLocalIp()}");
-          
 
             bool successful = true;
-
             try
-            {
-                
+            { 
                 mediaCapture = new MediaCapture();
 
                 // For this scenario, we only need Video (not microphone) so specify this in the initializer.
@@ -341,7 +337,7 @@ namespace Dinmore.Uwp
                             CurrentState.LastImageApiPush = DateTimeOffset.UtcNow;
                             CurrentState.FacesFoundByApi = await PostImageToApiAsync(CurrentState.ApiRequestParameters.Image);
 
-                            LogStatusMessage($"Sending faces to api",StatusSeverity.Info);
+                            LogStatusMessage($"Sending faces to api", StatusSeverity.Info);
 
                             ChangeDetectionState(DetectionStates.ApiResponseReceived);
                         }
@@ -648,7 +644,6 @@ namespace Dinmore.Uwp
             {
                 case DetectionStates.Idle:
                     ShutdownWebCam();
-                    VisualizationCanvas.Children.Clear();
                     CurrentState.State = newState;
                     break;
                 case DetectionStates.Startup:
@@ -657,8 +652,7 @@ namespace Dinmore.Uwp
                         ChangeDetectionState(DetectionStates.Idle);
                         break;
                     }
-                    VisualizationCanvas.Children.Clear();
-                    //this needs to test for ifGUID as stored
+                    // This needs to test for if a GUID as stored
                     var deviceId = ApplicationData.Current.LocalSettings.Values[_DeviceIdKey];
                     if (deviceId == null)
                     {
