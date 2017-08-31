@@ -1,10 +1,10 @@
 @model Dinmore.WebApp.Models.Device
 
 @{
-    ViewData["Title"] = "Delete Device";
+    ViewData["Title"] = "Delete";
 }
 
-<h2>@ViewData["Title"]</h2>
+<h2>Delete</h2>
 
 <h3>Are you sure you want to delete this?</h3>
 <div>
@@ -34,6 +34,36 @@
         </dt>
         <dd>
             @Html.DisplayFor(model => model.Venue)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.Interactive)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.Interactive)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.VerbaliseSystemInformationOnBoot)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.VerbaliseSystemInformationOnBoot)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.SoundOn)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.SoundOn)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.ResetOnBoot)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.ResetOnBoot)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.VoicePackageUrl)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.VoicePackageUrl)
         </dd>
     </dl>
     
