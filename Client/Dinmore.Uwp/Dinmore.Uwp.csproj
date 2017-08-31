@@ -103,11 +103,13 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Infrastructure\Media\IVoicePlayer.cs" />
     <Compile Include="AudioCapturePermissions.cs" />
     <Compile Include="Infrastructure\Media\PlayList.cs" />
     <Compile Include="Infrastructure\Media\PlayListGroup.cs" />
     <Compile Include="Infrastructure\Media\PlayListItem.cs" />
     <Compile Include="Infrastructure\Media\VoicePlayer.cs" />
+    <Compile Include="Infrastructure\Media\VoicePlayerGenerated.cs" />
     <Compile Include="Models\ApiRequestParameters.cs" />
     <Compile Include="Models\DetectionStates.cs" />
     <Compile Include="Models\Emotion.cs" />
@@ -186,6 +188,7 @@
     <Content Include="Assets\StoreLogo.scale-150.png" />
     <Content Include="Assets\StoreLogo.scale-200.png" />
     <Content Include="Assets\StoreLogo.scale-400.png" />
+    <Content Include="Assets\Voice\12-17.txt" />
     <Content Include="Assets\Voice\hello.wav">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -240,6 +243,8 @@
     <Content Include="Assets\Voice\hiya.wav">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="Assets\Voice\intro.txt" />
+    <Content Include="Assets\Voice\introgroup.txt" />
     <Content Include="Assets\Voice\sheep.wav">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

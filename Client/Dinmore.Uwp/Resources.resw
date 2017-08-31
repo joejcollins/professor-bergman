@@ -121,14 +121,8 @@
     <value>1000</value>
     <comment>The minimum interval required between API calls.</comment>
   </data>
-  <data name="Device" xml:space="preserve">
-    <value>Panorama </value>
-  </data>
-  <data name="Exhibit" xml:space="preserve">
-    <value>Panoramic view of Shrewsbury 1630</value>
-  </data>
   <data name="FaceApiUrl" xml:space="preserve">
-    <value>http://blackradley-dinmore-api.azurewebsites.net/api/patrons</value>
+    <value>http://blackradley-dinmore-api-develop.azurewebsites.net/api/patrons</value>
   </data>
   <data name="NumberMilliSecsForFacesToDisappear" xml:space="preserve">
     <value>5000</value>

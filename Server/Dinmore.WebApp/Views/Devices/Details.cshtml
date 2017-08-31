@@ -1,0 +1,51 @@
+@model Dinmore.WebApp.Models.Device
+
+@{
+    ViewData["Title"] = "Device Details";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<div>
+    <h4>Device</h4>
+    <hr />
+    <dl class="dl-horizontal">
+        <dt>
+            @Html.DisplayNameFor(model => model.Id)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.Id)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.DeviceLabel)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.DeviceLabel)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.Exhibit)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.Exhibit)
+        </dd>
+        <dt>
+            @Html.DisplayNameFor(model => model.Venue)
+        </dt>
+        <dd>
+            @Html.DisplayFor(model => model.Venue)
+        </dd>
+
+        <dt>
+            QR Code
+        </dt>
+        <dd>
+            <br />
+            <qrcode alt="QR Code for @Model.Id" content="@Model.Id" />
+        </dd>
+
+    </dl>
+</div>
+<div>
+    @Html.ActionLink("Delete", "Delete", new { id = Model.Id }) |
+    <a asp-action="Index">Back to List</a>
+</div>

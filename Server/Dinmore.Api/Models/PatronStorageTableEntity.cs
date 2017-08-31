@@ -6,15 +6,15 @@ using System.Threading.Tasks;
 
 namespace dinmore.api.Models
 {
-    public class PatronSighting : TableEntity
+    public class PatronStorageTableEntity : TableEntity
     {
-        public PatronSighting(string persistedFaceId, string sightingId)
+        public PatronStorageTableEntity(string persistedFaceId, string sightingId)
         {
             this.PartitionKey = persistedFaceId;
             this.RowKey = sightingId;
         }
 
-        public PatronSighting() { }
+        public PatronStorageTableEntity() { }
 
         public string Exhibit { get; set; }
 
