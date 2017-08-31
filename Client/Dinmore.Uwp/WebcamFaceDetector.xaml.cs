@@ -187,9 +187,7 @@ namespace Dinmore.Uwp
         /// </summary>
         /// <returns>Async Task object returning true if initialization and streaming were successful and false if an exception occurred.</returns>
         private async Task<bool> StartWebcamStreaming()
-        {
-
-            Infrastructure.VoicePackageService.DownloadVoice("de724d1e-85ba-416b-8784-93ab178b68a8");
+        {         
          
             // Speak the IP Out loud
             Say($"The IP Address is: {GetLocalIp()}");
@@ -308,6 +306,12 @@ namespace Dinmore.Uwp
                             LogStatusMessage($"Found a QR code with device id {result} which has been stored to app storage.", StatusSeverity.Info);
 
                             Say("I found a QR code, thanks.");
+
+                            Say("Downloading the voice package.");
+                            await Infrastructure.VoicePackageService.DownloadVoice(result);
+                            Say("Unpacking the voice package.");
+                            await Infrastructure.VoicePackageService.UnpackVoice(result);
+                            this.vp = await Infrastructure.VoicePackageService.VoicePlayerFactory(result);
 
                             ChangeDetectionState(DetectionStates.WaitingForFaces);
                         }
@@ -655,6 +659,7 @@ namespace Dinmore.Uwp
                     }
                     VisualizationCanvas.Children.Clear();
                     //this needs to test for ifGUID as stored
+                    ApplicationData.Current.LocalSettings.Values[_DeviceIdKey] = null;
                     var deviceId = ApplicationData.Current.LocalSettings.Values[_DeviceIdKey];
                     if (deviceId == null)
                     {

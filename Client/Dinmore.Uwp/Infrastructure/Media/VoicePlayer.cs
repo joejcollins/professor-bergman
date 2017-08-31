@@ -4,14 +4,14 @@ using Dinmore.Uwp.Models;
 using Windows.Media.Playback;
 using Windows.Media.Core;
 using System.Collections.Generic;
+using Windows.Data.Json;
+using Windows.Storage;
 
 namespace Dinmore.Uwp.Infrastructure.Media
 {
 
     internal class VoicePlayer : IDisposable, IVoicePlayer
     {
-        // see https://docs.microsoft.com/en-us/windows/uwp/audio-video-camera/play-audio-and-video-with-mediaplayer
-
 
         private static MediaPlayer mediaPlayer = new MediaPlayer();
         private MediaPlaybackList playbackList = new MediaPlaybackList();
@@ -28,9 +28,18 @@ namespace Dinmore.Uwp.Infrastructure.Media
             if (numberOfPeople > 1)
                 playListGroup = PlayListGroup.HelloMultipleFace;
 
-            PlayWav(PlayList.List
-                        .Where(w => w.PlayListGroup == playListGroup).ToList()
-                    );
+            var jsonArray = this.ja.GetNamedArray(playListGroup.ToString("F"));
+
+            var playlist = new List<PlayListItem>();
+            
+            foreach (var item in jsonArray)
+            {
+                playlist.Add(new PlayListItem(playListGroup, 1, item.GetString()));
+
+            }
+
+            PlayWav(playlist);
+
         }
 
         public void Play(DetectionState currentState)
@@ -38,9 +47,16 @@ namespace Dinmore.Uwp.Infrastructure.Media
             var avgAge = currentState.FacesFoundByApi.OrderByDescending(x => x.faceAttributes.age).First().faceAttributes.age;
             PlayListGroup playListGroup = GetPlayListGroupByDemographic(avgAge);
 
-                PlayWav(PlayList.List
-                        .Where(w => w.PlayListGroup == playListGroup).ToList()
-                    );   
+            var jsonArray = this.ja.GetNamedArray(playListGroup.ToString("F"));
+
+            var playlist = new List<PlayListItem>();
+            foreach (var item in jsonArray)
+            {
+                playlist.Add(new PlayListItem(playListGroup, 1, item.GetString()));
+
+            }
+
+            PlayWav(playlist);   
            
         }
 
@@ -59,7 +75,7 @@ namespace Dinmore.Uwp.Infrastructure.Media
             return PlayListGroup.Demographic12to17;
         }
 
-        public void PlayWav(List<PlayListItem> list)
+        public async void PlayWav(List<PlayListItem> list)
         {
             mediaPlayer.PlaybackSession.PositionChanged += PositionChanged;
                var session = mediaPlayer.PlaybackSession;
@@ -70,7 +86,8 @@ namespace Dinmore.Uwp.Infrastructure.Media
             playbackList.Items.Clear();
             foreach (var item in list)
             {
-                var mediaSource = MediaSource.CreateFromUri(new Uri($"ms-appx:///{item.Name}"));
+                var file = await this.folder.GetFileAsync(item.Name);
+                var mediaSource = MediaSource.CreateFromStorageFile(file);
                 playbackList.Items.Add(new MediaPlaybackItem(mediaSource));
             }
 
@@ -92,8 +109,7 @@ namespace Dinmore.Uwp.Infrastructure.Media
         }
 
         private void PlaybackList_CurrentItemChanged(MediaPlaybackList sender, CurrentMediaPlaybackItemChangedEventArgs args)
-        {
-           
+        {           
             if (StopOnNextTrack)
             {
                 mediaPlayer.Pause();
@@ -102,25 +118,16 @@ namespace Dinmore.Uwp.Infrastructure.Media
             }
         }
 
-        private void Session_PlaybackStateChanged(MediaPlaybackSession sender, object args)
-        {
-            if (sender.PlaybackState == MediaPlaybackState.Paused)
-            {
-                //var session = mediaPlayer.PlaybackSession;
-                //mediaPlayer.CurrentState = MediaPlaybackState.None;
-                //TODO at this point we should be at the end
-                //session.PlaybackStateChanged += Session_PlaybackStateChanged;
-                //var session = mediaPlayer.PlaybackSession;
-                //session.Position = TimeSpan.Zero;
-
-                //mediaPlayer.Source = MediaSource.CreateFromUri(new Uri($"ms-appx:///Assets/Voice/goat.wav"));
-
-                //mediaPlayer.Play();
-            }
-        }
-
         private bool disposedValue = false; // To detect redundant calls
         private bool StopOnNextTrack;
+        private JsonObject ja;
+        private StorageFolder folder;
+
+        public VoicePlayer(JsonObject ja, StorageFolder folder)
+        {
+            this.ja = ja;
+            this.folder = folder;
+        }
 
         protected virtual void Dispose(bool disposing)
         {
