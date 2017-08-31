@@ -17,8 +17,8 @@ namespace Dinmore.WebApp.TagHelpers
         {
             var QrcodeContent = context.AllAttributes["content"].Value.ToString();
             var alt = context.AllAttributes["alt"].Value.ToString();
-            var width = 400; // width of the Qr Code    
-            var height = 400; // height of the Qr Code    
+            var width = 300; // width of the Qr Code    
+            var height = 300; // height of the Qr Code    
             var margin = 0;
             var qrCodeWriter = new ZXing.BarcodeWriterPixelData
             {
@@ -50,8 +50,9 @@ namespace Dinmore.WebApp.TagHelpers
                 bitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
                 output.TagName = "img";
                 output.Attributes.Clear();
-                output.Attributes.Add("width", width);
-                output.Attributes.Add("height", height);
+                //output.Attributes.Add("width", width);
+                //output.Attributes.Add("height", height);
+                output.Attributes.Add("class", "img-fluid"); //Bootstrap repsonsive image class
                 output.Attributes.Add("alt", alt);
                 output.Attributes.Add("src", String.Format("data:image/png;base64,{0}", Convert.ToBase64String(ms.ToArray())));
             }
