@@ -1,5 +1,6 @@
 using Dinmore.Uwp.Infrastructure.Media;
 using Dinmore.Uwp.Models;
+using Microsoft.Bot.Connector.DirectLine;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -17,6 +18,7 @@ using Windows.Media.Capture;
 using Windows.Media.Core;
 using Windows.Media.FaceAnalysis;
 using Windows.Media.MediaProperties;
+using Windows.Media.SpeechRecognition;
 using Windows.System.Threading;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -70,6 +72,21 @@ namespace Dinmore.Uwp
         /// Semaphore to ensure FaceTracking logic only executes one at a time
         /// </summary>
         private SemaphoreSlim frameProcessingSemaphore = new SemaphoreSlim(1);
+
+        /// <summary>
+        /// Detect any speech to the app
+        /// </summary>
+        private SpeechRecognizer speechRecognizer;
+
+        /// <summary>
+        /// Bot direct line channel
+        /// </summary>
+        private DirectLineClient directLine;
+
+        /// <summary>
+        /// Bot conversation 
+        /// </summary>
+        private Conversation conversation;
 
         private double ApiIntervalMs;
         private int NumberMilliSecsForFacesToDisappear;

@@ -149,4 +149,7 @@
   <data name="TurnOnDisplay" xml:space="preserve">
     <value>false</value>
   </data>
+  <data name="BotDirectLineSecret" xml:space="preserve">
+    <value />
+  </data>
 </root>
