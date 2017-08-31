@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26228.4
+VisualStudioVersion = 15.0.26730.12
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dinmore.Api", "Dinmore.Api\Dinmore.Api.csproj", "{F3108E6F-952E-4F36-95A6-A737224A0AA5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dinmore.Api", "Dinmore.Api\Dinmore.Api.csproj", "{F3108E6F-952E-4F36-95A6-A737224A0AA5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dinmore.WebApp", "Dinmore.WebApp\Dinmore.WebApp.csproj", "{FFA9E62F-F88C-47F4-9817-C9C59CBABE89}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,8 +17,15 @@ Global
 		{F3108E6F-952E-4F36-95A6-A737224A0AA5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F3108E6F-952E-4F36-95A6-A737224A0AA5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F3108E6F-952E-4F36-95A6-A737224A0AA5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FFA9E62F-F88C-47F4-9817-C9C59CBABE89}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FFA9E62F-F88C-47F4-9817-C9C59CBABE89}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FFA9E62F-F88C-47F4-9817-C9C59CBABE89}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FFA9E62F-F88C-47F4-9817-C9C59CBABE89}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {622B39B7-3DBD-4EAD-ABD4-132D1B97B3FC}
 	EndGlobalSection
 EndGlobal

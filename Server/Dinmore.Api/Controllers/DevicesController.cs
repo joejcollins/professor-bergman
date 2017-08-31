@@ -21,6 +21,19 @@ namespace Dinmore.Api.Controllers
         }
 
         /// <summary>
+        /// Returns an array of all devices in the storage table
+        /// </summary>
+        /// <returns>An array of all devices in the storage table</returns>
+        [HttpGet]
+        public async Task<IActionResult> Get()
+        {
+            //log device data to storage
+            var devices = await _storeRepository.GetDevices();
+
+            return Ok(devices);
+        }
+
+        /// <summary>
         /// Adds a device to the store for devices
         /// </summary>
         /// <param name="Label">The label for the device in the context of the exhibit. Normally 001, 002, 003 etc</param>

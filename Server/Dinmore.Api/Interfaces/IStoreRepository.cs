@@ -14,5 +14,7 @@ namespace dinmore.api.Interfaces
         Task DeleteDevice(string deviceId);
 
         Task<Device> GetDevice(string deviceId);
+
+        Task<IEnumerable<Device>> GetDevices();
     }
 }
