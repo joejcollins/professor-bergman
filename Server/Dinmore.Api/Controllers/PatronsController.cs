@@ -89,8 +89,9 @@ namespace dinmore.api.Controllers
                         GetTopEmotion(face.faceAttributes.emotion) :
                         null,
                     Time = DateTime.UtcNow,
-                    Device = device.DeviceLabel,
+                    DeviceLabel = device.DeviceLabel,
                     Exhibit = device.Exhibit,
+                    Venue = device.Venue,
                     CurrentFaceListId = currentFaceListId,
                     IsInList = (similarPersistedFaces.Count() > 0),
                     FaceMatchConfidence = persistedFaceConfidence

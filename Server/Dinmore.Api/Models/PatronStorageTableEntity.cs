@@ -19,6 +19,7 @@ namespace dinmore.api.Models
         public string Exhibit { get; set; }
 
         public string Device { get; set; }
+        public string Venue { get; set; }
 
         public DateTime TimeOfSighting { get; set; }
 

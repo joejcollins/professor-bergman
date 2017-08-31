@@ -5,27 +5,9 @@ using System.Threading.Tasks;
 
 namespace dinmore.api.Models
 {
-    public class FaceAttributes
-    {
-        public double smile { get; set; }
-        public HeadPose headPose { get; set; }
-        public string gender { get; set; }
-        public double age { get; set; }
-        public FacialHair facialHair { get; set; }
-        public string glasses { get; set; }
-        public Emotion emotion { get; set; }
-        public Blur blur { get; set; }
-        public Exposure exposure { get; set; }
-        public Noise noise { get; set; }
-        public Makeup makeup { get; set; }
-        public List<object> accessories { get; set; }
-        public Occlusion occlusion { get; set; }
-        public Hair hair { get; set; }
-    }
-
     public class HeadPose
     {
-        public int pitch { get; set; }
+        public double pitch { get; set; }
         public double roll { get; set; }
         public double yaw { get; set; }
     }
@@ -41,12 +23,12 @@ namespace dinmore.api.Models
     {
         public double anger { get; set; }
         public double contempt { get; set; }
-        public int disgust { get; set; }
-        public int fear { get; set; }
+        public double disgust { get; set; }
+        public double fear { get; set; }
         public double happiness { get; set; }
         public double neutral { get; set; }
         public double sadness { get; set; }
-        public int surprise { get; set; }
+        public double surprise { get; set; }
     }
 
     public class Blur
@@ -92,4 +74,24 @@ namespace dinmore.api.Models
         public bool invisible { get; set; }
         public List<HairColor> hairColor { get; set; }
     }
+
+    public class FaceAttributes
+    {
+        public double smile { get; set; }
+        public HeadPose headPose { get; set; }
+        public string gender { get; set; }
+        public double age { get; set; }
+        public FacialHair facialHair { get; set; }
+        public string glasses { get; set; }
+        public Emotion emotion { get; set; }
+        public Blur blur { get; set; }
+        public Exposure exposure { get; set; }
+        public Noise noise { get; set; }
+        public Makeup makeup { get; set; }
+        public List<object> accessories { get; set; }
+        public Occlusion occlusion { get; set; }
+        public Hair hair { get; set; }
+    }
+
+
 }
