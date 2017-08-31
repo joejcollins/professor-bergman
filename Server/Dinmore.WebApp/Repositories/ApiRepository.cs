@@ -105,9 +105,19 @@ namespace Dinmore.WebApp.Repositories
                     { "DeviceLabel", device.DeviceLabel},
                     { "Exhibit", device.Exhibit },
                     { "Venue", device.Venue },
+                    { "Interactive", ConvertBoolToString(device.Interactive) },
+                    { "VerbaliseSystemInformationOnBoot", ConvertBoolToString(device.VerbaliseSystemInformationOnBoot) },
+                    { "SoundOn", ConvertBoolToString(device.SoundOn) },
+                    { "ResetOnBoot", ConvertBoolToString(device.ResetOnBoot) },
+                    { "VoicePackageUrl", device.VoicePackageUrl },
                 };
 
             return parameters;
+        }
+
+        private string ConvertBoolToString(bool b)
+        {
+            return b ? "true" : "false";
         }
 
     }
