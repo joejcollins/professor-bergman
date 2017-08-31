@@ -48,15 +48,36 @@ namespace Dinmore.WebApp.Controllers
         {
             try
             {
-                var device = new Device()
-                {
-                    DeviceLabel = collection["DeviceLabel"],
-                    Exhibit = collection["Exhibit"],
-                    Venue = collection["Venue"],
-                    Id = Guid.NewGuid(),
-                };
+                var device = CastFormCollectionToDevice(collection);
 
                 var result = _apiRepository.StoreDevice(device);
+
+                return RedirectToAction("Index");
+            }
+            catch
+            {
+                return View();
+            }
+        }
+
+        // GET: Devices/Edit/5
+        public async Task<ActionResult> Edit(Guid id)
+        {
+            var device = await GetDeviceById(id);
+
+            return View(device);
+        }
+
+        // POST: Devices/Edit/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Edit(Guid id, IFormCollection collection)
+        {
+            try
+            {
+                var device = CastFormCollectionToDevice(collection);
+
+                var result = _apiRepository.ReplaceDevice(device);
 
                 return RedirectToAction("Index");
             }
@@ -97,6 +118,23 @@ namespace Dinmore.WebApp.Controllers
             var data = await _apiRepository.GetDevices();
             var dataList = data.ToList();
             var device = dataList.Where(d => d.Id == id).FirstOrDefault();
+            return device;
+        }
+
+        private Device CastFormCollectionToDevice(IFormCollection collection)
+        {
+            var id = (string.IsNullOrEmpty(collection["Id"])) ?
+                Guid.NewGuid() :
+                Guid.Parse(collection["Id"]);
+
+            var device = new Device()
+            {
+                DeviceLabel = collection["DeviceLabel"],
+                Exhibit = collection["Exhibit"],
+                Venue = collection["Venue"],
+                Id = id,
+            };
+
             return device;
         }
     }
