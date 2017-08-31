@@ -52,6 +52,21 @@ namespace Dinmore.Api.Controllers
             return Ok(deviceId);
         }
 
+        //// PUT: api/Default1/5
+        //[HttpPut("{id}")]
+        //public void Put(int id, [FromBody]string value)
+        //{
+        //}
+        // PUT: api/Devices2/5
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Put(string id, Device device)
+        {
+            // Update device data to storage
+            await _storeRepository.ReplaceDevice(device);
+
+            return Ok(device);
+        }
+
         /// <summary>
         /// Deletes a device from storage
         /// </summary>

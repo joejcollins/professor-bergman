@@ -64,6 +64,28 @@ namespace Dinmore.WebApp.Repositories
             return responseString;
         }
 
+        public async Task<string> ReplaceDevice(Device device)
+        {
+            var responseString = string.Empty;
+            using (var httpClient = new HttpClient())
+            {
+                httpClient.BaseAddress = new Uri(_appSettings.ApiRoot + "/api/devices/" +device.Id.ToString());
+
+                //construct full API endpoint uri
+                var parameters = new Dictionary<string, string> {
+                    { "DeviceLabel", device.DeviceLabel},
+                    { "Exhibit", device.Exhibit },
+                    { "Venue", device.Venue },
+                };
+                var apiUri = QueryHelpers.AddQueryString(httpClient.BaseAddress.ToString(), parameters);
+
+                var responseMessage = await httpClient.PutAsync(apiUri, null);
+                responseString = await responseMessage.Content.ReadAsStringAsync();
+            }
+
+            return responseString;
+        }
+
         public async Task<IEnumerable<Device>> GetDevices()
         {
             var responseString = string.Empty;
