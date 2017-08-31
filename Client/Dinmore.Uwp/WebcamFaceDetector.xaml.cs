@@ -459,8 +459,8 @@ namespace Dinmore.Uwp
                     content.Headers.ContentType = new MediaTypeWithQualityHeaderValue("application/octet-stream");
 
                     //build url to pass to api, REFACTORING NEEDED
-                    var url = AppSettings.GetString("FaceApiUrl");
                     var deviceId = ApplicationData.Current.LocalSettings.Values[_DeviceIdKey];
+                    var url = AppSettings.GetString("FaceApiUrl");
                     var returnFaceLandmarks = AppSettings.GetString("ReturnFaceLandmarks");
                     var returnFaceAttributes = AppSettings.GetString("ReturnFaceAttributes");
                     url = $"{url}?deviceid={deviceId}&returnFaceLandmarks={returnFaceLandmarks}&returnFaceAttributes={returnFaceAttributes}";
