@@ -143,18 +143,25 @@ namespace Dinmore.Uwp
 
         private string GetLocalIp()
         {
-            var icp = NetworkInformation.GetInternetConnectionProfile();
+            // TODO: Make this more robust https://github.com/blackradley/dinmore/issues/29
+            try
+            {
+                var icp = NetworkInformation.GetInternetConnectionProfile();
 
-            if (icp?.NetworkAdapter == null) return null;
-            var hostname =
-                NetworkInformation.GetHostNames()
-                    .SingleOrDefault(
-                        hn =>
-                            hn.IPInformation?.NetworkAdapter != null && hn.IPInformation.NetworkAdapter.NetworkAdapterId
-                            == icp.NetworkAdapter.NetworkAdapterId);
+                if (icp?.NetworkAdapter == null) return null;
+                var hostname =
+                    NetworkInformation.GetHostNames()
+                        .SingleOrDefault(
+                            hn =>
+                                hn.IPInformation?.NetworkAdapter != null && hn.IPInformation.NetworkAdapter.NetworkAdapterId
+                                == icp.NetworkAdapter.NetworkAdapterId);
 
-            // the ip address
-            return hostname?.CanonicalName;
+                // the ip address
+                return hostname?.CanonicalName;
+            }
+            catch {
+                return "Greedy, 2 network cards";
+            }
         }
 
 
