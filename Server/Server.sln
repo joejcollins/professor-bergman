@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.26730.12
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dinmore.Api", "Dinmore.Api\Dinmore.Api.csproj", "{F3108E6F-952E-4F36-95A6-A737224A0AA5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dinmore.WebApp", "Dinmore.WebApp\Dinmore.WebApp.csproj", "{FFA9E62F-F88C-47F4-9817-C9C59CBABE89}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dinmore.WebApp", "Dinmore.WebApp\Dinmore.WebApp.csproj", "{FFA9E62F-F88C-47F4-9817-C9C59CBABE89}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

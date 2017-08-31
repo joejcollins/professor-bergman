@@ -132,10 +132,20 @@ namespace Dinmore.WebApp.Controllers
                 DeviceLabel = collection["DeviceLabel"],
                 Exhibit = collection["Exhibit"],
                 Venue = collection["Venue"],
+                Interactive = CheckboxToBool(collection["Interactive"]),
+                VerbaliseSystemInformationOnBoot = CheckboxToBool(collection["VerbaliseSystemInformationOnBoot"]),
+                SoundOn = CheckboxToBool(collection["SoundOn"]),
+                ResetOnBoot = CheckboxToBool(collection["ResetOnBoot"]),
+                VoicePackageUrl = collection["VoicePackageUrl"],
                 Id = id,
             };
 
             return device;
+        }
+
+        private bool CheckboxToBool(string checkValue)
+        {
+            return checkValue.Contains("true");
         }
     }
 }

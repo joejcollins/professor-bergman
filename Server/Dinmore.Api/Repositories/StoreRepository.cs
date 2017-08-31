@@ -33,6 +33,11 @@ namespace dinmore.api.Repositories
             deviceStorageTableEntity.DeviceLabel = device.DeviceLabel;
             deviceStorageTableEntity.Exhibit = device.Exhibit;
             deviceStorageTableEntity.Venue = device.Venue;
+            deviceStorageTableEntity.Interactive = device.Interactive;
+            deviceStorageTableEntity.VerbaliseSystemInformationOnBoot = device.VerbaliseSystemInformationOnBoot;
+            deviceStorageTableEntity.SoundOn = device.SoundOn;
+            deviceStorageTableEntity.ResetOnBoot = device.ResetOnBoot;
+            deviceStorageTableEntity.VoicePackageUrl = device.VoicePackageUrl;
 
             TableOperation insertOperation = TableOperation.Insert(deviceStorageTableEntity);
 
@@ -141,6 +146,11 @@ namespace dinmore.api.Repositories
                 updateEntity.Exhibit = device.Exhibit;
                 updateEntity.DeviceLabel = device.DeviceLabel;
                 updateEntity.Venue = device.Venue;
+                updateEntity.Interactive = device.Interactive;
+                updateEntity.VerbaliseSystemInformationOnBoot = device.VerbaliseSystemInformationOnBoot;
+                updateEntity.SoundOn = device.SoundOn;
+                updateEntity.ResetOnBoot = device.ResetOnBoot;
+                updateEntity.VoicePackageUrl = device.VoicePackageUrl;
 
                 // Create the Replace TableOperation.
                 TableOperation updateOperation = TableOperation.Replace(updateEntity);
@@ -175,7 +185,7 @@ namespace dinmore.api.Repositories
                 patronStorageTableEntity.Exhibit = patron.Exhibit;
                 patronStorageTableEntity.Venue = patron.Venue;
                 patronStorageTableEntity.Gender = patron.FaceAttributes.gender;
-                patronStorageTableEntity.Age = Math.Round(patron.FaceAttributes.age,0);
+                patronStorageTableEntity.Age = Math.Round(patron.FaceAttributes.age, 0);
                 patronStorageTableEntity.PrimaryEmotion = patron.PrimaryEmotion;
                 patronStorageTableEntity.TimeOfSighting = (DateTime)patron.Time;
                 patronStorageTableEntity.Smile = patron.FaceAttributes.smile;
@@ -195,7 +205,12 @@ namespace dinmore.api.Repositories
                 Id = new Guid(deviceEntity.RowKey),
                 Exhibit = deviceEntity.Exhibit,
                 DeviceLabel = deviceEntity.DeviceLabel,
-                Venue = deviceEntity.Venue
+                Venue = deviceEntity.Venue,
+                Interactive = deviceEntity.Interactive,
+                ResetOnBoot = deviceEntity.ResetOnBoot,
+                SoundOn = deviceEntity.SoundOn,
+                VerbaliseSystemInformationOnBoot = deviceEntity.VerbaliseSystemInformationOnBoot,
+                VoicePackageUrl = deviceEntity.VoicePackageUrl
             };
 
             return device;
