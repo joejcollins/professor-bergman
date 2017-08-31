@@ -38,7 +38,7 @@ namespace dinmore.api.Controllers
         /// <param name="returnFaceAttributes"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<IActionResult> Post(string deviceId, bool returnFaceLandmarks = false, string returnFaceAttributes = "age,gender,headPose,smile,facialHair,glasses,emotion")
+        public async Task<IActionResult> Post(string deviceId, bool returnFaceLandmarks = true, string returnFaceAttributes = "age,gender,headPose,smile,facialHair,glasses,emotion,hair,makeup,occlusion,accessories,blur,exposure,noise")
         {
             if (string.IsNullOrEmpty(deviceId)) return BadRequest();
 
