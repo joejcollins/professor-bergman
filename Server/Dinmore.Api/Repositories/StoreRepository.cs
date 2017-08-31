@@ -171,8 +171,9 @@ namespace dinmore.api.Repositories
                 var sightingId = Guid.NewGuid().ToString(); //This is a unique ID for the sighting
 
                 PatronStorageTableEntity patronStorageTableEntity = new PatronStorageTableEntity(persistedFaceId, sightingId);
-                patronStorageTableEntity.Device = patron.Device;
+                patronStorageTableEntity.Device = patron.DeviceLabel;
                 patronStorageTableEntity.Exhibit = patron.Exhibit;
+                patronStorageTableEntity.Venue = patron.Venue;
                 patronStorageTableEntity.Gender = patron.FaceAttributes.gender;
                 patronStorageTableEntity.Age = Math.Round(patron.FaceAttributes.age,0);
                 patronStorageTableEntity.PrimaryEmotion = patron.PrimaryEmotion;
