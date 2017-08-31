@@ -18,6 +18,14 @@ namespace Dinmore.WebApp.Controllers
             _apiRepository = apiRepository;
         }
 
+        // GET: Devices/Details/5
+        public async Task<ActionResult> Details(Guid id)
+        {
+            var device = await GetDeviceById(id);
+
+            return View(device);
+        }
+
         // GET: Devices
         public async Task<ActionResult> Index()
         {
