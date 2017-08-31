@@ -81,7 +81,7 @@ namespace dinmore.api.Models
     public class EyeLeftOuter
     {
         public double x { get; set; }
-        public double y { get; set; }
+        public int y { get; set; }
     }
 
     public class EyeLeftTop
@@ -147,7 +147,7 @@ namespace dinmore.api.Models
     public class NoseRootRight
     {
         public double x { get; set; }
-        public double y { get; set; }
+        public int y { get; set; }
     }
 
     public class NoseLeftAlarTop
@@ -170,7 +170,7 @@ namespace dinmore.api.Models
 
     public class NoseRightAlarOutTip
     {
-        public double x { get; set; }
+        public int x { get; set; }
         public double y { get; set; }
     }
 
