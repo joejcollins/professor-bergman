@@ -62,10 +62,7 @@ namespace Dinmore.WebApp.Controllers
         // GET: Devices/Delete/5
         public async Task<ActionResult> Delete(Guid id)
         {
-            var data = await _apiRepository.GetDevices();
-            var device = from d in data.ToList()
-                         where d.Id == id
-                         select d;
+            var device = await GetDeviceById(id);
 
             return View(device);
         }
@@ -77,7 +74,7 @@ namespace Dinmore.WebApp.Controllers
         {
             try
             {
-                // TODO: Add delete logic here
+                var result = _apiRepository.DeleteDevice(id);
 
                 return RedirectToAction("Index");
             }
@@ -85,6 +82,14 @@ namespace Dinmore.WebApp.Controllers
             {
                 return View();
             }
+        }
+
+        private async Task<Device> GetDeviceById(Guid id)
+        {
+            var data = await _apiRepository.GetDevices();
+            var dataList = data.ToList();
+            var device = dataList.Where(d => d.Id == id).FirstOrDefault();
+            return device;
         }
     }
 }

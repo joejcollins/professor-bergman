@@ -1,9 +1,14 @@
 ﻿using Dinmore.WebApp.Interfaces;
 using Dinmore.WebApp.Models;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 
 namespace Dinmore.WebApp.Repositories
@@ -19,26 +24,66 @@ namespace Dinmore.WebApp.Repositories
 
         public async Task<string> StoreDevice(Device device)
         {
-            return "ok";
+            var responseString = string.Empty;
+            using (var httpClient = new HttpClient())
+            {
+                httpClient.BaseAddress = new Uri(_appSettings.ApiRoot + "/api/devices");
+
+                //construct full API endpoint uri
+                var parameters = new Dictionary<string, string> {
+                    { "DeviceLabel", device.DeviceLabel},
+                    { "Exhibit", device.Exhibit },
+                    { "Venue", device.Venue },
+                };
+                var apiUri = QueryHelpers.AddQueryString(httpClient.BaseAddress.ToString(), parameters);
+
+                var responseMessage = await httpClient.PostAsync(apiUri, null);
+                responseString = await responseMessage.Content.ReadAsStringAsync();
+            }
+
+            return responseString;
         }
 
-        public async Task<string> DeleteDevice(string deviceId)
+        public async Task<string> DeleteDevice(Guid deviceId)
         {
-            return null;
+            var responseString = string.Empty;
+            using (var httpClient = new HttpClient())
+            {
+                httpClient.BaseAddress = new Uri(_appSettings.ApiRoot + "/api/devices");
+
+                //construct full API endpoint uri
+                var parameters = new Dictionary<string, string> {
+                    { "DeviceId", deviceId.ToString() }
+                };
+                var apiUri = QueryHelpers.AddQueryString(httpClient.BaseAddress.ToString(), parameters);
+
+                var responseMessage = await httpClient.DeleteAsync(apiUri);
+                responseString = await responseMessage.Content.ReadAsStringAsync();
+            }
+
+            return responseString;
         }
 
         public async Task<IEnumerable<Device>> GetDevices()
         {
-            //mock data
+            var responseString = string.Empty;
+            using (var httpClient = new HttpClient())
+            {
+                httpClient.BaseAddress = new Uri(_appSettings.ApiRoot + "/api/devices");
+                var responseMessage = await httpClient.GetAsync(httpClient.BaseAddress);
+                responseString = await responseMessage.Content.ReadAsStringAsync();
+            }
+            
+            var responseArray = JArray.Parse(responseString);
             var devices = new List<Device>();
-            devices.Add(new Device() { Id = Guid.Parse("09937208-5c7f-4ae0-a698-7beddeb2e272"), DeviceLabel = "Mason", Exhibit = "MakerSpace", Venue = "HarrisMuseum" });
-            devices.Add(new Device() { Id = Guid.Parse("2e8ad036-4ebc-4555-8e3a-9502e456c768"), DeviceLabel = "Joe", Exhibit = "MakerSpace", Venue = "HarrisMuseum" });
-            devices.Add(new Device() { Id = Guid.Parse("9a651e76-615b-4694-b7e5-466b3f53cbd3"), DeviceLabel = "MartinB", Exhibit = "MakerSpace", Venue = "HarrisMuseum" });
-            devices.Add(new Device() { Id = Guid.Parse("de724d1e-85ba-416b-8784-93ab178b68a8"), DeviceLabel = "MartinK", Exhibit = "MakerSpace", Venue = "HarrisMuseum" });
-
-
+            foreach (var deviceResponse in responseArray)
+            {
+                var face = JsonConvert.DeserializeObject<Device>(deviceResponse.ToString());
+                devices.Add(face);
+            }
 
             return devices;
         }
+
     }
 }
