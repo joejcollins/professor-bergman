@@ -103,6 +103,7 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Converters.cs" />
     <Compile Include="Infrastructure\Media\IVoicePlayer.cs" />
     <Compile Include="Infrastructure\Media\PlayList.cs" />
     <Compile Include="Infrastructure\Media\PlayListGroup.cs" />
