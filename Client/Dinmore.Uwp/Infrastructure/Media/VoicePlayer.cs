@@ -77,7 +77,6 @@ namespace Dinmore.Uwp.Infrastructure.Media
             // Check if playlist changes track and stop if the viewer has exited
             playbackList.CurrentItemChanged += PlaybackList_CurrentItemChanged;
             mediaPlayer.Source = playbackList;
-            IsCurrentlyPlaying = true;
             mediaPlayer.Play();
             
         }

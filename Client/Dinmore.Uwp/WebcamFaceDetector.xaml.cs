@@ -487,7 +487,7 @@ namespace Dinmore.Uwp
             }
             catch (Exception ex)
             {
-                vp.IsCurrentlyPlaying = false;
+                vp.Stop();
                 LogStatusMessage("Exception: " + ex.ToString(), StatusSeverity.Error);
                 return null;
             }
