@@ -109,6 +109,42 @@ namespace dinmore.api.Repositories
             }
         }
 
+        public async Task<IEnumerable<Device>> GetDevices()
+        {
+            var storageAccount = CloudStorageAccount.Parse(_appSettings.TableStorageConnectionString);
+
+            var blobClient = storageAccount.CreateCloudTableClient();
+
+            var table = blobClient.GetTableReference(_appSettings.StoreDeviceContainerName);
+
+            TableContinuationToken token = null;
+
+            var entities = new List<DeviceStorageTableEntity>();
+            do
+            {
+                var queryResult = await table.ExecuteQuerySegmentedAsync(new TableQuery<DeviceStorageTableEntity>(), token);
+                entities.AddRange(queryResult.Results);
+                token = queryResult.ContinuationToken;
+            } while (token != null);
+
+            // create list of device objects from the storage entities
+            var devices = new List<Device>();
+            foreach (var deviceStorageTableEntity in entities)
+            {
+                var device = new Device()
+                {
+                    Id = new Guid(deviceStorageTableEntity.RowKey),
+                    Exhibit = deviceStorageTableEntity.Exhibit,
+                    DeviceLabel = deviceStorageTableEntity.DeviceLabel,
+                    Venue = deviceStorageTableEntity.Venue
+                };
+
+                devices.Add(device);
+            }
+
+            return devices;
+        }
+
         public async Task StorePatrons(List<Patron> patrons)
         {
             var storageAccount = CloudStorageAccount.Parse(_appSettings.TableStorageConnectionString);
