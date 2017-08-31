@@ -272,6 +272,7 @@
     <Content Include="Assets\Voice\sheep.wav">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="Assets\Voice\silent.wav" />
     <Content Include="Assets\WideTile.scale-100.png" />
     <Content Include="Assets\WideTile.scale-125.png" />
     <Content Include="Assets\WideTile.scale-150.png" />
