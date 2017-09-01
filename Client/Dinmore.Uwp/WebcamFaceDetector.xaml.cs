@@ -659,7 +659,9 @@ namespace Dinmore.Uwp
                     }
                     VisualizationCanvas.Children.Clear();
                     //this needs to test for ifGUID as stored
-                    ApplicationData.Current.LocalSettings.Values[_DeviceIdKey] = null;
+
+                    // I use this to delete the device stuf during testing
+                    // ApplicationData.Current.LocalSettings.Values[_DeviceIdKey] = null;
                     var deviceId = ApplicationData.Current.LocalSettings.Values[_DeviceIdKey];
                     if (deviceId == null)
                     {
