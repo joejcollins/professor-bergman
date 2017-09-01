@@ -141,6 +141,7 @@ namespace Dinmore.Uwp
         {
             //get device settings here
             await UpdateDeviceSettings();
+            this.vp = await Infrastructure.VoicePackageService.VoicePlayerFactory();
 
             // Speak the IP Out loud
             if (ApplicationData.Current.LocalSettings.Values[_VerbaliseSystemInformationOnBootKey] != null)
