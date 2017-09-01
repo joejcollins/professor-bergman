@@ -1,6 +1,5 @@
 using Dinmore.Uwp.Infrastructure.Media;
 using Dinmore.Uwp.Models;
-using Microsoft.Bot.Connector.DirectLine;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -12,7 +11,6 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
-using Windows.ApplicationModel;
 using Windows.ApplicationModel.Resources;
 using Windows.Devices.Enumeration;
 using Windows.Graphics.Imaging;
@@ -20,11 +18,9 @@ using Windows.Media;
 using Windows.Media.Capture;
 using Windows.Media.FaceAnalysis;
 using Windows.Media.MediaProperties;
-using Windows.Media.Playback;
 using Windows.Media.SpeechRecognition;
 using Windows.Networking.Connectivity;
 using Windows.Storage;
-using Windows.Storage.Streams;
 using Windows.System.Threading;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Media;
@@ -169,17 +165,19 @@ namespace Dinmore.Uwp
                 ChangeDetectionState(DetectionStates.Startup);
             }
 
-            // Prompt for permission to access the microphone. This request will only happen
-            // once, it will not re-prompt if the user rejects the permission.
-            if (await AudioCapturePermissions.RequestMicrophonePermission())
+            if (!(bool)ApplicationData.Current.LocalSettings.Values[_InteractiveKey])
             {
-                await StartSpeechRecognition();
+                // Prompt for permission to access the microphone. This request will only happen
+                // once, it will not re-prompt if the user rejects the permission.
+                if (await AudioCapturePermissions.RequestMicrophonePermission())
+                {
+                    await StartSpeechRecognition();
+                }
+                else
+                {
+                    Say(AppSettings.GetString("MicrophonePrivacyDeclined"));
+                }
             }
-            else
-            {
-                Say(AppSettings.GetString("MicrophonePrivacyDeclined"));
-            }
-        }
         }
 
         /// <summary>
@@ -245,7 +243,7 @@ namespace Dinmore.Uwp
                 var responseString = string.Empty;
                 using (var httpClient = new HttpClient())
                 {
-                    httpClient.BaseAddress = new Uri(deviceApiUrl +"/" + device.Id.ToString());
+                    httpClient.BaseAddress = new Uri(deviceApiUrl + "/" + device.Id.ToString());
 
                     //construct full API endpoint uri
                     var fullUrl = $"{httpClient.BaseAddress}?DeviceLabel={device.DeviceLabel}&Exhibit={device.Exhibit}&Venue={device.Venue}&Interactive={device.Interactive}&VerbaliseSystemInformationOnBoot={device.VerbaliseSystemInformationOnBoot}&SoundOn={device.SoundOn}&ResetOnBoot=false&VoicePackageUrl={device.VoicePackageUrl}&QnAKnowledgeBaseId={device.QnAKnowledgeBaseId}";
@@ -287,7 +285,8 @@ namespace Dinmore.Uwp
                 // the ip address
                 return hostname?.CanonicalName;
             }
-            catch {
+            catch
+            {
                 return "Greedy, 2 network cards";
             }
         }
@@ -334,7 +333,7 @@ namespace Dinmore.Uwp
             bool successful = true;
             try
             {
-                
+
                 mediaCapture = new MediaCapture();
 
                 // For this scenario, we only need Video (not microphone) so specify this in the initializer.
@@ -591,7 +590,7 @@ namespace Dinmore.Uwp
                             Say("Unpacking the voice package.");
                             await Infrastructure.VoicePackageService.UnpackVoice(voicePackageUrl);
                             this.vp = await Infrastructure.VoicePackageService.VoicePlayerFactory(voicePackageUrl);
-                            
+
                             ChangeDetectionState(DetectionStates.WaitingForFaces);
                         }
                         break;
@@ -655,11 +654,14 @@ namespace Dinmore.Uwp
                         {
                             LogStatusMessage("Starting playlist", StatusSeverity.Info);
 
-                            var play = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
+                            if ((bool)ApplicationData.Current.LocalSettings.Values[_InteractiveKey])
                             {
-                                //TODO This needs 
-                                vp.Play(CurrentState);
-                            });
+                                var play = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
+                                {
+                                    //TODO This needs 
+                                    vp.Play(CurrentState);
+                                });
+                            }
                         }
 
                         // Check here if the media has finished playing or the people have walked away.

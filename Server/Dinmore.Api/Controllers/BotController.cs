@@ -70,13 +70,18 @@ namespace Dinmore.Api.Controllers
 
             DirectLineClient directLine = new DirectLineClient(_appSettings.BotDirectLineSecret);
 
+            if (device.QnAKnowledgeBaseId == null)
+            {
+                return Ok("QnA KnowledgeBase not found for given device Id - please check configuration");
+            }
+
             // Send a new activity to the bot with the captured text to process
             Activity activity = new Activity
             {
                 Text = message,
                 From = new ChannelAccount(_appSettings.BotFromUserName),
                 Type = ActivityTypes.Message,
-                ChannelData = GetExhibitQnAModelIdFromDeviceId()
+                ChannelData = device.QnAKnowledgeBaseId
             };
 
             var conversation = await directLine.Conversations.StartConversationAsync();
@@ -85,16 +90,6 @@ namespace Dinmore.Api.Controllers
             // TODO: Investigate conversation Id format being returned
             var res = botResponse.Id?.Replace("|0000000", "");
             return Ok(res);
-        }
-
-        /// <summary>
-        /// Resolve the deviceId to a specific QnA Maker KnowledgeBaseId
-        /// </summary>
-        private string GetExhibitQnAModelIdFromDeviceId()
-        {
-            // TODO: Refactor this
-            string retVal = "get this from MK's device";
-            return retVal;
         }
     }
 }

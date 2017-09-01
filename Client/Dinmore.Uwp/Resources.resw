@@ -122,7 +122,7 @@
     <comment>The minimum interval required between API calls.</comment>
   </data>
   <data name="FaceApiUrl" xml:space="preserve">
-    <value>http://localhost:21252/api/patrons</value>
+    <value>http://blackradley-dinmore-api-develop.azurewebsites.net/api/patrons</value>
   </data>
   <data name="NumberMilliSecsForFacesToDisappear" xml:space="preserve">
     <value>5000</value>
