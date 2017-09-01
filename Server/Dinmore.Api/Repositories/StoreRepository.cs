@@ -26,18 +26,19 @@ namespace dinmore.api.Repositories
 
         public async Task StoreDevice(Device device)
         {
-            var storageAccount = CloudStorageAccount.Parse(_appSettings.TableStorageConnectionString);
-
-            var blobClient = storageAccount.CreateCloudTableClient();
-
-            var table = blobClient.GetTableReference(_appSettings.StoreDeviceContainerName);
-
-            await table.CreateIfNotExistsAsync();
+            //get cloudtable
+            var table = await GetCloudTable(_appSettings.TableStorageConnectionString, _appSettings.StoreDeviceContainerName);
 
             DeviceStorageTableEntity deviceStorageTableEntity = new DeviceStorageTableEntity(device.Id.ToString(), _appSettings.StoreDevicePartitionKey);
             deviceStorageTableEntity.DeviceLabel = device.DeviceLabel;
             deviceStorageTableEntity.Exhibit = device.Exhibit;
             deviceStorageTableEntity.Venue = device.Venue;
+            deviceStorageTableEntity.Interactive = device.Interactive;
+            deviceStorageTableEntity.VerbaliseSystemInformationOnBoot = device.VerbaliseSystemInformationOnBoot;
+            deviceStorageTableEntity.SoundOn = device.SoundOn;
+            deviceStorageTableEntity.ResetOnBoot = device.ResetOnBoot;
+            deviceStorageTableEntity.VoicePackageUrl = device.VoicePackageUrl;
+            deviceStorageTableEntity.QnAKnowledgeBaseId = device.QnAKnowledgeBaseId;
 
             TableOperation insertOperation = TableOperation.Insert(deviceStorageTableEntity);
 
@@ -46,11 +47,8 @@ namespace dinmore.api.Repositories
 
         public async Task DeleteDevice(string deviceId)
         {
-            var storageAccount = CloudStorageAccount.Parse(_appSettings.TableStorageConnectionString);
-
-            var tableClient = storageAccount.CreateCloudTableClient();
-            
-            var table = tableClient.GetTableReference(_appSettings.StoreDeviceContainerName);
+            //get cloudtable
+            var table = await GetCloudTable(_appSettings.TableStorageConnectionString, _appSettings.StoreDeviceContainerName);
 
             // Create a retrieve operation that expects a customer entity.
             TableOperation retrieveOperation = TableOperation.Retrieve<DeviceStorageTableEntity>(_appSettings.StoreDevicePartitionKey, deviceId);
@@ -76,11 +74,8 @@ namespace dinmore.api.Repositories
 
         public async Task<Device> GetDevice(string deviceId)
         {
-            var storageAccount = CloudStorageAccount.Parse(_appSettings.TableStorageConnectionString);
-
-            var blobClient = storageAccount.CreateCloudTableClient();
-
-            var table = blobClient.GetTableReference(_appSettings.StoreDeviceContainerName);
+            //get cloudtable
+            var table = await GetCloudTable(_appSettings.TableStorageConnectionString, _appSettings.StoreDeviceContainerName);
 
             // Create a retrieve operation that takes a customer entity.
             TableOperation retrieveOperation = TableOperation.Retrieve<DeviceStorageTableEntity>(_appSettings.StoreDevicePartitionKey, deviceId);
@@ -93,13 +88,8 @@ namespace dinmore.api.Repositories
                 // get the result and create a new device from the data
                 var deviceResult = (DeviceStorageTableEntity)retrievedResult.Result;
 
-                var device = new Device()
-                {
-                    Id = new Guid(deviceResult.RowKey),
-                    Exhibit = deviceResult.Exhibit,
-                    DeviceLabel = deviceResult.DeviceLabel,
-                    Venue = deviceResult.Venue
-                };
+                // Create a new Device object from result
+                var device = CastDeviceStorageTableEntityToDevice(deviceResult);
 
                 return device;
             }
@@ -111,11 +101,8 @@ namespace dinmore.api.Repositories
 
         public async Task<IEnumerable<Device>> GetDevices()
         {
-            var storageAccount = CloudStorageAccount.Parse(_appSettings.TableStorageConnectionString);
-
-            var blobClient = storageAccount.CreateCloudTableClient();
-
-            var table = blobClient.GetTableReference(_appSettings.StoreDeviceContainerName);
+            //get cloudtable
+            var table = await GetCloudTable(_appSettings.TableStorageConnectionString, _appSettings.StoreDeviceContainerName);
 
             TableContinuationToken token = null;
 
@@ -131,13 +118,8 @@ namespace dinmore.api.Repositories
             var devices = new List<Device>();
             foreach (var deviceStorageTableEntity in entities)
             {
-                var device = new Device()
-                {
-                    Id = new Guid(deviceStorageTableEntity.RowKey),
-                    Exhibit = deviceStorageTableEntity.Exhibit,
-                    DeviceLabel = deviceStorageTableEntity.DeviceLabel,
-                    Venue = deviceStorageTableEntity.Venue
-                };
+                // Create a new Device object from result
+                var device = CastDeviceStorageTableEntityToDevice(deviceStorageTableEntity);
 
                 devices.Add(device);
             }
@@ -145,15 +127,54 @@ namespace dinmore.api.Repositories
             return devices;
         }
 
+        public async Task<Device> ReplaceDevice(Device device)
+        {
+            //get cloudtable
+            var table = await GetCloudTable(_appSettings.TableStorageConnectionString, _appSettings.StoreDeviceContainerName);
+
+            // Create a retrieve operation that takes a customer entity.
+            TableOperation retrieveOperation = TableOperation.Retrieve<DeviceStorageTableEntity>(_appSettings.StoreDevicePartitionKey, device.Id.ToString());
+
+            // Execute the operation.
+            TableResult retrievedResult = await table.ExecuteAsync(retrieveOperation);
+
+            // Assign the result to a CustomerEntity object.
+            var updateEntity = (DeviceStorageTableEntity)retrievedResult.Result;
+
+            if (updateEntity != null)
+            {
+                // Change the entity
+                updateEntity.Exhibit = device.Exhibit;
+                updateEntity.DeviceLabel = device.DeviceLabel;
+                updateEntity.Venue = device.Venue;
+                updateEntity.Interactive = device.Interactive;
+                updateEntity.VerbaliseSystemInformationOnBoot = device.VerbaliseSystemInformationOnBoot;
+                updateEntity.SoundOn = device.SoundOn;
+                updateEntity.ResetOnBoot = device.ResetOnBoot;
+                updateEntity.VoicePackageUrl = device.VoicePackageUrl;
+                updateEntity.QnAKnowledgeBaseId = device.QnAKnowledgeBaseId;
+
+                // Create the Replace TableOperation.
+                TableOperation updateOperation = TableOperation.Replace(updateEntity);
+
+                // Execute the operation.
+                await table.ExecuteAsync(updateOperation);
+
+                // Create a new Device object from result
+                var newDevice = CastDeviceStorageTableEntityToDevice(updateEntity);
+
+                return newDevice;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
         public async Task StorePatrons(List<Patron> patrons)
         {
-            var storageAccount = CloudStorageAccount.Parse(_appSettings.TableStorageConnectionString);
-
-            var blobClient = storageAccount.CreateCloudTableClient();
-
-            var table = blobClient.GetTableReference(_appSettings.StorePatronContainerName);
-
-            await table.CreateIfNotExistsAsync();
+            //get cloudtable
+            var table = await GetCloudTable(_appSettings.TableStorageConnectionString, _appSettings.StorePatronContainerName);
 
             //insert an entity (row) per patron
             foreach (var patron in patrons)
@@ -162,10 +183,11 @@ namespace dinmore.api.Repositories
                 var sightingId = Guid.NewGuid().ToString(); //This is a unique ID for the sighting
 
                 PatronStorageTableEntity patronStorageTableEntity = new PatronStorageTableEntity(persistedFaceId, sightingId);
-                patronStorageTableEntity.Device = patron.Device;
+                patronStorageTableEntity.Device = patron.DeviceLabel;
                 patronStorageTableEntity.Exhibit = patron.Exhibit;
+                patronStorageTableEntity.Venue = patron.Venue;
                 patronStorageTableEntity.Gender = patron.FaceAttributes.gender;
-                patronStorageTableEntity.Age = Math.Round(patron.FaceAttributes.age,0);
+                patronStorageTableEntity.Age = Math.Round(patron.FaceAttributes.age, 0);
                 patronStorageTableEntity.PrimaryEmotion = patron.PrimaryEmotion;
                 patronStorageTableEntity.TimeOfSighting = (DateTime)patron.Time;
                 patronStorageTableEntity.Smile = patron.FaceAttributes.smile;
@@ -178,7 +200,37 @@ namespace dinmore.api.Repositories
             }
         }
 
+        private Device CastDeviceStorageTableEntityToDevice(DeviceStorageTableEntity deviceEntity)
+        {
+            var device = new Device()
+            {
+                Id = new Guid(deviceEntity.RowKey),
+                Exhibit = deviceEntity.Exhibit,
+                DeviceLabel = deviceEntity.DeviceLabel,
+                Venue = deviceEntity.Venue,
+                Interactive = deviceEntity.Interactive,
+                ResetOnBoot = deviceEntity.ResetOnBoot,
+                SoundOn = deviceEntity.SoundOn,
+                VerbaliseSystemInformationOnBoot = deviceEntity.VerbaliseSystemInformationOnBoot,
+                VoicePackageUrl = deviceEntity.VoicePackageUrl,
+                QnAKnowledgeBaseId = deviceEntity.QnAKnowledgeBaseId
+            };
 
+            return device;
+        }
+
+        private async Task<CloudTable> GetCloudTable(string tableConnectionString, string containerName)
+        {
+            var storageAccount = CloudStorageAccount.Parse(tableConnectionString);
+
+            var blobClient = storageAccount.CreateCloudTableClient();
+
+            var table = blobClient.GetTableReference(containerName);
+
+            await table.CreateIfNotExistsAsync();
+
+            return table;
+        }
 
     }
 }

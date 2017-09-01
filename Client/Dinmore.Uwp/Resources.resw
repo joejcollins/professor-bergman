@@ -143,6 +143,17 @@
   <data name="TurnOnDisplay" xml:space="preserve">
     <value>false</value>
   </data>
+  <data name="ReturnFaceAttributes" xml:space="preserve">
+    <value>age,gender,smile,emotion,accessories,facialHair</value>
+    <comment>Comma delimited list of attributes that the patrons API shoudl return for each face. Full list and default if omitted is age,gender,headPose,smile,facialHair,glasses,emotion,hair,makeup,occlusion,accessories,blur,exposure,noise</comment>
+  </data>
+  <data name="ReturnFaceLandmarks" xml:space="preserve">
+    <value>false</value>
+    <comment>Whether to ask the patrons API to return face landmarks (location of pupil etc). Default if omited is true</comment>
+  </data>
+  <data name="DeviceApiUrl" xml:space="preserve">
+    <value>http://blackradley-dinmore-api-develop.azurewebsites.net/api/devices</value>
+  </data>
   <data name="MicrophonePrivacyDeclined" xml:space="preserve">
     <value>Please check application setting in Settings-&gt;Privacy-&gt;Microphone privacy settings</value>
     <comment>Required for speech recognition</comment>
@@ -156,6 +167,6 @@
     <comment>Provide one to override the default webcamera</comment>
   </data>
   <data name="BotApiUrl" xml:space="preserve">
-    <value>http://localhost:21252/api/bot</value>
+    <value>http://blackradley-dinmore-api-develop.azurewebsites.net/api/bot</value>
   </data>
 </root>

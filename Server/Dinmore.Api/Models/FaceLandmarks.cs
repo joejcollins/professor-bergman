@@ -5,37 +5,6 @@ using System.Threading.Tasks;
 
 namespace dinmore.api.Models
 {
-    public class FaceLandmarks
-    {
-        public PupilLeft pupilLeft { get; set; }
-        public PupilRight pupilRight { get; set; }
-        public NoseTip noseTip { get; set; }
-        public MouthLeft mouthLeft { get; set; }
-        public MouthRight mouthRight { get; set; }
-        public EyebrowLeftOuter eyebrowLeftOuter { get; set; }
-        public EyebrowLeftInner eyebrowLeftInner { get; set; }
-        public EyeLeftOuter eyeLeftOuter { get; set; }
-        public EyeLeftTop eyeLeftTop { get; set; }
-        public EyeLeftBottom eyeLeftBottom { get; set; }
-        public EyeLeftInner eyeLeftInner { get; set; }
-        public EyebrowRightInner eyebrowRightInner { get; set; }
-        public EyebrowRightOuter eyebrowRightOuter { get; set; }
-        public EyeRightInner eyeRightInner { get; set; }
-        public EyeRightTop eyeRightTop { get; set; }
-        public EyeRightBottom eyeRightBottom { get; set; }
-        public EyeRightOuter eyeRightOuter { get; set; }
-        public NoseRootLeft noseRootLeft { get; set; }
-        public NoseRootRight noseRootRight { get; set; }
-        public NoseLeftAlarTop noseLeftAlarTop { get; set; }
-        public NoseRightAlarTop noseRightAlarTop { get; set; }
-        public NoseLeftAlarOutTip noseLeftAlarOutTip { get; set; }
-        public NoseRightAlarOutTip noseRightAlarOutTip { get; set; }
-        public UpperLipTop upperLipTop { get; set; }
-        public UpperLipBottom upperLipBottom { get; set; }
-        public UnderLipTop underLipTop { get; set; }
-        public UnderLipBottom underLipBottom { get; set; }
-    }
-
     public class PupilLeft
     {
         public double x { get; set; }
@@ -196,5 +165,36 @@ namespace dinmore.api.Models
     {
         public double x { get; set; }
         public double y { get; set; }
+    }
+
+    public class FaceLandmarks
+    {
+        public PupilLeft pupilLeft { get; set; }
+        public PupilRight pupilRight { get; set; }
+        public NoseTip noseTip { get; set; }
+        public MouthLeft mouthLeft { get; set; }
+        public MouthRight mouthRight { get; set; }
+        public EyebrowLeftOuter eyebrowLeftOuter { get; set; }
+        public EyebrowLeftInner eyebrowLeftInner { get; set; }
+        public EyeLeftOuter eyeLeftOuter { get; set; }
+        public EyeLeftTop eyeLeftTop { get; set; }
+        public EyeLeftBottom eyeLeftBottom { get; set; }
+        public EyeLeftInner eyeLeftInner { get; set; }
+        public EyebrowRightInner eyebrowRightInner { get; set; }
+        public EyebrowRightOuter eyebrowRightOuter { get; set; }
+        public EyeRightInner eyeRightInner { get; set; }
+        public EyeRightTop eyeRightTop { get; set; }
+        public EyeRightBottom eyeRightBottom { get; set; }
+        public EyeRightOuter eyeRightOuter { get; set; }
+        public NoseRootLeft noseRootLeft { get; set; }
+        public NoseRootRight noseRootRight { get; set; }
+        public NoseLeftAlarTop noseLeftAlarTop { get; set; }
+        public NoseRightAlarTop noseRightAlarTop { get; set; }
+        public NoseLeftAlarOutTip noseLeftAlarOutTip { get; set; }
+        public NoseRightAlarOutTip noseRightAlarOutTip { get; set; }
+        public UpperLipTop upperLipTop { get; set; }
+        public UpperLipBottom upperLipBottom { get; set; }
+        public UnderLipTop underLipTop { get; set; }
+        public UnderLipBottom underLipBottom { get; set; }
     }
 }

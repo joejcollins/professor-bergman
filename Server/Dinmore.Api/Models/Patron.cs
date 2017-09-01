@@ -21,9 +21,11 @@ namespace dinmore.api.Models
 
         public Nullable<DateTime> Time { get; set; }
 
-        public string Device { get; set; }
+        public string DeviceLabel { get; set; }
 
         public string Exhibit { get; set; }
+
+        public string Venue { get; set; }
 
         public string CurrentFaceListId { get; set; }
 

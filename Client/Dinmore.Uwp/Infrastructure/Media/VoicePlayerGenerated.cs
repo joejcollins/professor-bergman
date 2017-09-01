@@ -9,6 +9,11 @@ using Windows.Media.SpeechSynthesis;
 using Windows.Media.Core;
 using System.IO;
 using Windows.Storage;
+using Windows.UI.Xaml.Controls;
+using Windows.Storage.Streams;
+using Windows.ApplicationModel;
+using Windows.ApplicationModel.Core;
+using Windows.UI.Core;
 
 namespace Dinmore.Uwp.Infrastructure.Media
 {
@@ -20,7 +25,13 @@ namespace Dinmore.Uwp.Infrastructure.Media
         private bool StopOnNextTrack;
 
         public VoicePlayerGenerated() {
-            mediaPlayer.PlaybackSession.PositionChanged += PositionChanged;
+            mediaPlayer.MediaEnded += MediaPlayer_MediaEnded; ;
+        }
+
+        private async void MediaPlayer_MediaEnded(MediaPlayer sender, object args)
+        {
+            IsCurrentlyPlaying = false;
+            await PlayNext();
         }
 
         private Queue<string> speechlist = new Queue<string>();
@@ -81,7 +92,8 @@ namespace Dinmore.Uwp.Infrastructure.Media
             return file;
         }
 
-        public void Say(string phrase) {        
+        public void Say(string phrase) {  
+            
             this.Say(new List<string>() { phrase });
         }
 
@@ -115,14 +127,6 @@ namespace Dinmore.Uwp.Infrastructure.Media
             speechlist.Clear();
         }
 
-        private async void PositionChanged(MediaPlaybackSession sender, object args)
-        {
-            if (sender.Position >= sender.NaturalDuration && sender.NaturalDuration > new TimeSpan(0))
-            {
-                IsCurrentlyPlaying = false;
-                await PlayNext();
-            }
-        }
         public void Dispose()
         {
             Dispose(true);

@@ -12,6 +12,8 @@ namespace Dinmore.WebApp.Interfaces
 
         Task<string> DeleteDevice(Guid deviceId);
 
+        Task<string> ReplaceDevice(Device device);
+
         Task<IEnumerable<Device>> GetDevices();
     }
 }
