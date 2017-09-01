@@ -115,6 +115,7 @@
     <Compile Include="Infrastructure\VoicePackageService.cs" />
     <Compile Include="Models\ApiRequestParameters.cs" />
     <Compile Include="Models\DetectionStates.cs" />
+    <Compile Include="Models\Device.cs" />
     <Compile Include="Models\Emotion.cs" />
     <Compile Include="Models\FaceAttributes.cs" />
     <Compile Include="Models\FaceLandmarks.cs" />
