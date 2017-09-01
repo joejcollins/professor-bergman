@@ -103,6 +103,9 @@ namespace Dinmore.Uwp
 
         private VoicePlayerGenerated vpGenerated = new VoicePlayerGenerated();
 
+
+        private const string _DeviceExhibitKey = "DeviceExhibit";
+        private const string _DeviceLabelKey = "DeviceLabel";
         private bool IsSpeaking = false;
 
         private const string _DeviceIdKey = "DeviceId";
@@ -148,14 +151,17 @@ namespace Dinmore.Uwp
         {
             //get device settings here
             await UpdateDeviceSettings();
+            this.vp = await Infrastructure.VoicePackageService.VoicePlayerFactory();
 
-            // Speak the IP Out loud
+            // VerbaliseSystemInformation
             if (ApplicationData.Current.LocalSettings.Values[_VerbaliseSystemInformationOnBootKey] != null)
             {
                 var verbaliseSystemInformationOnBoot = (bool)ApplicationData.Current.LocalSettings.Values[_VerbaliseSystemInformationOnBootKey];
                 if (verbaliseSystemInformationOnBoot)
                 {
-                    Say($"The IP Address is: {GetLocalIp()}");
+                    Say($"The IP address is: {GetLocalIp()}");
+                    Say($"The exhibit is {ApplicationData.Current.LocalSettings.Values[_DeviceExhibitKey]}");
+                    Say($"The device label is {ApplicationData.Current.LocalSettings.Values[_DeviceLabelKey]}");
                 }
             }
 
@@ -233,6 +239,8 @@ namespace Dinmore.Uwp
                 Say($"Resetting device settings.");
 
                 //set all settings to null
+                ApplicationData.Current.LocalSettings.Values[_DeviceExhibitKey] = null;
+                ApplicationData.Current.LocalSettings.Values[_DeviceLabelKey] = null;
                 ApplicationData.Current.LocalSettings.Values[_DeviceIdKey] = null;
                 ApplicationData.Current.LocalSettings.Values[_InteractiveKey] = null;
                 ApplicationData.Current.LocalSettings.Values[_VerbaliseSystemInformationOnBootKey] = null;
@@ -258,6 +266,8 @@ namespace Dinmore.Uwp
             else
             {
                 // Store device settings in Windows local app settings
+                ApplicationData.Current.LocalSettings.Values[_DeviceExhibitKey] = device.Exhibit;
+                ApplicationData.Current.LocalSettings.Values[_DeviceLabelKey] = device.DeviceLabel;
                 ApplicationData.Current.LocalSettings.Values[_InteractiveKey] = device.Interactive;
                 ApplicationData.Current.LocalSettings.Values[_VerbaliseSystemInformationOnBootKey] = device.VerbaliseSystemInformationOnBoot;
                 ApplicationData.Current.LocalSettings.Values[_SoundOnKey] = device.SoundOn;

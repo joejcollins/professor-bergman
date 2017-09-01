@@ -13,6 +13,16 @@ namespace Dinmore.Uwp.Infrastructure
 {
     public class VoicePackageService
     {
+        private const string _DeviceExhibitKey = "DeviceExhibit";
+        private const string _DeviceLabelKey = "DeviceLabel";
+        private const string _DeviceIdKey = "DeviceId";
+        private const string _InteractiveKey = "Interactive";
+        private const string _VerbaliseSystemInformationOnBootKey = "VerbaliseSystemInformationOnBoot";
+        private const string _SoundOnKey = "SoundOn";
+        private const string _ResetOnBootKey = "ResetOnBoot";
+        private const string _VoicePackageUrlKey = "VoicePackageUrl";
+        private const string _QnAKnowledgeBaseIdKey = "QnAKnowledgeBaseId";
+
         public async static Task<string> UnpackVoice(string voicePackageUrl) {
             // Will be null if folder dosen't exist
             var storageFolder = await ApplicationData.Current.LocalFolder.TryGetItemAsync("Assets\\Voice\\");
@@ -87,6 +97,18 @@ namespace Dinmore.Uwp.Infrastructure
         static string ExtractFileNameFromUrl(string url)
         {
             return url.Substring(url.LastIndexOf('/') + 1).Replace(".zip", "").Trim();
+        }
+
+        internal static async Task<IVoicePlayer> VoicePlayerFactory()
+        {
+            if (ApplicationData.Current.LocalSettings.Values[_VoicePackageUrlKey] != null)
+            {
+                return await VoicePlayerFactory(ApplicationData.Current.LocalSettings.Values[_VoicePackageUrlKey].ToString());
+            }
+            else
+            {
+                return new VoicePlayerGenerated();
+            }
         }
     }
 }
