@@ -24,5 +24,7 @@ namespace Dinmore.Api.Models
         public bool ResetOnBoot { get; set; }
 
         public string VoicePackageUrl { get; set; }
+
+        public string QnAKnowledgeBaseId { get; set; }
     }
 }
