@@ -142,6 +142,16 @@ namespace Dinmore.Uwp
             //get device settings here
             await UpdateDeviceSettings();
 
+            // Speak the IP Out loud
+            if (ApplicationData.Current.LocalSettings.Values[_VerbaliseSystemInformationOnBootKey] != null)
+            {
+                var verbaliseSystemInformationOnBoot = (bool)ApplicationData.Current.LocalSettings.Values[_VerbaliseSystemInformationOnBootKey];
+                if (verbaliseSystemInformationOnBoot)
+                {
+                    Say($"The IP Address is: {GetLocalIp()}");
+                }
+            }
+
             // The 'await' operation can only be used from within an async method but class constructors
             // cannot be labeled as async, and so we'll initialize FaceTracker here.
             if (faceTracker == null)
@@ -257,11 +267,7 @@ namespace Dinmore.Uwp
         /// </summary>
         /// <returns>Async Task object returning true if initialization and streaming were successful and false if an exception occurred.</returns>
         private async Task<bool> StartWebcamStreaming()
-        {         
-         
-            // Speak the IP Out loud
-            Say($"The IP Address is: {GetLocalIp()}");
-
+        {
             bool successful = true;
             try
             { 
@@ -374,13 +380,18 @@ namespace Dinmore.Uwp
                             LogStatusMessage($"Found a QR code with device id {result} which has been stored to app storage.", StatusSeverity.Info);
 
                             Say("I found a QR code, thanks.");
+
+                            // Get device settings
                             await this.UpdateDeviceSettings();
 
+                            // Update voice package
+                            var voicePackageUrl = (string)ApplicationData.Current.LocalSettings.Values[_VoicePackageUrlKey];
+
                             Say("Downloading the voice package.");
-                            await Infrastructure.VoicePackageService.DownloadVoice(result);
+                            await Infrastructure.VoicePackageService.DownloadVoice(voicePackageUrl);
                             Say("Unpacking the voice package.");
-                            await Infrastructure.VoicePackageService.UnpackVoice(result);
-                            this.vp = await Infrastructure.VoicePackageService.VoicePlayerFactory(result);
+                            await Infrastructure.VoicePackageService.UnpackVoice(voicePackageUrl);
+                            this.vp = await Infrastructure.VoicePackageService.VoicePlayerFactory(voicePackageUrl);
                             
                             ChangeDetectionState(DetectionStates.WaitingForFaces);
                         }
@@ -536,7 +547,7 @@ namespace Dinmore.Uwp
                     var content = new StreamContent(new MemoryStream(image));
                     content.Headers.ContentType = new MediaTypeWithQualityHeaderValue("application/octet-stream");
 
-                    //build url to pass to api, REFACTORING NEEDED
+                    //build url to pass to api
                     var deviceId = ApplicationData.Current.LocalSettings.Values[_DeviceIdKey];
                     var url = AppSettings.GetString("FaceApiUrl");
                     var returnFaceLandmarks = AppSettings.GetString("ReturnFaceLandmarks");
@@ -731,7 +742,7 @@ namespace Dinmore.Uwp
                     var deviceId = ApplicationData.Current.LocalSettings.Values[_DeviceIdKey];
                     if (deviceId == null)
                     {
-                        Say("I have no device ID. I'm now onboarding which means I am looking for a QR code containing a device ID GUID, you can get this from the device API.");
+                        Say("I have no device ID. I'm now onboarding, show me a QR code containing a device ID.");
                         ChangeDetectionState(DetectionStates.OnBoarding);
                     }
                     else
