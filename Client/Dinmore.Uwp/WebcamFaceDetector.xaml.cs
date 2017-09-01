@@ -99,6 +99,12 @@ namespace Dinmore.Uwp
         private VoicePlayerGenerated vpGenerated = new VoicePlayerGenerated();
 
         private const string _DeviceIdKey = "DeviceId";
+        private const string _InteractiveKey = "Interactive";
+        private const string _VerbaliseSystemInformationOnBootKey = "VerbaliseSystemInformationOnBoot";
+        private const string _SoundOnKey = "SoundOn";
+        private const string _ResetOnBootKey = "ResetOnBoot";
+        private const string _VoicePackageUrlKey = "VoicePackageUrl";
+        private const string _QnAKnowledgeBaseIdKey = "QnAKnowledgeBaseId";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WebcamFaceDetector"/> class.
@@ -133,6 +139,8 @@ namespace Dinmore.Uwp
         /// <param name="e">Event data</param>
         protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
+            //get device settings here
+            await UpdateDeviceSettings();
 
             // The 'await' operation can only be used from within an async method but class constructors
             // cannot be labeled as async, and so we'll initialize FaceTracker here.
@@ -141,6 +149,62 @@ namespace Dinmore.Uwp
                 faceTracker = await FaceTracker.CreateAsync();
                 ChangeDetectionState(DetectionStates.Startup);
             }
+        }
+
+        /// <summary>
+        /// Updates local device settinsg from the device API
+        /// </summary>
+        /// <returns>True if the function worked. False if teh device has not been onboarded or there was a problem</returns>
+        private async Task<bool> UpdateDeviceSettings()
+        {
+            Say("Getting device settings");
+
+            // First check if we have a device ID (ha sthe device been onboarded yet?)
+            var deviceId = ApplicationData.Current.LocalSettings.Values[_DeviceIdKey];
+            if (deviceId == null)
+            {
+                LogStatusMessage($"No Device ID. Cannot get device settings.", StatusSeverity.Error);
+                return false;
+            } 
+
+            // Call device API to get device settings
+            Device device;
+            using (var httpClient = new HttpClient())
+            {
+                var url = AppSettings.GetString("DeviceApiUrl");
+
+                var responseMessage = await httpClient.GetAsync(url);
+
+                if (!responseMessage.IsSuccessStatusCode)
+                {
+                    LogStatusMessage($"The Device API returned a non-sucess status {responseMessage.ReasonPhrase}", StatusSeverity.Error);
+                    return false;
+                }
+
+                //This will return all devices in the Azure table store because there is not yet an API call to get a specific device
+                //TO DO: Add and API call to return a speicfic device and update this code to use that call
+                var response = await responseMessage.Content.ReadAsStringAsync();
+                var result = JsonConvert.DeserializeObject<List<Device>>(response);
+
+                //filter for this device. We won't need to do this if/when the API gets updated with the capability to return a specific device
+                device = result.Where(d => d.Id.ToString() == deviceId.ToString()).FirstOrDefault();
+            }
+
+            if (device == null)
+            {
+                LogStatusMessage($"Could not find this device in the device data store. Suggest this device is reset and re-onboarded.", StatusSeverity.Error);
+                return false;
+            }
+
+            // Store device settings in Windows local app settings
+            ApplicationData.Current.LocalSettings.Values[_InteractiveKey] = device.Interactive;
+            ApplicationData.Current.LocalSettings.Values[_VerbaliseSystemInformationOnBootKey] = device.VerbaliseSystemInformationOnBoot;
+            ApplicationData.Current.LocalSettings.Values[_SoundOnKey] = device.SoundOn;
+            ApplicationData.Current.LocalSettings.Values[_ResetOnBootKey] = device.ResetOnBoot;
+            ApplicationData.Current.LocalSettings.Values[_VoicePackageUrlKey] = device.VoicePackageUrl;
+            ApplicationData.Current.LocalSettings.Values[_QnAKnowledgeBaseIdKey] = device.QnAKnowledgeBaseId;
+
+            return true;
         }
 
         private string GetLocalIp()
@@ -310,13 +374,14 @@ namespace Dinmore.Uwp
                             LogStatusMessage($"Found a QR code with device id {result} which has been stored to app storage.", StatusSeverity.Info);
 
                             Say("I found a QR code, thanks.");
+                            await this.UpdateDeviceSettings();
 
                             Say("Downloading the voice package.");
                             await Infrastructure.VoicePackageService.DownloadVoice(result);
                             Say("Unpacking the voice package.");
                             await Infrastructure.VoicePackageService.UnpackVoice(result);
                             this.vp = await Infrastructure.VoicePackageService.VoicePlayerFactory(result);
-
+                            
                             ChangeDetectionState(DetectionStates.WaitingForFaces);
                         }
                         break;

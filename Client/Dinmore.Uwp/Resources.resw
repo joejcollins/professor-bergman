@@ -151,4 +151,7 @@
     <value>false</value>
     <comment>Whether to ask the patrons API to return face landmarks (location of pupil etc). Default if omited is true</comment>
   </data>
+  <data name="DeviceApiUrl" xml:space="preserve">
+    <value>http://blackradley-dinmore-api-develop.azurewebsites.net/api/devices</value>
+  </data>
 </root>
