@@ -173,17 +173,20 @@ namespace Dinmore.Uwp
                 ChangeDetectionState(DetectionStates.Startup);
             }
 
-            if (!(bool)ApplicationData.Current.LocalSettings.Values[_InteractiveKey])
+            if (ApplicationData.Current.LocalSettings.Values[_InteractiveKey] != null)
             {
-                // Prompt for permission to access the microphone. This request will only happen
-                // once, it will not re-prompt if the user rejects the permission.
-                if (await AudioCapturePermissions.RequestMicrophonePermission())
+                if (!(bool)ApplicationData.Current.LocalSettings.Values[_InteractiveKey])
                 {
-                    await StartSpeechRecognition();
-                }
-                else
-                {
-                    Say(AppSettings.GetString("MicrophonePrivacyDeclined"));
+                    // Prompt for permission to access the microphone. This request will only happen
+                    // once, it will not re-prompt if the user rejects the permission.
+                    if (await AudioCapturePermissions.RequestMicrophonePermission())
+                    {
+                        await StartSpeechRecognition();
+                    }
+                    else
+                    {
+                        Say(AppSettings.GetString("MicrophonePrivacyDeclined"));
+                    }
                 }
             }
         }
