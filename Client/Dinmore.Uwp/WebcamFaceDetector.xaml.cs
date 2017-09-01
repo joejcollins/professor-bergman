@@ -40,11 +40,6 @@ namespace Dinmore.Uwp
         private readonly SolidColorBrush lineBrush = new SolidColorBrush(Windows.UI.Colors.Yellow);
 
         /// <summary>
-        /// Thickness of the face bounding box lines.
-        /// </summary>
-        private readonly double lineThickness = 2.0;
-
-        /// <summary>
         /// Transparent fill for the bounding box.
         /// </summary>
         private readonly SolidColorBrush fillBrush = new SolidColorBrush(Windows.UI.Colors.Transparent);
