@@ -110,6 +110,7 @@ namespace Dinmore.WebApp.Repositories
                     { "SoundOn", ConvertBoolToString(device.SoundOn) },
                     { "ResetOnBoot", ConvertBoolToString(device.ResetOnBoot) },
                     { "VoicePackageUrl", device.VoicePackageUrl },
+                    { "QnAKnowledgeBaseId", device.QnAKnowledgeBaseId },
                 };
 
             return parameters;
