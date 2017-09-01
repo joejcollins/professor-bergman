@@ -9,7 +9,7 @@ namespace Dinmore.Bot.Dialogs
     [Serializable]
     public class QnARootDialog : QnAMakerDialog
     {
-        public QnARootDialog(string subscriptionKey, string knowledgebaseId) : base(new QnAMakerService(new QnAMakerAttribute(subscriptionKey, knowledgebaseId, "No good match in FAQ.", 0.5)))
+        public QnARootDialog(string subscriptionKey, string knowledgebaseId) : base(new QnAMakerService(new QnAMakerAttribute(subscriptionKey, knowledgebaseId, "I'm sorry, please speak clearly or rephrase your question", 0.4)))
         {
 
         }

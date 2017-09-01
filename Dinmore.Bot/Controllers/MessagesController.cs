@@ -5,6 +5,7 @@ using System.Web.Http;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Connector;
 using Dinmore.Bot.Dialogs;
+using System.Configuration;
 
 namespace Dinmore.Bot
 {
@@ -19,10 +20,12 @@ namespace Dinmore.Bot
         {
             if (activity.Type == ActivityTypes.Message)
             {
-                // TODO: Extract keys from channel data
-
-                await Conversation.SendAsync(activity, () => new QnARootDialog(knowledgebaseId: "", subscriptionKey: ""));
-
+                if (activity.ChannelData != null)
+                {
+                    // Extract the QnAKnowledgeBaseId from the channeldata - which is derived from the device at each exhibit
+                    string modelId = activity.ChannelData.ToString();
+                    await Conversation.SendAsync(activity, () => new QnARootDialog(knowledgebaseId: modelId, subscriptionKey: ConfigurationManager.AppSettings["QnASubscriptionKey"]));
+                }
             }
             else
             {

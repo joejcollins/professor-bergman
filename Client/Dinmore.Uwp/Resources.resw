@@ -122,7 +122,7 @@
     <comment>The minimum interval required between API calls.</comment>
   </data>
   <data name="FaceApiUrl" xml:space="preserve">
-    <value>http://blackradley-dinmore-api-develop.azurewebsites.net/api/patrons</value>
+    <value>http://localhost:21252/api/patrons</value>
   </data>
   <data name="NumberMilliSecsForFacesToDisappear" xml:space="preserve">
     <value>5000</value>
@@ -137,13 +137,25 @@
     <comment>If face goes away and we stop don't start the next hello until this time has elapsed</comment>
   </data>
   <data name="TimerIntervalMilliSecs" xml:space="preserve">
-    <value>250</value>
+    <value>500</value>
     <comment>Every 250ms poll the face detction api</comment>
   </data>
   <data name="TurnOnDisplay" xml:space="preserve">
     <value>false</value>
   </data>
-  <data name="BotDirectLineSecret" xml:space="preserve">
-    <value />
+  <data name="MicrophonePrivacyDeclined" xml:space="preserve">
+    <value>Please check application setting in Settings-&gt;Privacy-&gt;Microphone privacy settings</value>
+    <comment>Required for speech recognition</comment>
+  </data>
+  <data name="PrivacyStatementDeclined" xml:space="preserve">
+    <value>Privacy statement was declined.  Go to Settings -&gt; Privacy -&gt; Speech, inking and typing, and turn on speech services.</value>
+    <comment>Also required for speech recognition</comment>
+  </data>
+  <data name="CameraDeviceName" xml:space="preserve">
+    <value>Microsoft® LifeCam Cinema(TM)</value>
+    <comment>Provide one to override the default webcamera</comment>
+  </data>
+  <data name="BotApiUrl" xml:space="preserve">
+    <value>http://localhost:21252/api/bot</value>
   </data>
 </root>

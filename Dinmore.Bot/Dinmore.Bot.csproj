@@ -126,7 +126,8 @@
     <Content Include="packages.config">
       <SubType>Designer</SubType>
     </Content>
-    <Content Include="PoultonElk.json" />
+    <Content Include="QnAModels\PoultonElk_v3.0.json" />
+    <Content Include="QnAModels\PoultonElk.tsv" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
