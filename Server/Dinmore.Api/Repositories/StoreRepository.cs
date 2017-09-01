@@ -38,6 +38,7 @@ namespace dinmore.api.Repositories
             deviceStorageTableEntity.SoundOn = device.SoundOn;
             deviceStorageTableEntity.ResetOnBoot = device.ResetOnBoot;
             deviceStorageTableEntity.VoicePackageUrl = device.VoicePackageUrl;
+            deviceStorageTableEntity.QnAKnowledgeBaseId = device.QnAKnowledgeBaseId;
 
             TableOperation insertOperation = TableOperation.Insert(deviceStorageTableEntity);
 
@@ -151,6 +152,7 @@ namespace dinmore.api.Repositories
                 updateEntity.SoundOn = device.SoundOn;
                 updateEntity.ResetOnBoot = device.ResetOnBoot;
                 updateEntity.VoicePackageUrl = device.VoicePackageUrl;
+                updateEntity.QnAKnowledgeBaseId = device.QnAKnowledgeBaseId;
 
                 // Create the Replace TableOperation.
                 TableOperation updateOperation = TableOperation.Replace(updateEntity);
@@ -210,7 +212,8 @@ namespace dinmore.api.Repositories
                 ResetOnBoot = deviceEntity.ResetOnBoot,
                 SoundOn = deviceEntity.SoundOn,
                 VerbaliseSystemInformationOnBoot = deviceEntity.VerbaliseSystemInformationOnBoot,
-                VoicePackageUrl = deviceEntity.VoicePackageUrl
+                VoicePackageUrl = deviceEntity.VoicePackageUrl,
+                QnAKnowledgeBaseId = deviceEntity.QnAKnowledgeBaseId
             };
 
             return device;

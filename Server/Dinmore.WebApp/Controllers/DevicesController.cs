@@ -137,6 +137,7 @@ namespace Dinmore.WebApp.Controllers
                 SoundOn = CheckboxToBool(collection["SoundOn"]),
                 ResetOnBoot = CheckboxToBool(collection["ResetOnBoot"]),
                 VoicePackageUrl = collection["VoicePackageUrl"],
+                QnAKnowledgeBaseId = collection["QnAKnowledgeBaseId"],
                 Id = id,
             };
 
