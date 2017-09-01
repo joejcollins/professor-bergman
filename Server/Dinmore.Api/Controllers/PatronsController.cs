@@ -27,16 +27,12 @@ namespace dinmore.api.Controllers
 
         /// <summary>
         /// POST: api/Patrons
-        /// To post in PostMan set 'Content-Type' to 'application/octet-stream' and attach a file as a binary body
-        /// 'device' is a unique identifier for the device that sent the photo 
-        /// 'returnFaceLandmarks' to return things like 'upperLipBottom', there are 27 landmarks in total. Defaults to false
-        /// 'returnFaceAttributes' to return specific attributes. Accepts a comma-delimited list. Defaults to age,gender,headPose,smile,facialHair,glasses,emotion
+        /// To post in PostMan set 'Content-Type' to 'application/octet-stream' and attach a file as a binary body 
         /// </summary>
-        /// <param name="device"></param>
-        /// <param name="exhibit"></param>
-        /// <param name="returnFaceLandmarks"></param>
-        /// <param name="returnFaceAttributes"></param>
-        /// <returns></returns>
+        /// <param name="deviceId">A string representing the device ID (guid) of the device making the post. Will return BadRequest if this is missing or does not map to a device in the devices table</param>
+        /// <param name="returnFaceLandmarks">To return things like 'upperLipBottom', there are 27 landmarks in total. Defaults to true</param>
+        /// <param name="returnFaceAttributes">To return specific attributes for each face. Accepts a comma-delimited list. Defaults to age,gender,headPose,smile,facialHair,glasses,emotion,hair,makeup,occlusion,accessories,blur,exposure,noise which is the full data set avaliable from Cognitive Services</param>
+        /// <returns>An array of Patron objects in JSON format</returns>
         [HttpPost]
         public async Task<IActionResult> Post(string deviceId, bool returnFaceLandmarks = true, string returnFaceAttributes = "age,gender,headPose,smile,facialHair,glasses,emotion,hair,makeup,occlusion,accessories,blur,exposure,noise")
         {
@@ -105,10 +101,10 @@ namespace dinmore.api.Controllers
         }
 
         /// <summary>
-        /// What's the primary emotion then?
+        /// Works out the highest scoring emotion from a range of emotion scores encapsulated in an Emotion object
         /// </summary>
-        /// <param name="emotion"></param>
-        /// <returns></returns>
+        /// <param name="emotion">An Emotion object</param>
+        /// <returns>A string representing the highest scoring emotion</returns>
         private static string GetTopEmotion(Emotion emotion)
         {
             var scoresList = new Dictionary<string, double>();
@@ -132,6 +128,11 @@ namespace dinmore.api.Controllers
             return key;
         }
 
+        /// <summary>
+        /// Converts a Stream into a byte array
+        /// </summary>
+        /// <param name="input">A Stream</param>
+        /// <returns>A byte array from the input stream</returns>
         private static byte[] ReadFileStream(Stream input)
         {
             byte[] buffer = new byte[16 * 1024];
@@ -146,6 +147,11 @@ namespace dinmore.api.Controllers
             }
         }
 
+        /// <summary>
+        /// Converts a FaceRectangle to a comma delimited string of coordinates
+        /// </summary>
+        /// <param name="faceRectangle">A FaceRectangle object</param>
+        /// <returns>Comma delimited string of coordinates</returns>
         private static string FaceRectangleToString(FaceRectangle faceRectangle)
         {
             var result = string.Empty;
