@@ -169,21 +169,21 @@ namespace Dinmore.Uwp
         {
             Say("Getting device settings");
 
-            // First check if we have a device ID (ha sthe device been onboarded yet?)
+            // First check if we have a device ID (has the device been onboarded yet?)
             var deviceId = ApplicationData.Current.LocalSettings.Values[_DeviceIdKey];
             if (deviceId == null)
             {
                 LogStatusMessage($"No Device ID. Cannot get device settings.", StatusSeverity.Error);
                 return false;
-            } 
+            }
+
+            var deviceApiUrl = AppSettings.GetString("DeviceApiUrl");
 
             // Call device API to get device settings
             Device device;
             using (var httpClient = new HttpClient())
             {
-                var url = AppSettings.GetString("DeviceApiUrl");
-
-                var responseMessage = await httpClient.GetAsync(url);
+                var responseMessage = await httpClient.GetAsync(deviceApiUrl);
 
                 if (!responseMessage.IsSuccessStatusCode)
                 {
@@ -206,13 +206,44 @@ namespace Dinmore.Uwp
                 return false;
             }
 
-            // Store device settings in Windows local app settings
-            ApplicationData.Current.LocalSettings.Values[_InteractiveKey] = device.Interactive;
-            ApplicationData.Current.LocalSettings.Values[_VerbaliseSystemInformationOnBootKey] = device.VerbaliseSystemInformationOnBoot;
-            ApplicationData.Current.LocalSettings.Values[_SoundOnKey] = device.SoundOn;
-            ApplicationData.Current.LocalSettings.Values[_ResetOnBootKey] = device.ResetOnBoot;
-            ApplicationData.Current.LocalSettings.Values[_VoicePackageUrlKey] = device.VoicePackageUrl;
-            ApplicationData.Current.LocalSettings.Values[_QnAKnowledgeBaseIdKey] = device.QnAKnowledgeBaseId;
+            // Is the reset flag true?
+            if (device.ResetOnBoot)
+            {
+                Say($"Resetting device settings.");
+
+                //set all settings to null
+                ApplicationData.Current.LocalSettings.Values[_DeviceIdKey] = null;
+                ApplicationData.Current.LocalSettings.Values[_InteractiveKey] = null;
+                ApplicationData.Current.LocalSettings.Values[_VerbaliseSystemInformationOnBootKey] = null;
+                ApplicationData.Current.LocalSettings.Values[_SoundOnKey] = null;
+                ApplicationData.Current.LocalSettings.Values[_ResetOnBootKey] = null;
+                ApplicationData.Current.LocalSettings.Values[_VoicePackageUrlKey] = null;
+                ApplicationData.Current.LocalSettings.Values[_QnAKnowledgeBaseIdKey] = null;
+
+                // Call API to set ResetOnBoot flag to false to avoid a loop
+                var responseString = string.Empty;
+                using (var httpClient = new HttpClient())
+                {
+                    httpClient.BaseAddress = new Uri(deviceApiUrl +"/" + device.Id.ToString());
+
+                    //construct full API endpoint uri
+                    var fullUrl = $"{httpClient.BaseAddress}?DeviceLabel={device.DeviceLabel}&Exhibit={device.Exhibit}&Venue={device.Venue}&Interactive={device.Interactive}&VerbaliseSystemInformationOnBoot={device.VerbaliseSystemInformationOnBoot}&SoundOn={device.SoundOn}&ResetOnBoot=false&VoicePackageUrl={device.VoicePackageUrl}&QnAKnowledgeBaseId={device.QnAKnowledgeBaseId}";
+
+                    var responseMessage = await httpClient.PutAsync(fullUrl, null);
+                    responseString = await responseMessage.Content.ReadAsStringAsync();
+                }
+
+            }
+            else
+            {
+                // Store device settings in Windows local app settings
+                ApplicationData.Current.LocalSettings.Values[_InteractiveKey] = device.Interactive;
+                ApplicationData.Current.LocalSettings.Values[_VerbaliseSystemInformationOnBootKey] = device.VerbaliseSystemInformationOnBoot;
+                ApplicationData.Current.LocalSettings.Values[_SoundOnKey] = device.SoundOn;
+                ApplicationData.Current.LocalSettings.Values[_ResetOnBootKey] = device.ResetOnBoot;
+                ApplicationData.Current.LocalSettings.Values[_VoicePackageUrlKey] = device.VoicePackageUrl;
+                ApplicationData.Current.LocalSettings.Values[_QnAKnowledgeBaseIdKey] = device.QnAKnowledgeBaseId;
+            }
 
             return true;
         }
