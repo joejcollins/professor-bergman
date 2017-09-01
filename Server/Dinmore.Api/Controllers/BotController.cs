@@ -35,6 +35,7 @@ namespace Dinmore.Api.Controllers
             string result = "Sorry no responding right now";
 
             DirectLineClient directLine = new DirectLineClient(_appSettings.BotDirectLineSecret);
+            directLine.BaseUri = new Uri(_appSettings.DirectLineBaseUrl);
 
             try
             {
