@@ -22,3 +22,5 @@ Attach a screen to the Raspberry Pi so you can see what is going on.
 
 6. May not appear on "My Devices" in which case get the Ethernet IP address from the screen.
 
+Now proceed to [onboarding.md](onboarding) to create the device data entry and associate the physical device with it. This is required before the device can start using the patrons API.
+
