@@ -10,6 +10,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.ApplicationModel;
 using Windows.ApplicationModel.Resources;
 using Windows.Graphics.Imaging;
 using Windows.Media;
@@ -17,8 +18,10 @@ using Windows.Media.Capture;
 using Windows.Media.Core;
 using Windows.Media.FaceAnalysis;
 using Windows.Media.MediaProperties;
+using Windows.Media.Playback;
 using Windows.Networking.Connectivity;
 using Windows.Storage;
+using Windows.Storage.Streams;
 using Windows.System.Threading;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -95,7 +98,16 @@ namespace Dinmore.Uwp
         
         private VoicePlayerGenerated vpGenerated = new VoicePlayerGenerated();
 
+
+        private const string _DeviceExhibitKey = "DeviceExhibit";
+        private const string _DeviceLabelKey = "DeviceLabel";
         private const string _DeviceIdKey = "DeviceId";
+        private const string _InteractiveKey = "Interactive";
+        private const string _VerbaliseSystemInformationOnBootKey = "VerbaliseSystemInformationOnBoot";
+        private const string _SoundOnKey = "SoundOn";
+        private const string _ResetOnBootKey = "ResetOnBoot";
+        private const string _VoicePackageUrlKey = "VoicePackageUrl";
+        private const string _QnAKnowledgeBaseIdKey = "QnAKnowledgeBaseId";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WebcamFaceDetector"/> class.
@@ -130,6 +142,21 @@ namespace Dinmore.Uwp
         /// <param name="e">Event data</param>
         protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
+            //get device settings here
+            await UpdateDeviceSettings();
+            this.vp = await Infrastructure.VoicePackageService.VoicePlayerFactory();
+
+            // VerbaliseSystemInformation
+            if (ApplicationData.Current.LocalSettings.Values[_VerbaliseSystemInformationOnBootKey] != null)
+            {
+                var verbaliseSystemInformationOnBoot = (bool)ApplicationData.Current.LocalSettings.Values[_VerbaliseSystemInformationOnBootKey];
+                if (verbaliseSystemInformationOnBoot)
+                {
+                    Say($"The IP address is: {GetLocalIp()}");
+                    Say($"The exhibit is {ApplicationData.Current.LocalSettings.Values[_DeviceExhibitKey]}");
+                    Say($"The device label is {ApplicationData.Current.LocalSettings.Values[_DeviceLabelKey]}");
+                }
+            }
 
             // The 'await' operation can only be used from within an async method but class constructors
             // cannot be labeled as async, and so we'll initialize FaceTracker here.
@@ -138,6 +165,97 @@ namespace Dinmore.Uwp
                 faceTracker = await FaceTracker.CreateAsync();
                 ChangeDetectionState(DetectionStates.Startup);
             }
+        }
+
+        /// <summary>
+        /// Updates local device settinsg from the device API
+        /// </summary>
+        /// <returns>True if the function worked. False if teh device has not been onboarded or there was a problem</returns>
+        private async Task<bool> UpdateDeviceSettings()
+        {
+            Say("Getting device settings");
+
+            // First check if we have a device ID (has the device been onboarded yet?)
+            var deviceId = ApplicationData.Current.LocalSettings.Values[_DeviceIdKey];
+            if (deviceId == null)
+            {
+                LogStatusMessage($"No Device ID. Cannot get device settings.", StatusSeverity.Error);
+                return false;
+            }
+
+            var deviceApiUrl = AppSettings.GetString("DeviceApiUrl");
+
+            // Call device API to get device settings
+            Device device;
+            using (var httpClient = new HttpClient())
+            {
+                var responseMessage = await httpClient.GetAsync(deviceApiUrl);
+
+                if (!responseMessage.IsSuccessStatusCode)
+                {
+                    LogStatusMessage($"The Device API returned a non-sucess status {responseMessage.ReasonPhrase}", StatusSeverity.Error);
+                    return false;
+                }
+
+                //This will return all devices in the Azure table store because there is not yet an API call to get a specific device
+                //TO DO: Add and API call to return a speicfic device and update this code to use that call
+                var response = await responseMessage.Content.ReadAsStringAsync();
+                var result = JsonConvert.DeserializeObject<List<Device>>(response);
+
+                //filter for this device. We won't need to do this if/when the API gets updated with the capability to return a specific device
+                device = result.Where(d => d.Id.ToString() == deviceId.ToString()).FirstOrDefault();
+            }
+
+            if (device == null)
+            {
+                LogStatusMessage($"Could not find this device in the device data store. Suggest this device is reset and re-onboarded.", StatusSeverity.Error);
+                return false;
+            }
+
+            // Is the reset flag true?
+            if (device.ResetOnBoot)
+            {
+                Say($"Resetting device settings.");
+
+                //set all settings to null
+                ApplicationData.Current.LocalSettings.Values[_DeviceExhibitKey] = null;
+                ApplicationData.Current.LocalSettings.Values[_DeviceLabelKey] = null;
+                ApplicationData.Current.LocalSettings.Values[_DeviceIdKey] = null;
+                ApplicationData.Current.LocalSettings.Values[_InteractiveKey] = null;
+                ApplicationData.Current.LocalSettings.Values[_VerbaliseSystemInformationOnBootKey] = null;
+                ApplicationData.Current.LocalSettings.Values[_SoundOnKey] = null;
+                ApplicationData.Current.LocalSettings.Values[_ResetOnBootKey] = null;
+                ApplicationData.Current.LocalSettings.Values[_VoicePackageUrlKey] = null;
+                ApplicationData.Current.LocalSettings.Values[_QnAKnowledgeBaseIdKey] = null;
+
+                // Call API to set ResetOnBoot flag to false to avoid a loop
+                var responseString = string.Empty;
+                using (var httpClient = new HttpClient())
+                {
+                    httpClient.BaseAddress = new Uri(deviceApiUrl +"/" + device.Id.ToString());
+
+                    //construct full API endpoint uri
+                    var fullUrl = $"{httpClient.BaseAddress}?DeviceLabel={device.DeviceLabel}&Exhibit={device.Exhibit}&Venue={device.Venue}&Interactive={device.Interactive}&VerbaliseSystemInformationOnBoot={device.VerbaliseSystemInformationOnBoot}&SoundOn={device.SoundOn}&ResetOnBoot=false&VoicePackageUrl={device.VoicePackageUrl}&QnAKnowledgeBaseId={device.QnAKnowledgeBaseId}";
+
+                    var responseMessage = await httpClient.PutAsync(fullUrl, null);
+                    responseString = await responseMessage.Content.ReadAsStringAsync();
+                }
+
+            }
+            else
+            {
+                // Store device settings in Windows local app settings
+                ApplicationData.Current.LocalSettings.Values[_DeviceExhibitKey] = device.Exhibit;
+                ApplicationData.Current.LocalSettings.Values[_DeviceLabelKey] = device.DeviceLabel;
+                ApplicationData.Current.LocalSettings.Values[_InteractiveKey] = device.Interactive;
+                ApplicationData.Current.LocalSettings.Values[_VerbaliseSystemInformationOnBootKey] = device.VerbaliseSystemInformationOnBoot;
+                ApplicationData.Current.LocalSettings.Values[_SoundOnKey] = device.SoundOn;
+                ApplicationData.Current.LocalSettings.Values[_ResetOnBootKey] = device.ResetOnBoot;
+                ApplicationData.Current.LocalSettings.Values[_VoicePackageUrlKey] = device.VoicePackageUrl;
+                ApplicationData.Current.LocalSettings.Values[_QnAKnowledgeBaseIdKey] = device.QnAKnowledgeBaseId;
+            }
+
+            return true;
         }
 
         private string GetLocalIp()
@@ -191,9 +309,6 @@ namespace Dinmore.Uwp
         /// <returns>Async Task object returning true if initialization and streaming were successful and false if an exception occurred.</returns>
         private async Task<bool> StartWebcamStreaming()
         {
-            // Speak the IP Out loud
-            Say($"The IP Address is: {GetLocalIp()}");
-
             bool successful = true;
             try
             { 
@@ -307,6 +422,18 @@ namespace Dinmore.Uwp
 
                             Say("I found a QR code, thanks.");
 
+                            // Get device settings
+                            await this.UpdateDeviceSettings();
+
+                            // Update voice package
+                            var voicePackageUrl = (string)ApplicationData.Current.LocalSettings.Values[_VoicePackageUrlKey];
+
+                            Say("Downloading the voice package.");
+                            await Infrastructure.VoicePackageService.DownloadVoice(voicePackageUrl);
+                            Say("Unpacking the voice package.");
+                            await Infrastructure.VoicePackageService.UnpackVoice(voicePackageUrl);
+                            this.vp = await Infrastructure.VoicePackageService.VoicePlayerFactory(voicePackageUrl);
+                            
                             ChangeDetectionState(DetectionStates.WaitingForFaces);
                         }
                         break;
@@ -461,7 +588,7 @@ namespace Dinmore.Uwp
                     var content = new StreamContent(new MemoryStream(image));
                     content.Headers.ContentType = new MediaTypeWithQualityHeaderValue("application/octet-stream");
 
-                    //build url to pass to api, REFACTORING NEEDED
+                    //build url to pass to api
                     var deviceId = ApplicationData.Current.LocalSettings.Values[_DeviceIdKey];
                     var url = AppSettings.GetString("FaceApiUrl");
                     var returnFaceLandmarks = AppSettings.GetString("ReturnFaceLandmarks");
@@ -656,7 +783,7 @@ namespace Dinmore.Uwp
                     var deviceId = ApplicationData.Current.LocalSettings.Values[_DeviceIdKey];
                     if (deviceId == null)
                     {
-                        Say("I have no device ID. I'm now onboarding which means I am looking for a QR code containing a device ID GUID, you can get this from the device API.");
+                        Say("I have no device ID. I'm now onboarding, show me a QR code containing a device ID.");
                         ChangeDetectionState(DetectionStates.OnBoarding);
                     }
                     else
