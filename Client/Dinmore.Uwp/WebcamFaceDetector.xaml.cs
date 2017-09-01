@@ -103,6 +103,8 @@ namespace Dinmore.Uwp
 
         private VoicePlayerGenerated vpGenerated = new VoicePlayerGenerated();
 
+        private bool IsSpeaking = false;
+
         private const string _DeviceIdKey = "DeviceId";
         private const string _InteractiveKey = "Interactive";
         private const string _VerbaliseSystemInformationOnBootKey = "VerbaliseSystemInformationOnBoot";
@@ -380,136 +382,63 @@ namespace Dinmore.Uwp
 
         private async Task StartSpeechRecognition()
         {
-            // Create an instance of SpeechRecognizer.
             speechRecognizer = new SpeechRecognizer();
-            speechRecognizer.Timeouts.InitialSilenceTimeout = TimeSpan.FromDays(1);
+            await speechRecognizer.CompileConstraintsAsync();
 
-            // Compile the dictation grammar by default.
-            var speechRecogState = await speechRecognizer.CompileConstraintsAsync();
-            if (speechRecogState.Status != SpeechRecognitionResultStatus.Success)
+            while (true && !vpGenerated.IsCurrentlyPlaying)
             {
-                Debug.WriteLine($"StartSpeechRecognition: {speechRecogState.Status}");
-                LogStatusMessage($"Error starting speech recognition: {speechRecogState.Status}", StatusSeverity.Error);
-                return;
-            }
-
-            // Hook up event handlers
-            speechRecognizer.StateChanged += SpeechRecognizer_StateChanged;
-            speechRecognizer.ContinuousRecognitionSession.Completed += ContinuousRecognitionSession_Completed;
-            speechRecognizer.ContinuousRecognitionSession.ResultGenerated += ContinuousRecognitionSession_ResultGenerated;
-
-            try
-            {
-                // The recognizer can only start listening in a continuous fashion if the recognizer is currently idle.
-                // This prevents an exception from occurring.
-                if (speechRecognizer.State == SpeechRecognizerState.Idle)
-                {
-                    await speechRecognizer.ContinuousRecognitionSession.StartAsync();
-                }
-                else
-                {
-                    Debug.WriteLine($"StartSpeechRecognition speechRecognizer.State: {speechRecognizer.State}");
-                    LogStatusMessage($"Error starting speech recognition speechRecognizer.State: {speechRecognizer.State}", StatusSeverity.Error);
-                    return;
-                }
-            }
-            catch (Exception exp)
-            {
-                Debug.WriteLine($"StartSpeechRecognition: {exp}");
-                // Handle the speech privacy policy error.
-                if ((uint)exp.HResult == HResultPrivacyStatementDeclined)
-                {
-                    LogStatusMessage(AppSettings.GetString("PrivacyStatementDeclined"), StatusSeverity.Error);
-                    //await Windows.System.Launcher.LaunchUriAsync(new Uri("ms-settings:privacy-accounts"));
-                }
-                else
-                {
-                    LogStatusMessage(exp.Message, StatusSeverity.Error);
-                }
-            }
-        }
-
-        private async Task EndSpeechRecognition()
-        {
-            try
-            {
-                await speechRecognizer.StopRecognitionAsync();
-            }
-            catch (Exception exp)
-            {
-                // eat
-            }
-
-            // Unhook events
-            speechRecognizer.StateChanged -= SpeechRecognizer_StateChanged;
-            speechRecognizer.ContinuousRecognitionSession.Completed -= ContinuousRecognitionSession_Completed;
-            speechRecognizer.ContinuousRecognitionSession.ResultGenerated -= ContinuousRecognitionSession_ResultGenerated;
-            speechRecognizer.Dispose();
-        }
-
-        /// <summary>
-        /// Process any speech detected and send to the bot framework to in turn query the QnA Maker database
-        /// Essentially here we have performed SST, the text is sent via direct line to the bot framework
-        /// Once a text response is recieved we convert this back to speech using TTS
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="args"></param>
-        private async void ContinuousRecognitionSession_ResultGenerated(SpeechContinuousRecognitionSession sender, SpeechContinuousRecognitionResultGeneratedEventArgs args)
-        {
-            // Check we're confident with the results of SST
-            if (args.Result.Confidence == SpeechRecognitionConfidence.Medium || args.Result.Confidence == SpeechRecognitionConfidence.High)
-            {
-                Debug.WriteLine($"ContinuousRecognitionSession_ResultGenerated: {args.Result.Text}");
-                LogStatusMessage($"ContinuousRecognitionSession_ResultGenerated: {args.Result.Text}", StatusSeverity.Info);
+                speechRecognizer.Timeouts.InitialSilenceTimeout = TimeSpan.FromDays(1);
+                SpeechRecognitionResult recog = null;
 
                 try
                 {
-                    // Send the message to the bot and get a response
-                    string conversationId = await PostMessageToApiAsync(args.Result.Text);
-                    if (conversationId == null)
-                    {
-                        Debug.WriteLine($"ContinuousRecognitionSession_ResultGenerated: No conversation Id returned from bot");
-                        LogStatusMessage($"ContinuousRecognitionSession_ResultGenerated: No conversation Id returned from bot", StatusSeverity.Info);
-                    }
-
-                    var botResponse = await GetMessageToApiAsync(conversationId);
-                    if (botResponse != null)
-                    {
-                        Debug.WriteLine($"ContinuousRecognitionSession_ResultGenerated: Bot response {botResponse}");
-                        LogStatusMessage($"ContinuousRecognitionSession_ResultGenerated: Bot response {botResponse}", StatusSeverity.Info);
-                        Say(botResponse);
-                    }
+                    IsSpeaking = true;
+                    // Create an instance of SpeechRecognizer.
+                    Debug.WriteLine($"StartSpeechRecognition: Starting recognizer");
+                    recog = await speechRecognizer.RecognizeAsync();
+                    Debug.WriteLine($"StartSpeechRecognition: recognizer started successfully");
                 }
                 catch (Exception exp)
                 {
-                    // Eat this
-                    Debug.WriteLine($"ContinuousRecognitionSession_ResultGenerated: {exp}");
-                    LogStatusMessage($"ContinuousRecognitionSession_ResultGenerated: {exp}", StatusSeverity.Error);
+                    Say($"There was a problem initializing the speech recognizer: {exp.InnerException}");
+                    return;
+                }
+
+                if (recog != null)
+                {
+                    if (recog.Status == SpeechRecognitionResultStatus.MicrophoneUnavailable)
+                    {
+                        string error = "StartSpeechRecognition: Error with speech recognition - check mic attached";
+                        Debug.WriteLine($"{error}");
+                        LogStatusMessage($"{error}", StatusSeverity.Error);
+                    }
+                    else if (recog.Status == SpeechRecognitionResultStatus.Success)
+                    {
+                        if (!string.IsNullOrEmpty(recog.Text))
+                        {
+                            Debug.WriteLine($"StartSpeechRecognition: Detected: {recog.Text}");
+                            LogStatusMessage($"StartSpeechRecognition: Detected: {recog.Text}", StatusSeverity.Info);
+
+                            string conversationId = await PostMessageToApiAsync(recog.Text);
+                            if (conversationId == null)
+                            {
+                                Debug.WriteLine($"StartSpeechRecognition: No conversation Id returned from bot");
+                                LogStatusMessage($"StartSpeechRecognition: No conversation Id returned from bot", StatusSeverity.Info);
+                                return;
+                            }
+
+                            var botResponse = await GetMessageFromApiAsync(conversationId);
+                            if (botResponse != null)
+                            {
+                                Debug.WriteLine($"StartSpeechRecognition: Bot response {botResponse}");
+                                LogStatusMessage($"StartSpeechRecognition: Bot response {botResponse}", StatusSeverity.Info);
+                                Say(botResponse);
+                            }
+                        }
+                    }
                 }
             }
-            else
-            {
-                Debug.WriteLine($"ContinuousRecognitionSession_ResultGenerated: {args.Result.Text}");
-                LogStatusMessage($"ContinuousRecognitionSession_ResultGenerated: {args.Result.Confidence} Detected: {args.Result.Text}", StatusSeverity.Info);
-
-                // In some scenarios, a developer may choose to ignore giving the user feedback in this case, if speech
-                // is not the primary input mechanism for the application.
-                Say("I didn't understand you, please rephrase your question");
-            }
-        }
-
-        private async void ContinuousRecognitionSession_Completed(SpeechContinuousRecognitionSession sender, SpeechContinuousRecognitionCompletedEventArgs args)
-        {
-            LogStatusMessage($"SpeechRecognition ended: {args.Status}", StatusSeverity.Warning);
-
-            // Clean up and start over
-            await EndSpeechRecognition();
             await StartSpeechRecognition();
-        }
-
-        private void SpeechRecognizer_StateChanged(SpeechRecognizer sender, SpeechRecognizerStateChangedEventArgs args)
-        {
-            LogStatusMessage($"SpeechRecognition state changed: {args.State}", StatusSeverity.Warning);
         }
 
         private void Say(string phrase)
@@ -616,7 +545,10 @@ namespace Dinmore.Uwp
                             //    new TimerElapsedHandler(HelloAudioHandler),
                             //    TimeSpan.FromMilliseconds(NumberMilliSecsToWaitForHello));
 
-                            HelloAudio();
+                            if ((bool)ApplicationData.Current.LocalSettings.Values[_InteractiveKey])
+                            {
+                                HelloAudio();
+                            }
 
                             CurrentState.LastImageApiPush = DateTimeOffset.UtcNow;
                             CurrentState.FacesFoundByApi = await PostImageToApiAsync(CurrentState.ApiRequestParameters.Image);
@@ -790,13 +722,12 @@ namespace Dinmore.Uwp
             {
                 using (var httpClient = new HttpClient())
                 {
-                    var content = new StringContent(messageText);
-
+                    //var content = new StringContent(messageText);
                     var url = AppSettings.GetString("BotApiUrl");
                     var deviceId = ApplicationData.Current.LocalSettings.Values[_DeviceIdKey];
                     url = $"{url}?deviceid={deviceId}&message={messageText}";
 
-                    var responseMessage = await httpClient.PostAsync(url, content);
+                    var responseMessage = await httpClient.PostAsync(url, null);
 
                     if (!responseMessage.IsSuccessStatusCode)
                     {
@@ -820,12 +751,13 @@ namespace Dinmore.Uwp
             }
             catch (Exception ex)
             {
+                Debug.WriteLine($"PostMessageToApiAsync Exception: {ex}");
                 LogStatusMessage("Exception: " + ex.ToString(), StatusSeverity.Error);
                 return null;
             }
         }
 
-        private async Task<string> GetMessageToApiAsync(string conversationId)
+        private async Task<string> GetMessageFromApiAsync(string conversationId)
         {
             try
             {
@@ -859,7 +791,7 @@ namespace Dinmore.Uwp
             }
             catch (Exception ex)
             {
-                vp.IsCurrentlyPlaying = false;
+                Debug.WriteLine($"GetMessageToApiAsync Exception: {ex}");
                 LogStatusMessage("Exception: " + ex.ToString(), StatusSeverity.Error);
                 return null;
             }
