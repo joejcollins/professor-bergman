@@ -13,6 +13,8 @@ namespace Dinmore.Uwp.Infrastructure
 {
     public class VoicePackageService
     {
+        private const string _DeviceExhibitKey = "DeviceExhibit";
+        private const string _DeviceLabelKey = "DeviceLabel";
         private const string _DeviceIdKey = "DeviceId";
         private const string _InteractiveKey = "Interactive";
         private const string _VerbaliseSystemInformationOnBootKey = "VerbaliseSystemInformationOnBoot";
