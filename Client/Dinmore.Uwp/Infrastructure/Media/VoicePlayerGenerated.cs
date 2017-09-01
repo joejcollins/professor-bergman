@@ -9,6 +9,11 @@ using Windows.Media.SpeechSynthesis;
 using Windows.Media.Core;
 using System.IO;
 using Windows.Storage;
+using Windows.UI.Xaml.Controls;
+using Windows.Storage.Streams;
+using Windows.ApplicationModel;
+using Windows.ApplicationModel.Core;
+using Windows.UI.Core;
 
 namespace Dinmore.Uwp.Infrastructure.Media
 {
@@ -87,7 +92,8 @@ namespace Dinmore.Uwp.Infrastructure.Media
             return file;
         }
 
-        public void Say(string phrase) {        
+        public void Say(string phrase) {  
+            
             this.Say(new List<string>() { phrase });
         }
 

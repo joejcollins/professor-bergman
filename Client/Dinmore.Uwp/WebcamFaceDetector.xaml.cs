@@ -10,6 +10,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.ApplicationModel;
 using Windows.ApplicationModel.Resources;
 using Windows.Graphics.Imaging;
 using Windows.Media;
@@ -17,8 +18,10 @@ using Windows.Media.Capture;
 using Windows.Media.Core;
 using Windows.Media.FaceAnalysis;
 using Windows.Media.MediaProperties;
+using Windows.Media.Playback;
 using Windows.Networking.Connectivity;
 using Windows.Storage;
+using Windows.Storage.Streams;
 using Windows.System.Threading;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -190,7 +193,8 @@ namespace Dinmore.Uwp
         /// </summary>
         /// <returns>Async Task object returning true if initialization and streaming were successful and false if an exception occurred.</returns>
         private async Task<bool> StartWebcamStreaming()
-        {
+        {         
+         
             // Speak the IP Out loud
             Say($"The IP Address is: {GetLocalIp()}");
 
@@ -306,6 +310,12 @@ namespace Dinmore.Uwp
                             LogStatusMessage($"Found a QR code with device id {result} which has been stored to app storage.", StatusSeverity.Info);
 
                             Say("I found a QR code, thanks.");
+
+                            Say("Downloading the voice package.");
+                            await Infrastructure.VoicePackageService.DownloadVoice(result);
+                            Say("Unpacking the voice package.");
+                            await Infrastructure.VoicePackageService.UnpackVoice(result);
+                            this.vp = await Infrastructure.VoicePackageService.VoicePlayerFactory(result);
 
                             ChangeDetectionState(DetectionStates.WaitingForFaces);
                         }
