@@ -14,7 +14,8 @@
         <div class="form-group">
             <label asp-for="Id" class="col-md-2 control-label"></label>
             <div class="col-md-10">
-                <input asp-for="Id" class="form-control" />
+                <input asp-for="Id" class="form-control" readonly />
+                <span class="text-info">You can't edit this. Delete and Re-create if you wish to change device id.</span>
                 <span asp-validation-for="Id" class="text-danger"></span>
             </div>
         </div>
