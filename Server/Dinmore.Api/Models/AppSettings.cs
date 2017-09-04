@@ -22,5 +22,8 @@ namespace dinmore.api.Models
         public string StoreDeviceContainerName { get; set; }
 
         public string StoreDevicePartitionKey { get; set; }
+        public string StoreVoicePackageContainerName { get; set; }
+
+        public string StoreVoicePackagesRootUrl { get; set; }
     }
 }
