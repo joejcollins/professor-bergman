@@ -427,18 +427,18 @@ namespace Dinmore.Uwp
                 //LogStatusMessage($"StartSpeechRecognition: Starting recognizer", StatusSeverity.Error);
 
                 vpGenerated.Stop();
-                if (!vpGenerated.IsCurrentlyPlaying)
-                {
-                    await SpeechRecognizer.ContinuousRecognitionSession.StartAsync();
-                    IsSpeechRecognitionInProgress = true;
-                    Debug.WriteLine($"StartSpeechRecognition: Recognizer started successfully");
-                    LogStatusMessage($"StartSpeechRecognition: Recognizer started successfully", StatusSeverity.Error);
-                }
-                else
-                {
-                    Debug.WriteLine($"StartSpeechRecognition: Playing audio, skipping recogition");
-                    LogStatusMessage($"StartSpeechRecognition: Playing audio, skipping recogition", StatusSeverity.Error);
-                }
+                //if (!vpGenerated.IsCurrentlyPlaying)
+                //{
+                await SpeechRecognizer.ContinuousRecognitionSession.StartAsync();
+                IsSpeechRecognitionInProgress = true;
+                Debug.WriteLine($"StartSpeechRecognition: Recognizer started successfully");
+                LogStatusMessage($"StartSpeechRecognition: Recognizer started successfully", StatusSeverity.Error);
+                //}
+                //else
+                //{
+                //    Debug.WriteLine($"StartSpeechRecognition: Playing audio, skipping recogition");
+                //    LogStatusMessage($"StartSpeechRecognition: Playing audio, skipping recogition", StatusSeverity.Error);
+                //}
             }
             catch (Exception exp)
             {
@@ -680,10 +680,9 @@ namespace Dinmore.Uwp
 
                         if (!vp.IsCurrentlyPlaying)
                         {
-                            LogStatusMessage("Starting playlist", StatusSeverity.Info);
-
                             if ((bool)ApplicationData.Current.LocalSettings.Values[_InteractiveKey])
                             {
+                                LogStatusMessage("Starting playlist", StatusSeverity.Info);
                                 var play = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
                                 {
                                     //TODO This needs 
@@ -691,6 +690,15 @@ namespace Dinmore.Uwp
                                 });
                             }
                         }
+
+                        //if (!(bool)ApplicationData.Current.LocalSettings.Values[_InteractiveKey])
+                        //{
+                        //    if (!vpGenerated.IsCurrentlyPlaying && !IsSpeechRecognitionInProgress)
+                        //    {
+                        //        LogStatusMessage("Starting speech recognizer", StatusSeverity.Info);
+                        //        await StartSpeechRecognition();
+                        //    }
+                        //}
 
                         // Check here if the media has finished playing or the people have walked away.
                         //ChangeDetectionState(DetectionStates.WaitingForFaces);
@@ -703,7 +711,7 @@ namespace Dinmore.Uwp
                     case DetectionStates.WaitingForFacesToDisappear:
 
                         CurrentState.FacesStillPresent = await AreFacesStillPresent();
-                        LogStatusMessage($"Faces present: {CurrentState.FacesStillPresent}", StatusSeverity.Info);
+                        LogStatusMessage($"Faces present: {CurrentState.FacesStillPresent} Speech Recognition active: {IsSpeechRecognitionInProgress}", StatusSeverity.Info);
 
                         //we dont have a face
                         if (!CurrentState.FacesStillPresent)
@@ -726,17 +734,18 @@ namespace Dinmore.Uwp
                                     }
                                 }
                                 ));
-
                         }
                         else
                         {
                             if (!(bool)ApplicationData.Current.LocalSettings.Values[_InteractiveKey])
                             {
-                                if (!IsSpeechRecognitionInProgress) await StartSpeechRecognition();
-                                //if (!IsSpeechRecognitionInProgress) await Task.Run(async () => await StartSpeechRecognition());
+                                if (!vpGenerated.IsCurrentlyPlaying && !IsSpeechRecognitionInProgress)
+                                {
+                                    LogStatusMessage("Starting speech recognizer", StatusSeverity.Info);
+                                    await StartSpeechRecognition();
+                                }
                             }
                         }
-
 
                         break;
 
