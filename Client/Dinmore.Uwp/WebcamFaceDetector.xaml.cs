@@ -77,7 +77,9 @@ namespace Dinmore.Uwp
         /// <summary>
         /// Detect any speech to the app
         /// </summary>
-        private SpeechRecognizer speechRecognizer;
+        private SpeechRecognizer SpeechRecognizer;
+
+        private bool IsSpeechRecognitionInProgress = false;
 
         /// <summary>
         /// Speech needs enabling within settings
@@ -106,7 +108,6 @@ namespace Dinmore.Uwp
 
         private const string _DeviceExhibitKey = "DeviceExhibit";
         private const string _DeviceLabelKey = "DeviceLabel";
-        private bool IsSpeaking = false;
 
         private const string _DeviceIdKey = "DeviceId";
         private const string _InteractiveKey = "Interactive";
@@ -179,16 +180,35 @@ namespace Dinmore.Uwp
                 {
                     // Prompt for permission to access the microphone. This request will only happen
                     // once, it will not re-prompt if the user rejects the permission.
-                    if (await AudioCapturePermissions.RequestMicrophonePermission())
-                    {
-                        await StartSpeechRecognition();
-                    }
-                    else
+                    if (!await AudioCapturePermissions.RequestMicrophonePermission())
                     {
                         Say(AppSettings.GetString("MicrophonePrivacyDeclined"));
                     }
+                    else
+                    {
+                        try
+                        {
+                            Debug.WriteLine($"Creating speech recognizer");
+                            SpeechRecognizer = new SpeechRecognizer();
+                            SpeechRecognizer.Timeouts.InitialSilenceTimeout = TimeSpan.FromDays(1);
+
+                            SpeechRecognizer.StateChanged += SpeechRecognizer_StateChanged;
+
+                            await SpeechRecognizer.CompileConstraintsAsync();
+                        }
+                        catch (Exception exp)
+                        {
+                            Say($"There was an error starting the speech recognizer: {exp.Message}");
+                        }
+                    }
                 }
             }
+        }
+
+        private void SpeechRecognizer_StateChanged(SpeechRecognizer sender, SpeechRecognizerStateChangedEventArgs args)
+        {
+            // Noisy..
+            //Debug.WriteLine($"Speech recognizer state changed: {args.State}");
         }
 
         /// <summary>
@@ -395,67 +415,127 @@ namespace Dinmore.Uwp
 
         private async Task StartSpeechRecognition()
         {
-            speechRecognizer = new SpeechRecognizer();
-            await speechRecognizer.CompileConstraintsAsync();
+            // End previous session
+            await StopSpeechRecognition();
 
-            while (true && !vpGenerated.IsCurrentlyPlaying)
+            try
             {
-                speechRecognizer.Timeouts.InitialSilenceTimeout = TimeSpan.FromDays(1);
-                SpeechRecognitionResult recog = null;
+                SpeechRecognizer.ContinuousRecognitionSession.Completed += ContinuousRecognitionSession_Completed;
+                SpeechRecognizer.ContinuousRecognitionSession.ResultGenerated += ContinuousRecognitionSession_ResultGenerated;
 
-                try
+                //Debug.WriteLine($"StartSpeechRecognition: Starting recognizer");
+                //LogStatusMessage($"StartSpeechRecognition: Starting recognizer", StatusSeverity.Error);
+
+                vpGenerated.Stop();
+                if (!vpGenerated.IsCurrentlyPlaying)
                 {
-                    IsSpeaking = true;
-                    // Create an instance of SpeechRecognizer.
-                    Debug.WriteLine($"StartSpeechRecognition: Starting recognizer");
-                    recog = await speechRecognizer.RecognizeAsync();
-                    Debug.WriteLine($"StartSpeechRecognition: recognizer started successfully");
+                    await SpeechRecognizer.ContinuousRecognitionSession.StartAsync();
+                    IsSpeechRecognitionInProgress = true;
+                    Debug.WriteLine($"StartSpeechRecognition: Recognizer started successfully");
+                    LogStatusMessage($"StartSpeechRecognition: Recognizer started successfully", StatusSeverity.Error);
                 }
-                catch (Exception exp)
+                else
                 {
-                    Say($"There was a problem initializing the speech recognizer: {exp.InnerException}");
+                    Debug.WriteLine($"StartSpeechRecognition: Playing audio, skipping recogition");
+                    LogStatusMessage($"StartSpeechRecognition: Playing audio, skipping recogition", StatusSeverity.Error);
+                }
+            }
+            catch (Exception exp)
+            {
+                Debug.WriteLine($"StartSpeechRecognition: Error {exp}");
+                //Say($"There was a problem with the speech recognizer: {exp.InnerException}");
+                return;
+            }
+        }
+
+        private async void ContinuousRecognitionSession_ResultGenerated(SpeechContinuousRecognitionSession sender, SpeechContinuousRecognitionResultGeneratedEventArgs args)
+        {
+            Debug.WriteLine($"ContinuousRecognitionSession_ResultGenerated: Result generated: {args.Result.Status}");
+            if (args.Result.Status != SpeechRecognitionResultStatus.Success)
+            {
+                return;
+            }
+
+            Debug.WriteLine($"ContinuousRecognitionSession_ResultGenerated: Result: {args.Result.Text} (Confidence: {args.Result.Confidence})");
+            LogStatusMessage($"ContinuousRecognitionSession_ResultGenerated: Result: {args.Result.Text} (Confidence: {args.Result.Confidence})", StatusSeverity.Info);
+            if (args.Result.Confidence == SpeechRecognitionConfidence.Low || args.Result.Text?.Length == 0)
+            {
+                return;
+            }
+
+            try
+            {
+                string conversationId = await PostMessageToApiAsync(args.Result.Text);
+                if (conversationId == null)
+                {
+                    Debug.WriteLine($"ContinuousRecognitionSession_ResultGenerated: No conversation Id returned from bot");
+                    LogStatusMessage($"ContinuousRecognitionSession_ResultGenerated: No conversation Id returned from bot", StatusSeverity.Info);
                     return;
                 }
 
-                if (recog != null)
+                string botResponse = await GetMessageFromApiAsync(conversationId) ?? "No reply";
+                Debug.WriteLine($"ContinuousRecognitionSession_ResultGenerated: Bot response {botResponse}");
+                LogStatusMessage($"ContinuousRecognitionSession_ResultGenerated: Bot response {botResponse}", StatusSeverity.Info);
+                Say(botResponse);
+            }
+            catch (Exception exp)
+            {
+                Debug.WriteLine($"ContinuousRecognitionSession_ResultGenerated: Error calling bot {exp}");
+                LogStatusMessage($"ContinuousRecognitionSession_ResultGenerated: Error calling bot {exp}", StatusSeverity.Error);
+            }
+        }
+
+        private void ContinuousRecognitionSession_Completed(SpeechContinuousRecognitionSession sender, SpeechContinuousRecognitionCompletedEventArgs args)
+        {
+            Debug.WriteLine($"Speech recognizer session completed: {args.Status}");
+            LogStatusMessage($"Speech recognizer session completed: {args.Status}", StatusSeverity.Info);
+            IsSpeechRecognitionInProgress = false;
+        }
+
+        private async Task StopSpeechRecognition()
+        {
+            // In case we're in initialising of the app and speech recognizer has not started yet
+            if (SpeechRecognizer == null)
+            {
+                return;
+            }
+
+            //LogStatusMessage($"StopSpeechRecognition: Ending speech recognition", StatusSeverity.Info);
+            //Debug.WriteLine($"StopSpeechRecognition: Ending speech recognition");
+
+            // Unhook events
+            SpeechRecognizer.ContinuousRecognitionSession.Completed -= ContinuousRecognitionSession_Completed;
+            SpeechRecognizer.ContinuousRecognitionSession.ResultGenerated -= ContinuousRecognitionSession_ResultGenerated;
+
+            if (IsSpeechRecognitionInProgress)
+            {
+                try
                 {
-                    if (recog.Status == SpeechRecognitionResultStatus.MicrophoneUnavailable)
+                    if (SpeechRecognizer.State != SpeechRecognizerState.Idle)
                     {
-                        string error = "StartSpeechRecognition: Error with speech recognition - check mic attached";
-                        Debug.WriteLine($"{error}");
-                        LogStatusMessage($"{error}", StatusSeverity.Error);
+                        await SpeechRecognizer.ContinuousRecognitionSession.CancelAsync();
+                        LogStatusMessage($"StopSpeechRecognition: Speech recognition cancelled", StatusSeverity.Info);
+                        Debug.WriteLine($"StopSpeechRecognition: Speech recognition cancelled");
                     }
-                    else if (recog.Status == SpeechRecognitionResultStatus.Success)
+                    else
                     {
-                        if (!string.IsNullOrEmpty(recog.Text))
-                        {
-                            Debug.WriteLine($"StartSpeechRecognition: Detected: {recog.Text}");
-                            LogStatusMessage($"StartSpeechRecognition: Detected: {recog.Text}", StatusSeverity.Info);
-
-                            string conversationId = await PostMessageToApiAsync(recog.Text);
-                            if (conversationId == null)
-                            {
-                                Debug.WriteLine($"StartSpeechRecognition: No conversation Id returned from bot");
-                                LogStatusMessage($"StartSpeechRecognition: No conversation Id returned from bot", StatusSeverity.Info);
-                                return;
-                            }
-
-                            var botResponse = await GetMessageFromApiAsync(conversationId);
-                            if (botResponse != null)
-                            {
-                                Debug.WriteLine($"StartSpeechRecognition: Bot response {botResponse}");
-                                LogStatusMessage($"StartSpeechRecognition: Bot response {botResponse}", StatusSeverity.Info);
-                                Say(botResponse);
-                            }
-                        }
+                        await SpeechRecognizer.ContinuousRecognitionSession.StopAsync();
+                        LogStatusMessage($"StopSpeechRecognition: Speech recognition stopped", StatusSeverity.Info);
+                        Debug.WriteLine($"StopSpeechRecognition: Speech recognition stopped");
                     }
+                    IsSpeechRecognitionInProgress = false;
+                }
+                catch (Exception exp)
+                {
+                    LogStatusMessage($"StopSpeechRecognition: error: {exp}", StatusSeverity.Info);
+                    Debug.WriteLine($"StopSpeechRecognition error: {exp}");
                 }
             }
-            await StartSpeechRecognition();
         }
 
         private void Say(string phrase)
         {
+            StopSpeechRecognition().GetAwaiter().GetResult();
             vpGenerated.Say(phrase);
         }
 
@@ -558,7 +638,11 @@ namespace Dinmore.Uwp
                             //    new TimerElapsedHandler(HelloAudioHandler),
                             //    TimeSpan.FromMilliseconds(NumberMilliSecsToWaitForHello));
 
-                            if ((bool)ApplicationData.Current.LocalSettings.Values[_InteractiveKey])
+                            if (!(bool)ApplicationData.Current.LocalSettings.Values[_InteractiveKey])
+                            {
+                                Say("I'm listening, talk to me");
+                            }
+                            else
                             {
                                 HelloAudio();
                             }
@@ -567,9 +651,9 @@ namespace Dinmore.Uwp
                             CurrentState.FacesFoundByApi = await PostImageToApiAsync(CurrentState.ApiRequestParameters.Image);
 
                             LogStatusMessage($"Sending faces to api", StatusSeverity.Info);
-
                             ChangeDetectionState(DetectionStates.ApiResponseReceived);
                         }
+
                         break;
 
                     case DetectionStates.ApiResponseReceived:
@@ -580,7 +664,6 @@ namespace Dinmore.Uwp
                             LogStatusMessage("Face(s) detected", StatusSeverity.Info);
                             ChangeDetectionState(DetectionStates.InterpretingApiResults);
                             CurrentState.FacesStillPresent = true;
-
                             break;
                         }
                         //ChangeDetectionState(DetectionStates.WaitingForFaces);
@@ -627,7 +710,7 @@ namespace Dinmore.Uwp
                         {
                             //TODO Refactor this out.
                             await Task.Delay(NumberMilliSecsForFacesToDisappear)
-                                .ContinueWith((t =>
+                                .ContinueWith((async t =>
                                 {
                                     CurrentState.FacesStillPresent = AreFacesStillPresent().Result;
                                     if (!CurrentState.FacesStillPresent)
@@ -636,11 +719,22 @@ namespace Dinmore.Uwp
                                         ChangeDetectionState(DetectionStates.WaitingForFaces);
                                         vp.Stop();
                                         CurrentState.TimeVideoWasStopped = DateTimeOffset.UtcNow;
+
+                                        // End speech recognition
+                                        await StopSpeechRecognition();
                                         return;
                                     }
                                 }
                                 ));
 
+                        }
+                        else
+                        {
+                            if (!(bool)ApplicationData.Current.LocalSettings.Values[_InteractiveKey])
+                            {
+                                if (!IsSpeechRecognitionInProgress) await StartSpeechRecognition();
+                                //if (!IsSpeechRecognitionInProgress) await Task.Run(async () => await StartSpeechRecognition());
+                            }
                         }
 
 
