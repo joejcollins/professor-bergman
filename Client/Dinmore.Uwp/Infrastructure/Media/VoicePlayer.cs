@@ -6,6 +6,8 @@ using Windows.Media.Core;
 using System.Collections.Generic;
 using Windows.Data.Json;
 using Windows.Storage;
+using Dinmore.Uwp.Helpers;
+using Dinmore.Uwp.Constants;
 
 namespace Dinmore.Uwp.Infrastructure.Media
 {
@@ -56,8 +58,7 @@ namespace Dinmore.Uwp.Infrastructure.Media
 
             }
 
-            PlayWav(playlist);   
-           
+            PlayWav(playlist);
         }
 
         public void Say(string phrase) {
@@ -77,25 +78,28 @@ namespace Dinmore.Uwp.Infrastructure.Media
 
         public async void PlayWav(List<PlayListItem> list)
         {
-            mediaPlayer.PlaybackSession.PositionChanged += PositionChanged;
-               var session = mediaPlayer.PlaybackSession;
-            if (session.PlaybackState == MediaPlaybackState.None)
+            // Respect sound on setting
+            if (Settings.GetBool(DeviceSettingKeys.SoundOnKey))
             {
-                session.Position = TimeSpan.Zero;
-            }
-            playbackList.Items.Clear();
-            foreach (var item in list)
-            {
-                var file = await this.folder.GetFileAsync(item.Name);
-                var mediaSource = MediaSource.CreateFromStorageFile(file);
-                playbackList.Items.Add(new MediaPlaybackItem(mediaSource));
-            }
+                mediaPlayer.PlaybackSession.PositionChanged += PositionChanged;
+                var session = mediaPlayer.PlaybackSession;
+                if (session.PlaybackState == MediaPlaybackState.None)
+                {
+                    session.Position = TimeSpan.Zero;
+                }
+                playbackList.Items.Clear();
+                foreach (var item in list)
+                {
+                    var file = await this.folder.GetFileAsync(item.Name);
+                    var mediaSource = MediaSource.CreateFromStorageFile(file);
+                    playbackList.Items.Add(new MediaPlaybackItem(mediaSource));
+                }
 
-            // Check if playlist changes track and stop if the viewer has exited
-            playbackList.CurrentItemChanged += PlaybackList_CurrentItemChanged;
-            mediaPlayer.Source = playbackList;
-            mediaPlayer.Play();
-            
+                // Check if playlist changes track and stop if the viewer has exited
+                playbackList.CurrentItemChanged += PlaybackList_CurrentItemChanged;
+                mediaPlayer.Source = playbackList;
+                mediaPlayer.Play();
+            }
         }
 
         private void PositionChanged(MediaPlaybackSession sender, object args)
