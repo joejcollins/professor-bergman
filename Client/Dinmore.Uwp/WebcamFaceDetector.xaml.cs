@@ -158,28 +158,8 @@ namespace Dinmore.Uwp
                 return false;
             }
 
-            var deviceApiUrl = AppSettings.GetString("DeviceApiUrl");
-
             // Call device API to get device settings
-            Device device;
-            using (var httpClient = new HttpClient())
-            {
-                var responseMessage = await httpClient.GetAsync(deviceApiUrl);
-
-                if (!responseMessage.IsSuccessStatusCode)
-                {
-                    LogStatusMessage($"The Device API returned a non-sucess status {responseMessage.ReasonPhrase}", StatusSeverity.Error, false);
-                    return false;
-                }
-
-                //This will return all devices in the Azure table store because there is not yet an API call to get a specific device
-                //TO DO: Add and API call to return a speicfic device and update this code to use that call
-                var response = await responseMessage.Content.ReadAsStringAsync();
-                var result = JsonConvert.DeserializeObject<List<Device>>(response);
-
-                //filter for this device. We won't need to do this if/when the API gets updated with the capability to return a specific device
-                device = result.Where(d => d.Id.ToString() == deviceId.ToString()).FirstOrDefault();
-            }
+            Device device = await Api.GetDevice(AppSettings, deviceId);
 
             if (device == null)
             {
@@ -204,18 +184,7 @@ namespace Dinmore.Uwp
                 Settings.Set(DeviceSettingKeys.QnAKnowledgeBaseIdKey, null);
 
                 // Call API to set ResetOnBoot flag to false to avoid a loop
-                var responseString = string.Empty;
-                using (var httpClient = new HttpClient())
-                {
-                    httpClient.BaseAddress = new Uri(deviceApiUrl +"/" + device.Id.ToString());
-
-                    //construct full API endpoint uri
-                    var fullUrl = $"{httpClient.BaseAddress}?DeviceLabel={device.DeviceLabel}&Exhibit={device.Exhibit}&Venue={device.Venue}&Interactive={device.Interactive}&VerbaliseSystemInformationOnBoot={device.VerbaliseSystemInformationOnBoot}&SoundOn={device.SoundOn}&ResetOnBoot=false&VoicePackageUrl={device.VoicePackageUrl}&QnAKnowledgeBaseId={device.QnAKnowledgeBaseId}";
-
-                    var responseMessage = await httpClient.PutAsync(fullUrl, null);
-                    responseString = await responseMessage.Content.ReadAsStringAsync();
-                }
-
+                await Api.UpdateDevice(AppSettings, device);
             }
             else
             {
@@ -551,43 +520,12 @@ namespace Dinmore.Uwp
         {
             try
             {
-                using (var httpClient = new HttpClient())
-                {
-                    var content = new StreamContent(new MemoryStream(image));
-                    content.Headers.ContentType = new MediaTypeWithQualityHeaderValue("application/octet-stream");
-
-                    //build url to pass to api
-                    var url = AppSettings.GetString("FaceApiUrl");
-                    var returnFaceLandmarks = AppSettings.GetString("ReturnFaceLandmarks");
-                    var returnFaceAttributes = AppSettings.GetString("ReturnFaceAttributes");
-                    url = $"{url}?deviceid={Settings.GetString(DeviceSettingKeys.DeviceIdKey)}&returnFaceLandmarks={returnFaceLandmarks}&returnFaceAttributes={returnFaceAttributes}";
-
-                    var responseMessage = await httpClient.PostAsync(url, content);
-
-                    if (!responseMessage.IsSuccessStatusCode)
-                    {
-                        switch (responseMessage.StatusCode.ToString())
-                        {
-                            case "BadRequest":
-                                LogStatusMessage("The API returned a 400 Bad Request. This is caused by either a missing DeviceId parameter or one containig a GUID that is not already registered with the device API.", StatusSeverity.Error, false);
-                                break;
-                            default:
-                                LogStatusMessage($"The API returned a non-sucess status {responseMessage.ReasonPhrase}", StatusSeverity.Error, false);
-                                break;
-                        }
-                        return null;
-                    }
-
-                    var response = await responseMessage.Content.ReadAsStringAsync();
-                    var result = JsonConvert.DeserializeObject<List<Face>>(response);
-
-                    return result;
-                }
+                return await Api.PostPatron(AppSettings, image);
             }
             catch (Exception ex)
             {
                 vp.Stop();
-                LogStatusMessage("Exception: " + ex.ToString(), StatusSeverity.Error, false);
+                LogStatusMessage("Exception posting to Patron api: " + ex.ToString(), StatusSeverity.Error, false);
                 return null;
             }
         }
