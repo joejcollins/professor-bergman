@@ -17,12 +17,13 @@
     <EnableDotNetNativeCompatibleProfile>true</EnableDotNetNativeCompatibleProfile>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{A5A43C5B-DE2A-4C0C-9213-0A381AF9435A};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
-    <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
+    <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
     <AppxBundle>Always</AppxBundle>
     <AppxBundlePlatforms>arm</AppxBundlePlatforms>
     <PackageCertificateThumbprint>6C1CA19D22011E0F94A3AE4C4258B06FE4A57A06</PackageCertificateThumbprint>
     <PackageCertificateKeyFile>Dinmore.Uwp_TemporaryKey.pfx</PackageCertificateKeyFile>
     <HockeyAppResourceId>508914dfa5e94e9280aacd818588588a</HockeyAppResourceId>
+    <AppxSymbolPackageEnabled>False</AppxSymbolPackageEnabled>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <DebugSymbols>true</DebugSymbols>
@@ -105,13 +106,18 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Constants\AppConsts.cs" />
+    <Compile Include="Constants\DeviceSettingKeys.cs" />
     <Compile Include="Converters.cs" />
+    <Compile Include="Helpers\Api.cs" />
+    <Compile Include="Helpers\Settings.cs" />
     <Compile Include="Infrastructure\Media\IVoicePlayer.cs" />
     <Compile Include="AudioCapturePermissions.cs" />
     <Compile Include="Infrastructure\Media\PlayList.cs" />
     <Compile Include="Infrastructure\Media\PlayListGroup.cs" />
     <Compile Include="Infrastructure\Media\PlayListItem.cs" />
     <Compile Include="Infrastructure\Media\VoicePlayer.cs" />
+    <Compile Include="Infrastructure\Media\VoicePlayerSpeechRecog.cs" />
     <Compile Include="Infrastructure\Media\VoicePlayerGenerated.cs" />
     <Compile Include="Infrastructure\VoicePackageService.cs" />
     <Compile Include="Models\ApiRequestParameters.cs" />

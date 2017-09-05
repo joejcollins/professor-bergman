@@ -26,5 +26,7 @@ namespace Dinmore.WebApp.Models
         public string VoicePackageUrl { get; set; }
 
         public string QnAKnowledgeBaseId { get; set; }
+
+        public byte[] VoicePackage { get; set; }
     }
 }

@@ -1,6 +1,7 @@
+using Dinmore.Uwp.Constants;
+using Dinmore.Uwp.Helpers;
 using Dinmore.Uwp.Infrastructure.Media;
 using Dinmore.Uwp.Models;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -8,7 +9,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.Resources;
@@ -20,7 +20,6 @@ using Windows.Media.FaceAnalysis;
 using Windows.Media.MediaProperties;
 using Windows.Media.SpeechRecognition;
 using Windows.Networking.Connectivity;
-using Windows.Storage;
 using Windows.System.Threading;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Media;
@@ -39,10 +38,6 @@ namespace Dinmore.Uwp
         /// </summary>
         private readonly SolidColorBrush lineBrush = new SolidColorBrush(Windows.UI.Colors.Yellow);
 
-        /// <summary>
-        /// Thickness of the face bounding box lines.
-        /// </summary>
-        private readonly double lineThickness = 2.0;
 
         /// <summary>
         /// Transparent fill for the bounding box.
@@ -75,22 +70,23 @@ namespace Dinmore.Uwp
         private SemaphoreSlim frameProcessingSemaphore = new SemaphoreSlim(1);
 
         /// <summary>
+        /// Semaphore to ensure Speech Reconigtion logic only executes one at a time
+        /// </summary>
+        private SemaphoreSlim speechRecognitionProcessingSemaphore = new SemaphoreSlim(1);
+
+
+        /// <summary>
         /// Detect any speech to the app
         /// </summary>
         private SpeechRecognizer SpeechRecognizer;
 
         private bool IsSpeechRecognitionInProgress = false;
 
-        /// <summary>
-        /// Speech needs enabling within settings
-        /// </summary>
-        private static uint HResultPrivacyStatementDeclined = 0x80045509;
-
         private double ApiIntervalMs;
         private int NumberMilliSecsForFacesToDisappear;
         private int NumberMilliSecsToWaitForHello;
         private int NumberMillSecsBeforeWePlayAgain;
-        private TimeSpan timerInterval;
+        private TimeSpan TimerInterval;
 
         /// <summary>
         /// The current step of the state machine for detecting faces, playing sounds etc.
@@ -105,17 +101,7 @@ namespace Dinmore.Uwp
 
         private VoicePlayerGenerated vpGenerated = new VoicePlayerGenerated();
 
-
-        private const string _DeviceExhibitKey = "DeviceExhibit";
-        private const string _DeviceLabelKey = "DeviceLabel";
-
-        private const string _DeviceIdKey = "DeviceId";
-        private const string _InteractiveKey = "Interactive";
-        private const string _VerbaliseSystemInformationOnBootKey = "VerbaliseSystemInformationOnBoot";
-        private const string _SoundOnKey = "SoundOn";
-        private const string _ResetOnBootKey = "ResetOnBoot";
-        private const string _VoicePackageUrlKey = "VoicePackageUrl";
-        private const string _QnAKnowledgeBaseIdKey = "QnAKnowledgeBaseId";
+        private VoicePlayerSpeechRecog vpSpeechRecog = new VoicePlayerSpeechRecog();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WebcamFaceDetector"/> class.
@@ -124,18 +110,11 @@ namespace Dinmore.Uwp
         {
             //Defaults
             AppSettings = ResourceLoader.GetForCurrentView();
-            NumberMilliSecsForFacesToDisappear =
-                int.Parse(AppSettings.GetString("NumberMilliSecsForFacesToDisappear"));
-            NumberMilliSecsToWaitForHello =
-                int.Parse(AppSettings.GetString("NumberMilliSecsToWaitForHello"));
-            NumberMillSecsBeforeWePlayAgain =
-                int.Parse(AppSettings.GetString("NumberMillSecsBeforeWePlayAgain"));
-            var timerIntervalMilliSecs =
-                int.Parse(AppSettings.GetString("TimerIntervalMilliSecs"));
-            timerInterval = TimeSpan.FromMilliseconds(timerIntervalMilliSecs);
-
-            ApiIntervalMs =
-                double.Parse(AppSettings.GetString("ApiIntervalMilliSecs"));
+            NumberMilliSecsForFacesToDisappear = int.Parse(AppSettings.GetString("NumberMilliSecsForFacesToDisappear"));
+            NumberMilliSecsToWaitForHello = int.Parse(AppSettings.GetString("NumberMilliSecsToWaitForHello"));
+            NumberMillSecsBeforeWePlayAgain = int.Parse(AppSettings.GetString("NumberMillSecsBeforeWePlayAgain"));
+            TimerInterval = TimeSpan.FromMilliseconds(int.Parse(AppSettings.GetString("TimerIntervalMilliSecs")));
+            ApiIntervalMs = double.Parse(AppSettings.GetString("ApiIntervalMilliSecs"));
 
 
             InitializeComponent();
@@ -152,18 +131,15 @@ namespace Dinmore.Uwp
         {
             //get device settings here
             await UpdateDeviceSettings();
+
             this.vp = await Infrastructure.VoicePackageService.VoicePlayerFactory();
 
             // VerbaliseSystemInformation
-            if (ApplicationData.Current.LocalSettings.Values[_VerbaliseSystemInformationOnBootKey] != null)
+            if (Settings.GetBool(DeviceSettingKeys.VerbaliseSystemInformationOnBootKey))
             {
-                var verbaliseSystemInformationOnBoot = (bool)ApplicationData.Current.LocalSettings.Values[_VerbaliseSystemInformationOnBootKey];
-                if (verbaliseSystemInformationOnBoot)
-                {
-                    Say($"The IP address is: {GetLocalIp()}");
-                    Say($"The exhibit is {ApplicationData.Current.LocalSettings.Values[_DeviceExhibitKey]}");
-                    Say($"The device label is {ApplicationData.Current.LocalSettings.Values[_DeviceLabelKey]}");
-                }
+                LogStatusMessage($"The IP address is: {GetLocalIp()}", StatusSeverity.Info, true);
+                LogStatusMessage($"The exhibit is {Settings.GetString(DeviceSettingKeys.DeviceExhibitKey)}", StatusSeverity.Info, true);
+                LogStatusMessage($"The device label is {Settings.GetString(DeviceSettingKeys.DeviceLabelKey)}", StatusSeverity.Info, true);
             }
 
             // The 'await' operation can only be used from within an async method but class constructors
@@ -174,129 +150,88 @@ namespace Dinmore.Uwp
                 ChangeDetectionState(DetectionStates.Startup);
             }
 
-            if (ApplicationData.Current.LocalSettings.Values[_InteractiveKey] != null)
+            if (!Settings.GetBool(DeviceSettingKeys.InteractiveKey))
             {
-                if (!(bool)ApplicationData.Current.LocalSettings.Values[_InteractiveKey])
+                // Prompt for permission to access the microphone. This request will only happen
+                // once, it will not re-prompt if the user rejects the permission.
+                if (!await AudioCapturePermissions.RequestMicrophonePermission())
                 {
-                    // Prompt for permission to access the microphone. This request will only happen
-                    // once, it will not re-prompt if the user rejects the permission.
-                    if (!await AudioCapturePermissions.RequestMicrophonePermission())
+                    Say(AppSettings.GetString("MicrophonePrivacyDeclined"));
+                }
+                else
+                {
+                    try
                     {
-                        Say(AppSettings.GetString("MicrophonePrivacyDeclined"));
+                        Debug.WriteLine($"Initialising speech recognizer"); //This can fail randomly
+                        SpeechRecognizer = new SpeechRecognizer();
+                        SpeechRecognizer.Timeouts.InitialSilenceTimeout = TimeSpan.FromMinutes(5);
+                        await SpeechRecognizer.CompileConstraintsAsync();
+                        Debug.WriteLine($"Speech recognizer initialised");
                     }
-                    else
+                    catch (Exception exp)
                     {
-                        try
-                        {
-                            Debug.WriteLine($"Creating speech recognizer");
-                            SpeechRecognizer = new SpeechRecognizer();
-                            SpeechRecognizer.Timeouts.InitialSilenceTimeout = TimeSpan.FromDays(1);
-
-                            SpeechRecognizer.StateChanged += SpeechRecognizer_StateChanged;
-
-                            await SpeechRecognizer.CompileConstraintsAsync();
-                        }
-                        catch (Exception exp)
-                        {
-                            Say($"There was an error starting the speech recognizer: {exp.Message}");
-                        }
+                        Say($"There was an error initialising the speech recognizer: {exp.Message}");
                     }
                 }
             }
-        }
-
-        private void SpeechRecognizer_StateChanged(SpeechRecognizer sender, SpeechRecognizerStateChangedEventArgs args)
-        {
-            // Noisy..
-            //Debug.WriteLine($"Speech recognizer state changed: {args.State}");
         }
 
         /// <summary>
-        /// Updates local device settinsg from the device API
+        /// Updates local device settings from the device API
         /// </summary>
-        /// <returns>True if the function worked. False if teh device has not been onboarded or there was a problem</returns>
+        /// <returns>True if the function worked. False if the device has not been onboarded or there was a problem</returns>
         private async Task<bool> UpdateDeviceSettings()
         {
-            Say("Getting device settings");
+            LogStatusMessage("Getting device settings", StatusSeverity.Info, false);
 
             // First check if we have a device ID (has the device been onboarded yet?)
-            var deviceId = ApplicationData.Current.LocalSettings.Values[_DeviceIdKey];
+            //var deviceId = ApplicationData.Current.LocalSettings.Values[_DeviceIdKey];
+            var deviceId = Settings.GetString(DeviceSettingKeys.DeviceIdKey);
             if (deviceId == null)
             {
-                LogStatusMessage($"No Device ID. Cannot get device settings.", StatusSeverity.Error);
+                LogStatusMessage($"No Device ID. Cannot get device settings.", StatusSeverity.Error, false);
                 return false;
             }
 
-            var deviceApiUrl = AppSettings.GetString("DeviceApiUrl");
-
             // Call device API to get device settings
-            Device device;
-            using (var httpClient = new HttpClient())
-            {
-                var responseMessage = await httpClient.GetAsync(deviceApiUrl);
-
-                if (!responseMessage.IsSuccessStatusCode)
-                {
-                    LogStatusMessage($"The Device API returned a non-sucess status {responseMessage.ReasonPhrase}", StatusSeverity.Error);
-                    return false;
-                }
-
-                //This will return all devices in the Azure table store because there is not yet an API call to get a specific device
-                //TO DO: Add and API call to return a speicfic device and update this code to use that call
-                var response = await responseMessage.Content.ReadAsStringAsync();
-                var result = JsonConvert.DeserializeObject<List<Device>>(response);
-
-                //filter for this device. We won't need to do this if/when the API gets updated with the capability to return a specific device
-                device = result.Where(d => d.Id.ToString() == deviceId.ToString()).FirstOrDefault();
-            }
+            Device device = await Api.GetDevice(AppSettings, deviceId);
 
             if (device == null)
             {
-                LogStatusMessage($"Could not find this device in the device data store. Suggest this device is reset and re-onboarded.", StatusSeverity.Error);
+                LogStatusMessage($"Could not find this device in the device data store. Suggest this device is reset and re-onboarded.", StatusSeverity.Error, false);
                 return false;
             }
 
             // Is the reset flag true?
             if (device.ResetOnBoot)
             {
-                Say($"Resetting device settings.");
+                LogStatusMessage($"Resetting device settings.", StatusSeverity.Info, true);
 
                 //set all settings to null
-                ApplicationData.Current.LocalSettings.Values[_DeviceExhibitKey] = null;
-                ApplicationData.Current.LocalSettings.Values[_DeviceLabelKey] = null;
-                ApplicationData.Current.LocalSettings.Values[_DeviceIdKey] = null;
-                ApplicationData.Current.LocalSettings.Values[_InteractiveKey] = null;
-                ApplicationData.Current.LocalSettings.Values[_VerbaliseSystemInformationOnBootKey] = null;
-                ApplicationData.Current.LocalSettings.Values[_SoundOnKey] = null;
-                ApplicationData.Current.LocalSettings.Values[_ResetOnBootKey] = null;
-                ApplicationData.Current.LocalSettings.Values[_VoicePackageUrlKey] = null;
-                ApplicationData.Current.LocalSettings.Values[_QnAKnowledgeBaseIdKey] = null;
+                Settings.Set(DeviceSettingKeys.DeviceExhibitKey, null);
+                Settings.Set(DeviceSettingKeys.DeviceLabelKey, null);
+                Settings.Set(DeviceSettingKeys.DeviceIdKey, null);
+                Settings.Set(DeviceSettingKeys.InteractiveKey, null);
+                Settings.Set(DeviceSettingKeys.VerbaliseSystemInformationOnBootKey, null);
+                Settings.Set(DeviceSettingKeys.SoundOnKey, null);
+                Settings.Set(DeviceSettingKeys.ResetOnBootKey, null);
+                Settings.Set(DeviceSettingKeys.VoicePackageUrlKey, null);
+                Settings.Set(DeviceSettingKeys.QnAKnowledgeBaseIdKey, null);
 
                 // Call API to set ResetOnBoot flag to false to avoid a loop
-                var responseString = string.Empty;
-                using (var httpClient = new HttpClient())
-                {
-                    httpClient.BaseAddress = new Uri(deviceApiUrl + "/" + device.Id.ToString());
-
-                    //construct full API endpoint uri
-                    var fullUrl = $"{httpClient.BaseAddress}?DeviceLabel={device.DeviceLabel}&Exhibit={device.Exhibit}&Venue={device.Venue}&Interactive={device.Interactive}&VerbaliseSystemInformationOnBoot={device.VerbaliseSystemInformationOnBoot}&SoundOn={device.SoundOn}&ResetOnBoot=false&VoicePackageUrl={device.VoicePackageUrl}&QnAKnowledgeBaseId={device.QnAKnowledgeBaseId}";
-
-                    var responseMessage = await httpClient.PutAsync(fullUrl, null);
-                    responseString = await responseMessage.Content.ReadAsStringAsync();
-                }
-
+                await Api.UpdateDevice(AppSettings, device);
             }
             else
             {
                 // Store device settings in Windows local app settings
-                ApplicationData.Current.LocalSettings.Values[_DeviceExhibitKey] = device.Exhibit;
-                ApplicationData.Current.LocalSettings.Values[_DeviceLabelKey] = device.DeviceLabel;
-                ApplicationData.Current.LocalSettings.Values[_InteractiveKey] = device.Interactive;
-                ApplicationData.Current.LocalSettings.Values[_VerbaliseSystemInformationOnBootKey] = device.VerbaliseSystemInformationOnBoot;
-                ApplicationData.Current.LocalSettings.Values[_SoundOnKey] = device.SoundOn;
-                ApplicationData.Current.LocalSettings.Values[_ResetOnBootKey] = device.ResetOnBoot;
-                ApplicationData.Current.LocalSettings.Values[_VoicePackageUrlKey] = device.VoicePackageUrl;
-                ApplicationData.Current.LocalSettings.Values[_QnAKnowledgeBaseIdKey] = device.QnAKnowledgeBaseId;
+                Settings.Set(DeviceSettingKeys.DeviceExhibitKey, device.Exhibit);
+                Settings.Set(DeviceSettingKeys.DeviceLabelKey, device.DeviceLabel);
+                Settings.Set(DeviceSettingKeys.InteractiveKey, device.Interactive);
+                Settings.Set(DeviceSettingKeys.VerbaliseSystemInformationOnBootKey, device.VerbaliseSystemInformationOnBoot);
+                Settings.Set(DeviceSettingKeys.SoundOnKey, device.SoundOn);
+                Settings.Set(DeviceSettingKeys.ResetOnBootKey, device.ResetOnBoot);
+                Settings.Set(DeviceSettingKeys.VoicePackageUrlKey, device.VoicePackageUrl);
+                Settings.Set(DeviceSettingKeys.QnAKnowledgeBaseIdKey, device.QnAKnowledgeBaseId);
             }
 
             return true;
@@ -396,7 +331,7 @@ namespace Dinmore.Uwp
             {
                 // There is now webcam present. Please Intall One.
 
-                Say("There is no webcam present, please add a USB webcam and restart the exhibit");
+                LogStatusMessage("There is no webcam present, please add a USB webcam and restart the exhibit", StatusSeverity.Info, true);
 
                 // If the user has disabled their webcam this exception is thrown; provide a descriptive message to inform the user of this fact.
                 //LogStatusMessage("Webcam is disabled or access to the webcam is disabled for this app.\nEnsure Privacy Settings allow webcam usage.", StatusSeverity.Error);
@@ -405,16 +340,21 @@ namespace Dinmore.Uwp
             }
             catch (Exception ex)
             {
-                Say("There is no webcam present, please add a USB webcam and restart the exhibit");
-                //LogStatusMessage("Unable to start camera: " + ex.ToString(), StatusSeverity.Error);
+                LogStatusMessage("There is no webcam present, please add a USB webcam and restart the exhibit", StatusSeverity.Info, true);
                 successful = false;
             }
 
             return successful;
         }
 
+        /// <summary>
+        /// Start listening for audio
+        /// </summary>
+        /// <returns></returns>
         private async Task StartSpeechRecognition()
         {
+            await speechRecognitionProcessingSemaphore.WaitAsync();
+
             // End previous session
             await StopSpeechRecognition();
 
@@ -423,75 +363,25 @@ namespace Dinmore.Uwp
                 SpeechRecognizer.ContinuousRecognitionSession.Completed += ContinuousRecognitionSession_Completed;
                 SpeechRecognizer.ContinuousRecognitionSession.ResultGenerated += ContinuousRecognitionSession_ResultGenerated;
 
-                //Debug.WriteLine($"StartSpeechRecognition: Starting recognizer");
-                //LogStatusMessage($"StartSpeechRecognition: Starting recognizer", StatusSeverity.Error);
-
-                vpGenerated.Stop();
-                //if (!vpGenerated.IsCurrentlyPlaying)
-                //{
                 await SpeechRecognizer.ContinuousRecognitionSession.StartAsync();
                 IsSpeechRecognitionInProgress = true;
                 Debug.WriteLine($"StartSpeechRecognition: Recognizer started successfully");
-                LogStatusMessage($"StartSpeechRecognition: Recognizer started successfully", StatusSeverity.Error);
-                //}
-                //else
-                //{
-                //    Debug.WriteLine($"StartSpeechRecognition: Playing audio, skipping recogition");
-                //    LogStatusMessage($"StartSpeechRecognition: Playing audio, skipping recogition", StatusSeverity.Error);
-                //}
+                LogStatusMessage($"StartSpeechRecognition: Recognizer started successfully", StatusSeverity.Error, false);
             }
             catch (Exception exp)
             {
                 Debug.WriteLine($"StartSpeechRecognition: Error {exp}");
-                //Say($"There was a problem with the speech recognizer: {exp.InnerException}");
-                return;
+            }
+            finally
+            {
+                speechRecognitionProcessingSemaphore.Release();
             }
         }
 
-        private async void ContinuousRecognitionSession_ResultGenerated(SpeechContinuousRecognitionSession sender, SpeechContinuousRecognitionResultGeneratedEventArgs args)
-        {
-            Debug.WriteLine($"ContinuousRecognitionSession_ResultGenerated: Result generated: {args.Result.Status}");
-            if (args.Result.Status != SpeechRecognitionResultStatus.Success)
-            {
-                return;
-            }
-
-            Debug.WriteLine($"ContinuousRecognitionSession_ResultGenerated: Result: {args.Result.Text} (Confidence: {args.Result.Confidence})");
-            LogStatusMessage($"ContinuousRecognitionSession_ResultGenerated: Result: {args.Result.Text} (Confidence: {args.Result.Confidence})", StatusSeverity.Info);
-            if (args.Result.Confidence == SpeechRecognitionConfidence.Low || args.Result.Text?.Length == 0)
-            {
-                return;
-            }
-
-            try
-            {
-                string conversationId = await PostMessageToApiAsync(args.Result.Text);
-                if (conversationId == null)
-                {
-                    Debug.WriteLine($"ContinuousRecognitionSession_ResultGenerated: No conversation Id returned from bot");
-                    LogStatusMessage($"ContinuousRecognitionSession_ResultGenerated: No conversation Id returned from bot", StatusSeverity.Info);
-                    return;
-                }
-
-                string botResponse = await GetMessageFromApiAsync(conversationId) ?? "No reply";
-                Debug.WriteLine($"ContinuousRecognitionSession_ResultGenerated: Bot response {botResponse}");
-                LogStatusMessage($"ContinuousRecognitionSession_ResultGenerated: Bot response {botResponse}", StatusSeverity.Info);
-                Say(botResponse);
-            }
-            catch (Exception exp)
-            {
-                Debug.WriteLine($"ContinuousRecognitionSession_ResultGenerated: Error calling bot {exp}");
-                LogStatusMessage($"ContinuousRecognitionSession_ResultGenerated: Error calling bot {exp}", StatusSeverity.Error);
-            }
-        }
-
-        private void ContinuousRecognitionSession_Completed(SpeechContinuousRecognitionSession sender, SpeechContinuousRecognitionCompletedEventArgs args)
-        {
-            Debug.WriteLine($"Speech recognizer session completed: {args.Status}");
-            LogStatusMessage($"Speech recognizer session completed: {args.Status}", StatusSeverity.Info);
-            IsSpeechRecognitionInProgress = false;
-        }
-
+        /// <summary>
+        /// Stop listening for audio
+        /// </summary>
+        /// <returns></returns>
         private async Task StopSpeechRecognition()
         {
             // In case we're in initialising of the app and speech recognizer has not started yet
@@ -523,26 +413,83 @@ namespace Dinmore.Uwp
                         LogStatusMessage($"StopSpeechRecognition: Speech recognition stopped", StatusSeverity.Info);
                         Debug.WriteLine($"StopSpeechRecognition: Speech recognition stopped");
                     }
-                    IsSpeechRecognitionInProgress = false;
                 }
                 catch (Exception exp)
                 {
                     LogStatusMessage($"StopSpeechRecognition: error: {exp}", StatusSeverity.Info);
                     Debug.WriteLine($"StopSpeechRecognition error: {exp}");
                 }
+                finally
+                {
+                    IsSpeechRecognitionInProgress = false;
+                }
             }
+        }
+
+        /// <summary>
+        /// Called once Speech Recognizer has detected something
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="args"></param>
+        private async void ContinuousRecognitionSession_ResultGenerated(SpeechContinuousRecognitionSession sender, SpeechContinuousRecognitionResultGeneratedEventArgs args)
+        {
+            Debug.WriteLine($"ContinuousRecognitionSession_ResultGenerated: Result generated: {args.Result.Status}");
+            if (args.Result.Status != SpeechRecognitionResultStatus.Success)
+            {
+                return;
+            }
+
+            Debug.WriteLine($"ContinuousRecognitionSession_ResultGenerated: Result: {args.Result.Text} (Confidence: {args.Result.Confidence})");
+            LogStatusMessage($"ContinuousRecognitionSession_ResultGenerated: Result: {args.Result.Text} (Confidence: {args.Result.Confidence})", StatusSeverity.Info, false);
+            if (args.Result.Confidence == SpeechRecognitionConfidence.Low || args.Result.Text?.Length == 0)
+            {
+                return;
+            }
+
+            try
+            {
+                string conversationId = await PostMessageToApiAsync(args.Result.Text);
+                if (conversationId == null)
+                {
+                    Debug.WriteLine($"ContinuousRecognitionSession_ResultGenerated: No conversation Id returned from bot");
+                    LogStatusMessage($"ContinuousRecognitionSession_ResultGenerated: No conversation Id returned from bot", StatusSeverity.Info, false);
+                    return;
+                }
+
+                string botResponse = await GetMessageFromApiAsync(conversationId) ?? "No reply";
+                Debug.WriteLine($"ContinuousRecognitionSession_ResultGenerated: Bot response {botResponse}");
+                LogStatusMessage($"ContinuousRecognitionSession_ResultGenerated: Bot response {botResponse}", StatusSeverity.Info);
+                await StopSpeechRecognition();
+                await vpSpeechRecog.SayAsync(botResponse);
+            }
+            catch (Exception exp)
+            {
+                Debug.WriteLine($"ContinuousRecognitionSession_ResultGenerated: Error calling bot {exp}");
+                LogStatusMessage($"ContinuousRecognitionSession_ResultGenerated: Error calling bot {exp}", StatusSeverity.Error);
+            }
+        }
+
+        /// <summary>
+        /// Called after ContinuousRecognitionSession_ResultGenerated
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="args"></param>
+        private void ContinuousRecognitionSession_Completed(SpeechContinuousRecognitionSession sender, SpeechContinuousRecognitionCompletedEventArgs args)
+        {
+            Debug.WriteLine($"Speech recognizer session completed: {args.Status}");
+            LogStatusMessage($"Speech recognizer session completed: {args.Status}", StatusSeverity.Info);
+            IsSpeechRecognitionInProgress = false;
         }
 
         private void Say(string phrase)
         {
-            StopSpeechRecognition().GetAwaiter().GetResult();
             vpGenerated.Say(phrase);
         }
 
         private void RunTimer()
         {
             frameProcessingTimer = ThreadPoolTimer.CreateTimer(
-                new TimerElapsedHandler(ProcessCurrentStateAsync), timerInterval);
+                new TimerElapsedHandler(ProcessCurrentStateAsync), TimerInterval);
         }
 
         /// <summary>
@@ -595,30 +542,24 @@ namespace Dinmore.Uwp
                         if (!string.IsNullOrEmpty(result))
                         {
                             //store the device id guid
-                            ApplicationData.Current.LocalSettings.Values[_DeviceIdKey] = result;
-
-                            LogStatusMessage($"Found a QR code with device id {result} which has been stored to app storage.", StatusSeverity.Info);
-
-                            Say("I found a QR code, thanks.");
+                            Settings.Set(DeviceSettingKeys.DeviceIdKey, result);
+                            LogStatusMessage($"Found a QR code with device id {result}.", StatusSeverity.Info, true);
 
                             // Get device settings
                             await this.UpdateDeviceSettings();
 
                             // Update voice package
-                            var voicePackageUrl = (string)ApplicationData.Current.LocalSettings.Values[_VoicePackageUrlKey];
+                            LogStatusMessage("Downloading the voice package.", StatusSeverity.Info, true);
+                            await Infrastructure.VoicePackageService.DownloadUnpackVoicePackage(Settings.GetString(DeviceSettingKeys.VoicePackageUrlKey));
+                            LogStatusMessage("Got the voice package.", StatusSeverity.Info, true);
 
-                            Say("Downloading the voice package.");
-                            await Infrastructure.VoicePackageService.DownloadVoice(voicePackageUrl);
-                            Say("Unpacking the voice package.");
-                            await Infrastructure.VoicePackageService.UnpackVoice(voicePackageUrl);
-                            this.vp = await Infrastructure.VoicePackageService.VoicePlayerFactory(voicePackageUrl);
+                            this.vp = await Infrastructure.VoicePackageService.VoicePlayerFactory(Settings.GetString(DeviceSettingKeys.VoicePackageUrlKey));
 
                             ChangeDetectionState(DetectionStates.WaitingForFaces);
                         }
                         break;
 
                     case DetectionStates.WaitingForFaces:
-                        //LogStatusMessage("Waiting for faces", StatusSeverity.Info);
                         CurrentState.ApiRequestParameters = await ProcessCurrentVideoFrameAsync();
 
                         if (CurrentState.ApiRequestParameters != null)
@@ -628,7 +569,6 @@ namespace Dinmore.Uwp
                         break;
 
                     case DetectionStates.FaceDetectedOnDevice:
-                        //LogStatusMessage("Just about to send API call for faces", StatusSeverity.Info);
 
                         //Should we play? MORE DESC REQUIRED
                         if (CurrentState.LastImageApiPush.AddMilliseconds(ApiIntervalMs) < DateTimeOffset.UtcNow
@@ -637,10 +577,12 @@ namespace Dinmore.Uwp
                             //ThreadPoolTimer.CreateTimer(
                             //    new TimerElapsedHandler(HelloAudioHandler),
                             //    TimeSpan.FromMilliseconds(NumberMilliSecsToWaitForHello));
-
-                            if (!(bool)ApplicationData.Current.LocalSettings.Values[_InteractiveKey])
+                            if (!Settings.GetBool(DeviceSettingKeys.InteractiveKey))
                             {
-                                Say("I'm listening, talk to me");
+                                if (!vpSpeechRecog.IsCurrentlyPlaying && !IsSpeechRecognitionInProgress)
+                                {
+                                    await vpSpeechRecog.SayAsync("I'm listening, talk to me");
+                                }
                             }
                             else
                             {
@@ -650,18 +592,18 @@ namespace Dinmore.Uwp
                             CurrentState.LastImageApiPush = DateTimeOffset.UtcNow;
                             CurrentState.FacesFoundByApi = await PostImageToApiAsync(CurrentState.ApiRequestParameters.Image);
 
-                            LogStatusMessage($"Sending faces to api", StatusSeverity.Info);
+                            LogStatusMessage($"Sending faces to api", StatusSeverity.Info, false);
+
                             ChangeDetectionState(DetectionStates.ApiResponseReceived);
                         }
 
                         break;
 
                     case DetectionStates.ApiResponseReceived:
-                        //LogStatusMessage("API response received", StatusSeverity.Info);
 
                         if (CurrentState.FacesFoundByApi != null && CurrentState.FacesFoundByApi.Any())
                         {
-                            LogStatusMessage("Face(s) detected", StatusSeverity.Info);
+                            LogStatusMessage("Face(s) detected", StatusSeverity.Info, false);
                             ChangeDetectionState(DetectionStates.InterpretingApiResults);
                             CurrentState.FacesStillPresent = true;
                             break;
@@ -680,7 +622,7 @@ namespace Dinmore.Uwp
 
                         if (!vp.IsCurrentlyPlaying)
                         {
-                            if ((bool)ApplicationData.Current.LocalSettings.Values[_InteractiveKey])
+                            if (Settings.GetBool(DeviceSettingKeys.InteractiveKey))
                             {
                                 LogStatusMessage("Starting playlist", StatusSeverity.Info);
                                 var play = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
@@ -690,15 +632,6 @@ namespace Dinmore.Uwp
                                 });
                             }
                         }
-
-                        //if (!(bool)ApplicationData.Current.LocalSettings.Values[_InteractiveKey])
-                        //{
-                        //    if (!vpGenerated.IsCurrentlyPlaying && !IsSpeechRecognitionInProgress)
-                        //    {
-                        //        LogStatusMessage("Starting speech recognizer", StatusSeverity.Info);
-                        //        await StartSpeechRecognition();
-                        //    }
-                        //}
 
                         // Check here if the media has finished playing or the people have walked away.
                         //ChangeDetectionState(DetectionStates.WaitingForFaces);
@@ -711,25 +644,22 @@ namespace Dinmore.Uwp
                     case DetectionStates.WaitingForFacesToDisappear:
 
                         CurrentState.FacesStillPresent = await AreFacesStillPresent();
-                        LogStatusMessage($"Faces present: {CurrentState.FacesStillPresent} Speech Recognition active: {IsSpeechRecognitionInProgress}", StatusSeverity.Info);
+                        LogStatusMessage($"Faces present: {CurrentState.FacesStillPresent} Speech Recognition active: {IsSpeechRecognitionInProgress}", StatusSeverity.Info, false);
 
                         //we dont have a face
                         if (!CurrentState.FacesStillPresent)
                         {
                             //TODO Refactor this out.
                             await Task.Delay(NumberMilliSecsForFacesToDisappear)
-                                .ContinueWith((async t =>
+                                .ContinueWith((t =>
                                 {
                                     CurrentState.FacesStillPresent = AreFacesStillPresent().Result;
                                     if (!CurrentState.FacesStillPresent)
                                     {
-                                        LogStatusMessage($"Faces have gone for a few or more secs, stop the audio playback", StatusSeverity.Info);
+                                        LogStatusMessage($"Faces have gone for a few or more secs, stop the audio playback", StatusSeverity.Info, false);
                                         ChangeDetectionState(DetectionStates.WaitingForFaces);
                                         vp.Stop();
                                         CurrentState.TimeVideoWasStopped = DateTimeOffset.UtcNow;
-
-                                        // End speech recognition
-                                        await StopSpeechRecognition();
                                         return;
                                     }
                                 }
@@ -737,9 +667,9 @@ namespace Dinmore.Uwp
                         }
                         else
                         {
-                            if (!(bool)ApplicationData.Current.LocalSettings.Values[_InteractiveKey])
+                            if (!Settings.GetBool(DeviceSettingKeys.InteractiveKey))
                             {
-                                if (!vpGenerated.IsCurrentlyPlaying && !IsSpeechRecognitionInProgress)
+                                if (!vpSpeechRecog.IsCurrentlyPlaying && !IsSpeechRecognitionInProgress)
                                 {
                                     LogStatusMessage("Starting speech recognizer", StatusSeverity.Info);
                                     await StartSpeechRecognition();
@@ -756,7 +686,7 @@ namespace Dinmore.Uwp
             }
             catch (Exception ex)
             {
-                LogStatusMessage("Unable to process current frame. " + ex.ToString(), StatusSeverity.Error);
+                LogStatusMessage("Unable to process current frame. " + ex.ToString(), StatusSeverity.Error, false);
             }
             finally
             {
@@ -766,14 +696,14 @@ namespace Dinmore.Uwp
 
         private void HelloAudio()
         {
-            LogStatusMessage("Starting introduction", StatusSeverity.Info);
+            LogStatusMessage("Starting introduction", StatusSeverity.Info, false);
 
             vp.PlayIntroduction(CurrentState.ApiRequestParameters.Faces.Count());
             //timer.Cancel();
         }
 
 
-        private void LogStatusMessage(string message, StatusSeverity severity)
+        private void LogStatusMessage(string message, StatusSeverity severity, bool say = false)
         {
             var ignored = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
             {
@@ -784,50 +714,23 @@ namespace Dinmore.Uwp
 
                 StatusLog.Insert(0, new StatusMessage(message, severity));
             });
+
+            if (say)
+            {
+                vpGenerated.Say(message);
+            }
         }
 
         private async Task<List<Face>> PostImageToApiAsync(byte[] image)
         {
             try
             {
-                using (var httpClient = new HttpClient())
-                {
-                    var content = new StreamContent(new MemoryStream(image));
-                    content.Headers.ContentType = new MediaTypeWithQualityHeaderValue("application/octet-stream");
-
-                    //build url to pass to api
-                    var deviceId = ApplicationData.Current.LocalSettings.Values[_DeviceIdKey];
-                    var url = AppSettings.GetString("FaceApiUrl");
-                    var returnFaceLandmarks = AppSettings.GetString("ReturnFaceLandmarks");
-                    var returnFaceAttributes = AppSettings.GetString("ReturnFaceAttributes");
-                    url = $"{url}?deviceid={deviceId}&returnFaceLandmarks={returnFaceLandmarks}&returnFaceAttributes={returnFaceAttributes}";
-
-                    var responseMessage = await httpClient.PostAsync(url, content);
-
-                    if (!responseMessage.IsSuccessStatusCode)
-                    {
-                        switch (responseMessage.StatusCode.ToString())
-                        {
-                            case "BadRequest":
-                                LogStatusMessage("The API returned a 400 Bad Request. This is caused by either a missing DeviceId parameter or one containig a GUID that is not already registered with the device API.", StatusSeverity.Error);
-                                break;
-                            default:
-                                LogStatusMessage($"The API returned a non-sucess status {responseMessage.ReasonPhrase}", StatusSeverity.Error);
-                                break;
-                        }
-                        return null;
-                    }
-
-                    var response = await responseMessage.Content.ReadAsStringAsync();
-                    var result = JsonConvert.DeserializeObject<List<Face>>(response);
-
-                    return result;
-                }
+                return await Api.PostPatron(AppSettings, image);
             }
             catch (Exception ex)
             {
                 vp.Stop();
-                LogStatusMessage("Exception: " + ex.ToString(), StatusSeverity.Error);
+                LogStatusMessage("Exception posting to Patron api: " + ex.ToString(), StatusSeverity.Error, false);
                 return null;
             }
         }
@@ -840,7 +743,7 @@ namespace Dinmore.Uwp
                 {
                     //var content = new StringContent(messageText);
                     var url = AppSettings.GetString("BotApiUrl");
-                    var deviceId = ApplicationData.Current.LocalSettings.Values[_DeviceIdKey];
+                    var deviceId = Settings.GetString(DeviceSettingKeys.DeviceIdKey);
                     url = $"{url}?deviceid={deviceId}&message={messageText}";
 
                     var responseMessage = await httpClient.PostAsync(url, null);
@@ -882,7 +785,7 @@ namespace Dinmore.Uwp
                     var content = new StringContent(conversationId);
 
                     var url = AppSettings.GetString("BotApiUrl");
-                    var deviceId = ApplicationData.Current.LocalSettings.Values[_DeviceIdKey];
+                    var deviceId = Settings.GetString(DeviceSettingKeys.DeviceIdKey);
                     url = $"{url}?conversationId={conversationId}";
 
                     var responseMessage = await httpClient.GetAsync(url);
@@ -995,16 +898,13 @@ namespace Dinmore.Uwp
                             //encoder.BitmapTransform.Bounds = bounds;
                             await encoder.FlushAsync();
 
-                            LogStatusMessage($"Found face(s) on camera: {faces.Count}", StatusSeverity.Info);
+                            LogStatusMessage($"Found face(s) on camera: {faces.Count}", StatusSeverity.Info, false);
 
 
                             return new ApiRequestParameters
                             {
                                 Image = ms.ToArray(),
-                                Faces = faces,
-                                //ImageBounds = bounds,
-                                //OriginalImageHeight = converted.PixelHeight,
-                                //OriginalImageWidth = converted.PixelWidth,
+                                Faces = faces
                             };
                         }
                     }
@@ -1013,7 +913,7 @@ namespace Dinmore.Uwp
             }
             catch (Exception ex)
             {
-                LogStatusMessage("Unable to process current frame: " + ex.ToString(), StatusSeverity.Error);
+                LogStatusMessage("Unable to process current frame: " + ex.ToString(), StatusSeverity.Error, false);
                 return null;
             }
             finally
@@ -1038,7 +938,7 @@ namespace Dinmore.Uwp
             }
             catch (Exception ex)
             {
-                LogStatusMessage("Unable to process current frame: " + ex.ToString(), StatusSeverity.Error);
+                LogStatusMessage("Unable to process current frame: " + ex.ToString(), StatusSeverity.Error, false);
                 return false;  //TODO ? true or false?
             }
             finally
@@ -1067,11 +967,11 @@ namespace Dinmore.Uwp
                         ChangeDetectionState(DetectionStates.Idle);
                         break;
                     }
-                    // This needs to test for if a GUID as stored
-                    var deviceId = ApplicationData.Current.LocalSettings.Values[_DeviceIdKey];
+                    var deviceId = Settings.GetString(DeviceSettingKeys.DeviceIdKey);
                     if (deviceId == null)
                     {
-                        Say("I have no device ID. I'm now onboarding, show me a QR code containing a device ID.");
+                        //need to verbalise this directly rather than going through LogStatusMessage because the SoundOn setting is not yet set 
+                        vpGenerated.Say("I have no device ID. I'm now onboarding, show me a QR code containing a device ID.");
                         ChangeDetectionState(DetectionStates.OnBoarding);
                     }
                     else
