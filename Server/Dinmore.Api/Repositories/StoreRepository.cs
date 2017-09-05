@@ -155,7 +155,7 @@ namespace dinmore.api.Repositories
             var voicePackageUrl = device.VoicePackageUrl;
             if (!string.IsNullOrEmpty(fileName))
             {
-                voicePackageUrl = $"{_appSettings.StoreVoicePackagesRootUrl}/{fileName}";
+                voicePackageUrl = $"{_appSettings.StoreVoicePackagesRootUrl}{fileName}";
             }
 
             //get cloudtable
