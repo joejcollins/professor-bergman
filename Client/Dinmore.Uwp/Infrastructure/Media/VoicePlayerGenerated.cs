@@ -14,6 +14,8 @@ using Windows.Storage.Streams;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.Core;
 using Windows.UI.Core;
+using Dinmore.Uwp.Helpers;
+using Dinmore.Uwp.Constants;
 
 namespace Dinmore.Uwp.Infrastructure.Media
 {
@@ -106,19 +108,24 @@ namespace Dinmore.Uwp.Infrastructure.Media
             await PlayNext();
         }
 
-        public async Task<bool> PlayNext() {
-
-            if (!this.IsCurrentlyPlaying && mediaPlayer.PlaybackSession.PlaybackState != MediaPlaybackState.Playing && speechlist.Count > 0)
+        public async Task<bool> PlayNext()
+        {
+            // Respect sound on setting
+            if (Settings.GetBool(DeviceSettingKeys.SoundOnKey))
             {
-                this.IsCurrentlyPlaying = true;
-                var item = speechlist.Dequeue();
-                var synth = new Windows.Media.SpeechSynthesis.SpeechSynthesizer();
-                SpeechSynthesisStream stream = await synth.SynthesizeTextToStreamAsync(item);
-                MediaSource mediaSource = MediaSource.CreateFromStream(stream, stream.ContentType);
-                mediaPlayer.Source = mediaSource;
-                mediaPlayer.Play();
-                return true;
+                if (!this.IsCurrentlyPlaying && mediaPlayer.PlaybackSession.PlaybackState != MediaPlaybackState.Playing && speechlist.Count > 0)
+                {
+                    this.IsCurrentlyPlaying = true;
+                    var item = speechlist.Dequeue();
+                    var synth = new Windows.Media.SpeechSynthesis.SpeechSynthesizer();
+                    SpeechSynthesisStream stream = await synth.SynthesizeTextToStreamAsync(item);
+                    MediaSource mediaSource = MediaSource.CreateFromStream(stream, stream.ContentType);
+                    mediaPlayer.Source = mediaSource;
+                    mediaPlayer.Play();
+                    return true;
+                }
             }
+
             return false;
         }
 

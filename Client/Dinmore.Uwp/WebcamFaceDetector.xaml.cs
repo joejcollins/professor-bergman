@@ -118,12 +118,8 @@ namespace Dinmore.Uwp
             //get device settings here
             await UpdateDeviceSettings();
 
-            // is sound on?
-            if (Settings.GetBool(DeviceSettingKeys.SoundOnKey))
-            {
-                this.vp = await Infrastructure.VoicePackageService.VoicePlayerFactory();
-            }
-
+            this.vp = await Infrastructure.VoicePackageService.VoicePlayerFactory();
+            
             // VerbaliseSystemInformation
             if (Settings.GetBool(DeviceSettingKeys.VerbaliseSystemInformationOnBootKey))
             {
@@ -364,8 +360,9 @@ namespace Dinmore.Uwp
                             LogStatusMessage("Downloading the voice package.", StatusSeverity.Info, true);
                             await Infrastructure.VoicePackageService.DownloadUnpackVoicePackage(Settings.GetString(DeviceSettingKeys.VoicePackageUrlKey));
                             LogStatusMessage("Got the voice package.", StatusSeverity.Info, true);
-                            this.vp = await Infrastructure.VoicePackageService.VoicePlayerFactory(Settings.GetString(DeviceSettingKeys.VoicePackageUrlKey));
-                            
+
+                                this.vp = await Infrastructure.VoicePackageService.VoicePlayerFactory(Settings.GetString(DeviceSettingKeys.VoicePackageUrlKey));
+
                             ChangeDetectionState(DetectionStates.WaitingForFaces);
                         }
                         break;
@@ -509,10 +506,7 @@ namespace Dinmore.Uwp
 
             if (say)
             {
-                if (Settings.GetBool(DeviceSettingKeys.SoundOnKey))
-                {
-                    vpGenerated.Say(message);
-                }
+                vpGenerated.Say(message);
             }
         }
 
