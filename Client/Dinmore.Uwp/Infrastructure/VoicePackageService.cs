@@ -8,65 +8,54 @@ using System.Threading.Tasks;
 using Dinmore.Uwp.Infrastructure.Media;
 using Windows.Storage;
 using Windows.Data.Json;
+using Dinmore.Uwp.Constants;
+using Dinmore.Uwp.Helpers;
 
 namespace Dinmore.Uwp.Infrastructure
 {
     public class VoicePackageService
     {
-        private const string _DeviceExhibitKey = "DeviceExhibit";
-        private const string _DeviceLabelKey = "DeviceLabel";
-        private const string _DeviceIdKey = "DeviceId";
-        private const string _InteractiveKey = "Interactive";
-        private const string _VerbaliseSystemInformationOnBootKey = "VerbaliseSystemInformationOnBoot";
-        private const string _SoundOnKey = "SoundOn";
-        private const string _ResetOnBootKey = "ResetOnBoot";
-        private const string _VoicePackageUrlKey = "VoicePackageUrl";
-        private const string _QnAKnowledgeBaseIdKey = "QnAKnowledgeBaseId";
-
-        public async static Task<string> UnpackVoice(string voicePackageUrl) {
-            // Will be null if folder dosen't exist
-            var storageFolder = await ApplicationData.Current.LocalFolder.TryGetItemAsync("Assets\\Voice\\");
-            if (storageFolder == null) {
-                storageFolder = await ApplicationData.Current.LocalFolder.CreateFolderAsync("Assets\\Voice\\");
-            }
-
-            // Get file name
-            var packageFileName = ExtractFileNameFromUrl(voicePackageUrl);
-
-            var outputFolderLocation = $"Assets\\Voice\\{packageFileName}\\";
-            var outputputFolder = await ApplicationData.Current.LocalFolder.TryGetItemAsync(outputFolderLocation);
-            if (outputputFolder != null)
-            {
-                await outputputFolder.DeleteAsync(StorageDeleteOption.PermanentDelete);
-            }
-            System.IO.Compression.ZipFile.ExtractToDirectory($"{storageFolder.Path}\\{packageFileName}.zip", $"{storageFolder.Path}\\{packageFileName}");
-
-            return packageFileName;
-        }
-
-        public async static Task<string> DownloadVoice(string voicePackageUrl)
+        public async static Task<string> DownloadUnpackVoicePackage(string voicePackageUrl)
         {
-            StorageFolder storageFolder = (StorageFolder)await ApplicationData.Current.LocalFolder.TryGetItemAsync("Assets\\Voice\\");
-            if (storageFolder == null)
+            try
             {
-                storageFolder = await ApplicationData.Current.LocalFolder.CreateFolderAsync("Assets\\Voice\\");
+                // Create voices storage folder
+                StorageFolder storageFolder = (StorageFolder)await ApplicationData.Current.LocalFolder.TryGetItemAsync(AppConsts.VoiceAssetsFolderPath);
+                if (storageFolder == null)
+                {
+                    storageFolder = await ApplicationData.Current.LocalFolder.CreateFolderAsync(AppConsts.VoiceAssetsFolderPath);
+                }
+
+                // Get file name
+                var packageFileName = ExtractFileNameFromUrl(voicePackageUrl);
+
+                // Download and store voice package zip
+                StorageFile sf = await storageFolder.CreateFileAsync($"{packageFileName}.zip", CreationCollisionOption.ReplaceExisting);
+                var downloadFolder = (await sf.GetParentAsync()).ToString();
+                HttpClient client = new HttpClient();
+                byte[] buffer = await client.GetByteArrayAsync(voicePackageUrl);
+                using (Stream stream = await sf.OpenStreamForWriteAsync())
+                {
+                    stream.Write(buffer, 0, buffer.Length);
+                }
+
+                // Unpack voice files
+                var outputFolderLocation = $"{AppConsts.VoiceAssetsFolderPath}{packageFileName}\\";
+                var outputputFolder = await ApplicationData.Current.LocalFolder.TryGetItemAsync(outputFolderLocation);
+                if (outputputFolder != null)
+                {
+                    await outputputFolder.DeleteAsync(StorageDeleteOption.PermanentDelete);
+                }
+                System.IO.Compression.ZipFile.ExtractToDirectory($"{storageFolder.Path}\\{packageFileName}.zip", $"{storageFolder.Path}\\{packageFileName}");
+
+
+                return packageFileName;
             }
-
-            // Get file name
-            var packageFileName = ExtractFileNameFromUrl(voicePackageUrl);
-
-            var outputFolderLocation = $"Assets\\Voice\\{packageFileName}\\";
-
-            StorageFile sf = await storageFolder.CreateFileAsync($"{packageFileName}.zip", CreationCollisionOption.ReplaceExisting);
-            var downloadFolder = (await sf.GetParentAsync()).ToString();
-            HttpClient client = new HttpClient();
-            byte[] buffer = await client.GetByteArrayAsync(voicePackageUrl);
-            using (Stream stream = await sf.OpenStreamForWriteAsync())
+            catch (Exception ex)
             {
-                stream.Write(buffer, 0, buffer.Length);
+                //Log here when it is a glbal function
+                return null;
             }
-
-            return packageFileName;
         }
 
         internal async static Task<IVoicePlayer> VoicePlayerFactory(string voicePackageUrl)
@@ -74,14 +63,14 @@ namespace Dinmore.Uwp.Infrastructure
             // Get file name
             var packageFileName = ExtractFileNameFromUrl(voicePackageUrl);
 
-            IStorageItem file = await ApplicationData.Current.LocalFolder.TryGetItemAsync($"Assets\\Voice\\{packageFileName}\\voice.json");
+            IStorageItem file = await ApplicationData.Current.LocalFolder.TryGetItemAsync($"{AppConsts.VoiceAssetsFolderPath}{packageFileName}\\voice.json");
             if (file == null)
             {
                 var vp = new VoicePlayerGenerated();
-                vp.Say("Error: We could not load the Voice");
+                vp.Say("Error: We could not load the Voice Package");
                 return vp;
             }
-            StorageFolder folder = await ApplicationData.Current.LocalFolder.GetFolderAsync($"Assets\\Voice\\{packageFileName}\\");
+            StorageFolder folder = await ApplicationData.Current.LocalFolder.GetFolderAsync($"{AppConsts.VoiceAssetsFolderPath}{packageFileName}\\");
  
             var jsonstring = await FileIO.ReadTextAsync(((StorageFile)file));
             JsonObject ja = JsonValue.Parse(jsonstring).GetObject();
@@ -101,9 +90,9 @@ namespace Dinmore.Uwp.Infrastructure
 
         internal static async Task<IVoicePlayer> VoicePlayerFactory()
         {
-            if (ApplicationData.Current.LocalSettings.Values[_VoicePackageUrlKey] != null)
+            if (Settings.GetString(DeviceSettingKeys.VoicePackageUrlKey) != null)
             {
-                return await VoicePlayerFactory(ApplicationData.Current.LocalSettings.Values[_VoicePackageUrlKey].ToString());
+                return await VoicePlayerFactory(Settings.GetString(DeviceSettingKeys.VoicePackageUrlKey));
             }
             else
             {

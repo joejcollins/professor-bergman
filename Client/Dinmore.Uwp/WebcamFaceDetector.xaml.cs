@@ -1,3 +1,5 @@
+using Dinmore.Uwp.Constants;
+using Dinmore.Uwp.Helpers;
 using Dinmore.Uwp.Infrastructure.Media;
 using Dinmore.Uwp.Models;
 using Newtonsoft.Json;
@@ -10,24 +12,17 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
-using Windows.ApplicationModel;
 using Windows.ApplicationModel.Resources;
 using Windows.Graphics.Imaging;
 using Windows.Media;
 using Windows.Media.Capture;
-using Windows.Media.Core;
 using Windows.Media.FaceAnalysis;
 using Windows.Media.MediaProperties;
-using Windows.Media.Playback;
 using Windows.Networking.Connectivity;
-using Windows.Storage;
-using Windows.Storage.Streams;
 using Windows.System.Threading;
-using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
-using Windows.UI.Xaml.Shapes;
 using ZXing;
 
 namespace Dinmore.Uwp
@@ -42,10 +37,6 @@ namespace Dinmore.Uwp
         /// </summary>
         private readonly SolidColorBrush lineBrush = new SolidColorBrush(Windows.UI.Colors.Yellow);
 
-        /// <summary>
-        /// Thickness of the face bounding box lines.
-        /// </summary>
-        private readonly double lineThickness = 2.0;
 
         /// <summary>
         /// Transparent fill for the bounding box.
@@ -81,7 +72,7 @@ namespace Dinmore.Uwp
         private int NumberMilliSecsForFacesToDisappear;
         private int NumberMilliSecsToWaitForHello;
         private int NumberMillSecsBeforeWePlayAgain;
-        private TimeSpan timerInterval;
+        private TimeSpan TimerInterval;
 
         /// <summary>
         /// The current step of the state machine for detecting faces, playing sounds etc.
@@ -98,17 +89,6 @@ namespace Dinmore.Uwp
         
         private VoicePlayerGenerated vpGenerated = new VoicePlayerGenerated();
 
-
-        private const string _DeviceExhibitKey = "DeviceExhibit";
-        private const string _DeviceLabelKey = "DeviceLabel";
-        private const string _DeviceIdKey = "DeviceId";
-        private const string _InteractiveKey = "Interactive";
-        private const string _VerbaliseSystemInformationOnBootKey = "VerbaliseSystemInformationOnBoot";
-        private const string _SoundOnKey = "SoundOn";
-        private const string _ResetOnBootKey = "ResetOnBoot";
-        private const string _VoicePackageUrlKey = "VoicePackageUrl";
-        private const string _QnAKnowledgeBaseIdKey = "QnAKnowledgeBaseId";
-
         /// <summary>
         /// Initializes a new instance of the <see cref="WebcamFaceDetector"/> class.
         /// </summary>
@@ -116,18 +96,11 @@ namespace Dinmore.Uwp
         {
             //Defaults
             AppSettings = ResourceLoader.GetForCurrentView();
-            NumberMilliSecsForFacesToDisappear = 
-                int.Parse(AppSettings.GetString("NumberMilliSecsForFacesToDisappear"));
-            NumberMilliSecsToWaitForHello =
-                int.Parse(AppSettings.GetString("NumberMilliSecsToWaitForHello"));
-            NumberMillSecsBeforeWePlayAgain = 
-                int.Parse(AppSettings.GetString("NumberMillSecsBeforeWePlayAgain"));
-            var timerIntervalMilliSecs =
-                int.Parse(AppSettings.GetString("TimerIntervalMilliSecs"));
-            timerInterval = TimeSpan.FromMilliseconds(timerIntervalMilliSecs);
-
-            ApiIntervalMs = 
-                double.Parse(AppSettings.GetString("ApiIntervalMilliSecs"));
+            NumberMilliSecsForFacesToDisappear = int.Parse(AppSettings.GetString("NumberMilliSecsForFacesToDisappear"));
+            NumberMilliSecsToWaitForHello = int.Parse(AppSettings.GetString("NumberMilliSecsToWaitForHello"));
+            NumberMillSecsBeforeWePlayAgain =  int.Parse(AppSettings.GetString("NumberMillSecsBeforeWePlayAgain"));
+            TimerInterval = TimeSpan.FromMilliseconds(int.Parse(AppSettings.GetString("TimerIntervalMilliSecs")));
+            ApiIntervalMs =  double.Parse(AppSettings.GetString("ApiIntervalMilliSecs"));
             
 
             InitializeComponent();
@@ -144,18 +117,19 @@ namespace Dinmore.Uwp
         {
             //get device settings here
             await UpdateDeviceSettings();
-            this.vp = await Infrastructure.VoicePackageService.VoicePlayerFactory();
+
+            // is sound on?
+            if (Settings.GetBool(DeviceSettingKeys.SoundOnKey))
+            {
+                this.vp = await Infrastructure.VoicePackageService.VoicePlayerFactory();
+            }
 
             // VerbaliseSystemInformation
-            if (ApplicationData.Current.LocalSettings.Values[_VerbaliseSystemInformationOnBootKey] != null)
+            if (Settings.GetBool(DeviceSettingKeys.VerbaliseSystemInformationOnBootKey))
             {
-                var verbaliseSystemInformationOnBoot = (bool)ApplicationData.Current.LocalSettings.Values[_VerbaliseSystemInformationOnBootKey];
-                if (verbaliseSystemInformationOnBoot)
-                {
-                    Say($"The IP address is: {GetLocalIp()}");
-                    Say($"The exhibit is {ApplicationData.Current.LocalSettings.Values[_DeviceExhibitKey]}");
-                    Say($"The device label is {ApplicationData.Current.LocalSettings.Values[_DeviceLabelKey]}");
-                }
+                LogStatusMessage($"The IP address is: {GetLocalIp()}", StatusSeverity.Info, true);
+                LogStatusMessage($"The exhibit is {Settings.GetString(DeviceSettingKeys.DeviceExhibitKey)}", StatusSeverity.Info, true);
+                LogStatusMessage($"The device label is {Settings.GetString(DeviceSettingKeys.DeviceLabelKey)}", StatusSeverity.Info, true);
             }
 
             // The 'await' operation can only be used from within an async method but class constructors
@@ -168,18 +142,19 @@ namespace Dinmore.Uwp
         }
 
         /// <summary>
-        /// Updates local device settinsg from the device API
+        /// Updates local device settings from the device API
         /// </summary>
-        /// <returns>True if the function worked. False if teh device has not been onboarded or there was a problem</returns>
+        /// <returns>True if the function worked. False if the device has not been onboarded or there was a problem</returns>
         private async Task<bool> UpdateDeviceSettings()
         {
-            Say("Getting device settings");
+            LogStatusMessage("Getting device settings", StatusSeverity.Info, false);
 
             // First check if we have a device ID (has the device been onboarded yet?)
-            var deviceId = ApplicationData.Current.LocalSettings.Values[_DeviceIdKey];
+            //var deviceId = ApplicationData.Current.LocalSettings.Values[_DeviceIdKey];
+            var deviceId = Settings.GetString(DeviceSettingKeys.DeviceIdKey);
             if (deviceId == null)
             {
-                LogStatusMessage($"No Device ID. Cannot get device settings.", StatusSeverity.Error);
+                LogStatusMessage($"No Device ID. Cannot get device settings.", StatusSeverity.Error, false);
                 return false;
             }
 
@@ -193,7 +168,7 @@ namespace Dinmore.Uwp
 
                 if (!responseMessage.IsSuccessStatusCode)
                 {
-                    LogStatusMessage($"The Device API returned a non-sucess status {responseMessage.ReasonPhrase}", StatusSeverity.Error);
+                    LogStatusMessage($"The Device API returned a non-sucess status {responseMessage.ReasonPhrase}", StatusSeverity.Error, false);
                     return false;
                 }
 
@@ -208,25 +183,25 @@ namespace Dinmore.Uwp
 
             if (device == null)
             {
-                LogStatusMessage($"Could not find this device in the device data store. Suggest this device is reset and re-onboarded.", StatusSeverity.Error);
+                LogStatusMessage($"Could not find this device in the device data store. Suggest this device is reset and re-onboarded.", StatusSeverity.Error, false);
                 return false;
             }
 
             // Is the reset flag true?
             if (device.ResetOnBoot)
             {
-                Say($"Resetting device settings.");
+                LogStatusMessage($"Resetting device settings.", StatusSeverity.Info, true);
 
                 //set all settings to null
-                ApplicationData.Current.LocalSettings.Values[_DeviceExhibitKey] = null;
-                ApplicationData.Current.LocalSettings.Values[_DeviceLabelKey] = null;
-                ApplicationData.Current.LocalSettings.Values[_DeviceIdKey] = null;
-                ApplicationData.Current.LocalSettings.Values[_InteractiveKey] = null;
-                ApplicationData.Current.LocalSettings.Values[_VerbaliseSystemInformationOnBootKey] = null;
-                ApplicationData.Current.LocalSettings.Values[_SoundOnKey] = null;
-                ApplicationData.Current.LocalSettings.Values[_ResetOnBootKey] = null;
-                ApplicationData.Current.LocalSettings.Values[_VoicePackageUrlKey] = null;
-                ApplicationData.Current.LocalSettings.Values[_QnAKnowledgeBaseIdKey] = null;
+                Settings.Set(DeviceSettingKeys.DeviceExhibitKey, null);
+                Settings.Set(DeviceSettingKeys.DeviceLabelKey, null);
+                Settings.Set(DeviceSettingKeys.DeviceIdKey, null);
+                Settings.Set(DeviceSettingKeys.InteractiveKey, null);
+                Settings.Set(DeviceSettingKeys.VerbaliseSystemInformationOnBootKey, null);
+                Settings.Set(DeviceSettingKeys.SoundOnKey, null);
+                Settings.Set(DeviceSettingKeys.ResetOnBootKey, null);
+                Settings.Set(DeviceSettingKeys.VoicePackageUrlKey, null);
+                Settings.Set(DeviceSettingKeys.QnAKnowledgeBaseIdKey, null);
 
                 // Call API to set ResetOnBoot flag to false to avoid a loop
                 var responseString = string.Empty;
@@ -245,14 +220,14 @@ namespace Dinmore.Uwp
             else
             {
                 // Store device settings in Windows local app settings
-                ApplicationData.Current.LocalSettings.Values[_DeviceExhibitKey] = device.Exhibit;
-                ApplicationData.Current.LocalSettings.Values[_DeviceLabelKey] = device.DeviceLabel;
-                ApplicationData.Current.LocalSettings.Values[_InteractiveKey] = device.Interactive;
-                ApplicationData.Current.LocalSettings.Values[_VerbaliseSystemInformationOnBootKey] = device.VerbaliseSystemInformationOnBoot;
-                ApplicationData.Current.LocalSettings.Values[_SoundOnKey] = device.SoundOn;
-                ApplicationData.Current.LocalSettings.Values[_ResetOnBootKey] = device.ResetOnBoot;
-                ApplicationData.Current.LocalSettings.Values[_VoicePackageUrlKey] = device.VoicePackageUrl;
-                ApplicationData.Current.LocalSettings.Values[_QnAKnowledgeBaseIdKey] = device.QnAKnowledgeBaseId;
+                Settings.Set(DeviceSettingKeys.DeviceExhibitKey, device.Exhibit);
+                Settings.Set(DeviceSettingKeys.DeviceLabelKey, device.DeviceLabel);
+                Settings.Set(DeviceSettingKeys.InteractiveKey, device.Interactive);
+                Settings.Set(DeviceSettingKeys.VerbaliseSystemInformationOnBootKey, device.VerbaliseSystemInformationOnBoot);
+                Settings.Set(DeviceSettingKeys.SoundOnKey, device.SoundOn);
+                Settings.Set(DeviceSettingKeys.ResetOnBootKey, device.ResetOnBoot);
+                Settings.Set(DeviceSettingKeys.VoicePackageUrlKey, device.VoicePackageUrl);
+                Settings.Set(DeviceSettingKeys.QnAKnowledgeBaseIdKey, device.QnAKnowledgeBaseId);
             }
 
             return true;
@@ -338,7 +313,7 @@ namespace Dinmore.Uwp
             {
                 // There is now webcam present. Please Intall One.
 
-                Say("There is no webcam present, please add a USB webcam and restart the exhibit");
+                LogStatusMessage("There is no webcam present, please add a USB webcam and restart the exhibit", StatusSeverity.Info, true);
 
                 // If the user has disabled their webcam this exception is thrown; provide a descriptive message to inform the user of this fact.
                 //LogStatusMessage("Webcam is disabled or access to the webcam is disabled for this app.\nEnsure Privacy Settings allow webcam usage.", StatusSeverity.Error);
@@ -347,23 +322,17 @@ namespace Dinmore.Uwp
             }
             catch (Exception ex)
             {
-                Say("There is no webcam present, please add a USB webcam and restart the exhibit");
-                //LogStatusMessage("Unable to start camera: " + ex.ToString(), StatusSeverity.Error);
+                LogStatusMessage("There is no webcam present, please add a USB webcam and restart the exhibit", StatusSeverity.Info, true);
                 successful = false;
             }
 
             return successful;
         }
 
-        private void Say(string phrase)
-        {
-            vpGenerated.Say(phrase);
-        }
-
         private void RunTimer()
         {
             frameProcessingTimer = ThreadPoolTimer.CreateTimer(
-                new TimerElapsedHandler(ProcessCurrentStateAsync), timerInterval);
+                new TimerElapsedHandler(ProcessCurrentStateAsync), TimerInterval);
         }
 
         /// <summary>
@@ -416,30 +385,23 @@ namespace Dinmore.Uwp
                         if (!string.IsNullOrEmpty(result))
                         {
                             //store the device id guid
-                            ApplicationData.Current.LocalSettings.Values[_DeviceIdKey] = result;
-
-                            LogStatusMessage($"Found a QR code with device id {result} which has been stored to app storage.", StatusSeverity.Info);
-
-                            Say("I found a QR code, thanks.");
+                            Settings.Set(DeviceSettingKeys.DeviceIdKey, result);
+                            LogStatusMessage($"Found a QR code with device id {result}.", StatusSeverity.Info, true);
 
                             // Get device settings
                             await this.UpdateDeviceSettings();
 
                             // Update voice package
-                            var voicePackageUrl = (string)ApplicationData.Current.LocalSettings.Values[_VoicePackageUrlKey];
-
-                            Say("Downloading the voice package.");
-                            await Infrastructure.VoicePackageService.DownloadVoice(voicePackageUrl);
-                            Say("Unpacking the voice package.");
-                            await Infrastructure.VoicePackageService.UnpackVoice(voicePackageUrl);
-                            this.vp = await Infrastructure.VoicePackageService.VoicePlayerFactory(voicePackageUrl);
+                            LogStatusMessage("Downloading the voice package.", StatusSeverity.Info, true);
+                            await Infrastructure.VoicePackageService.DownloadUnpackVoicePackage(Settings.GetString(DeviceSettingKeys.VoicePackageUrlKey));
+                            LogStatusMessage("Got the voice package.", StatusSeverity.Info, true);
+                            this.vp = await Infrastructure.VoicePackageService.VoicePlayerFactory(Settings.GetString(DeviceSettingKeys.VoicePackageUrlKey));
                             
                             ChangeDetectionState(DetectionStates.WaitingForFaces);
                         }
                         break;
 
                     case DetectionStates.WaitingForFaces:
-                        //LogStatusMessage("Waiting for faces", StatusSeverity.Info);
                         CurrentState.ApiRequestParameters = await ProcessCurrentVideoFrameAsync();
 
                         if (CurrentState.ApiRequestParameters != null)
@@ -449,7 +411,6 @@ namespace Dinmore.Uwp
                         break;
 
                     case DetectionStates.FaceDetectedOnDevice:
-                        //LogStatusMessage("Just about to send API call for faces", StatusSeverity.Info);
 
                         //Should we play? MORE DESC REQUIRED
                         if (CurrentState.LastImageApiPush.AddMilliseconds(ApiIntervalMs) < DateTimeOffset.UtcNow
@@ -464,18 +425,17 @@ namespace Dinmore.Uwp
                             CurrentState.LastImageApiPush = DateTimeOffset.UtcNow;
                             CurrentState.FacesFoundByApi = await PostImageToApiAsync(CurrentState.ApiRequestParameters.Image);
 
-                            LogStatusMessage($"Sending faces to api", StatusSeverity.Info);
+                            LogStatusMessage($"Sending faces to api", StatusSeverity.Info, false);
 
                             ChangeDetectionState(DetectionStates.ApiResponseReceived);
                         }
                         break;
 
                     case DetectionStates.ApiResponseReceived:
-                        //LogStatusMessage("API response received", StatusSeverity.Info);
 
                         if (CurrentState.FacesFoundByApi != null && CurrentState.FacesFoundByApi.Any())
                         {
-                            LogStatusMessage("Face(s) detected", StatusSeverity.Info);
+                            LogStatusMessage("Face(s) detected", StatusSeverity.Info, false);
                             ChangeDetectionState(DetectionStates.InterpretingApiResults);
                             CurrentState.FacesStillPresent = true;
                             break;
@@ -494,7 +454,7 @@ namespace Dinmore.Uwp
 
                         if (!vp.IsCurrentlyPlaying)
                         {
-                            LogStatusMessage("Starting playlist", StatusSeverity.Info);
+                            LogStatusMessage("Starting playlist", StatusSeverity.Info, false);
 
                             var play = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                             {
@@ -514,7 +474,7 @@ namespace Dinmore.Uwp
                     case DetectionStates.WaitingForFacesToDisappear:
 
                         CurrentState.FacesStillPresent = await AreFacesStillPresent();
-                        LogStatusMessage($"Faces present: {CurrentState.FacesStillPresent}", StatusSeverity.Info);
+                        LogStatusMessage($"Faces present: {CurrentState.FacesStillPresent}", StatusSeverity.Info, false);
 
                         //we dont have a face
                         if (!CurrentState.FacesStillPresent)
@@ -528,7 +488,7 @@ namespace Dinmore.Uwp
                                     CurrentState.FacesStillPresent = AreFacesStillPresent().Result;
                                     if (!CurrentState.FacesStillPresent)
                                     {
-                                        LogStatusMessage($"Faces have gone for a few or more secs, stop the audio playback", StatusSeverity.Info);
+                                        LogStatusMessage($"Faces have gone for a few or more secs, stop the audio playback", StatusSeverity.Info, false);
                                         ChangeDetectionState(DetectionStates.WaitingForFaces);
                                         vp.Stop();
                                         CurrentState.TimeVideoWasStopped = DateTimeOffset.UtcNow;
@@ -549,7 +509,7 @@ namespace Dinmore.Uwp
             }
             catch (Exception ex)
             {
-                LogStatusMessage("Unable to process current frame. " + ex.ToString(), StatusSeverity.Error);
+                LogStatusMessage("Unable to process current frame. " + ex.ToString(), StatusSeverity.Error, false);
             }
             finally
             {
@@ -559,14 +519,14 @@ namespace Dinmore.Uwp
 
         private void HelloAudio()
         {
-            LogStatusMessage("Starting introduction", StatusSeverity.Info);
+            LogStatusMessage("Starting introduction", StatusSeverity.Info, false);
         
             vp.PlayIntroduction(CurrentState.ApiRequestParameters.Faces.Count());
             //timer.Cancel();
         }
 
 
-        private void LogStatusMessage(string message, StatusSeverity severity)
+        private void LogStatusMessage(string message, StatusSeverity severity, bool say)
         {
             var ignored = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
             {
@@ -577,6 +537,14 @@ namespace Dinmore.Uwp
 
                 StatusLog.Insert(0, new StatusMessage(message, severity));
             });
+
+            if (say)
+            {
+                if (Settings.GetBool(DeviceSettingKeys.SoundOnKey))
+                {
+                    vpGenerated.Say(message);
+                }
+            }
         }
 
         private async Task<List<Face>> PostImageToApiAsync(byte[] image)
@@ -589,11 +557,10 @@ namespace Dinmore.Uwp
                     content.Headers.ContentType = new MediaTypeWithQualityHeaderValue("application/octet-stream");
 
                     //build url to pass to api
-                    var deviceId = ApplicationData.Current.LocalSettings.Values[_DeviceIdKey];
                     var url = AppSettings.GetString("FaceApiUrl");
                     var returnFaceLandmarks = AppSettings.GetString("ReturnFaceLandmarks");
                     var returnFaceAttributes = AppSettings.GetString("ReturnFaceAttributes");
-                    url = $"{url}?deviceid={deviceId}&returnFaceLandmarks={returnFaceLandmarks}&returnFaceAttributes={returnFaceAttributes}";
+                    url = $"{url}?deviceid={Settings.GetString(DeviceSettingKeys.DeviceIdKey)}&returnFaceLandmarks={returnFaceLandmarks}&returnFaceAttributes={returnFaceAttributes}";
 
                     var responseMessage = await httpClient.PostAsync(url, content);
 
@@ -602,10 +569,10 @@ namespace Dinmore.Uwp
                         switch (responseMessage.StatusCode.ToString())
                         {
                             case "BadRequest":
-                                LogStatusMessage("The API returned a 400 Bad Request. This is caused by either a missing DeviceId parameter or one containig a GUID that is not already registered with the device API.", StatusSeverity.Error);
+                                LogStatusMessage("The API returned a 400 Bad Request. This is caused by either a missing DeviceId parameter or one containig a GUID that is not already registered with the device API.", StatusSeverity.Error, false);
                                 break;
                             default:
-                                LogStatusMessage($"The API returned a non-sucess status {responseMessage.ReasonPhrase}", StatusSeverity.Error);
+                                LogStatusMessage($"The API returned a non-sucess status {responseMessage.ReasonPhrase}", StatusSeverity.Error, false);
                                 break;
                         }
                         return null;
@@ -620,7 +587,7 @@ namespace Dinmore.Uwp
             catch (Exception ex)
             {
                 vp.Stop();
-                LogStatusMessage("Exception: " + ex.ToString(), StatusSeverity.Error);
+                LogStatusMessage("Exception: " + ex.ToString(), StatusSeverity.Error, false);
                 return null;
             }
         }
@@ -707,16 +674,13 @@ namespace Dinmore.Uwp
                             //encoder.BitmapTransform.Bounds = bounds;
                             await encoder.FlushAsync();
 
-                            LogStatusMessage($"Found face(s) on camera: {faces.Count}", StatusSeverity.Info);
+                            LogStatusMessage($"Found face(s) on camera: {faces.Count}", StatusSeverity.Info, false);
 
 
                             return new ApiRequestParameters
                             {
                                 Image = ms.ToArray(),
-                                Faces = faces,
-                                //ImageBounds = bounds,
-                                //OriginalImageHeight = converted.PixelHeight,
-                                //OriginalImageWidth = converted.PixelWidth,
+                                Faces = faces
                             };
                         }
                     }
@@ -725,7 +689,7 @@ namespace Dinmore.Uwp
             }
             catch (Exception ex)
             {
-                LogStatusMessage("Unable to process current frame: " + ex.ToString(), StatusSeverity.Error);
+                LogStatusMessage("Unable to process current frame: " + ex.ToString(), StatusSeverity.Error, false);
                 return null;
             }
             finally
@@ -750,7 +714,7 @@ namespace Dinmore.Uwp
             }
             catch (Exception ex)
             {
-                LogStatusMessage("Unable to process current frame: " + ex.ToString(), StatusSeverity.Error);
+                LogStatusMessage("Unable to process current frame: " + ex.ToString(), StatusSeverity.Error, false);
                 return false;  //TODO ? true or false?
             }
             finally
@@ -779,11 +743,11 @@ namespace Dinmore.Uwp
                         ChangeDetectionState(DetectionStates.Idle);
                         break;
                     }
-                    // This needs to test for if a GUID as stored
-                    var deviceId = ApplicationData.Current.LocalSettings.Values[_DeviceIdKey];
+                    var deviceId = Settings.GetString(DeviceSettingKeys.DeviceIdKey);
                     if (deviceId == null)
                     {
-                        Say("I have no device ID. I'm now onboarding, show me a QR code containing a device ID.");
+                        //need to verbalise this directly rather than going through LogStatusMessage because the SoundOn setting is not yet set 
+                        vpGenerated.Say("I have no device ID. I'm now onboarding, show me a QR code containing a device ID.");
                         ChangeDetectionState(DetectionStates.OnBoarding);
                     }
                     else
