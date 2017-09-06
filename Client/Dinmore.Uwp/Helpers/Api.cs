@@ -3,6 +3,7 @@ using Dinmore.Uwp.Models;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -111,6 +112,85 @@ namespace Dinmore.Uwp.Helpers
             }
             catch
             {
+                return null;
+            }
+        }
+
+        public static async Task<string> PostBotMessageToApiAsync(ResourceLoader appSettings, string messageText)
+        {
+            try
+            {
+                using (var httpClient = new HttpClient())
+                {
+                    //var content = new StringContent(messageText);
+                    var url = appSettings.GetString("BotApiUrl");
+                    var deviceId = Settings.GetString(DeviceSettingKeys.DeviceIdKey);
+                    url = $"{url}?deviceid={deviceId}&message={messageText}";
+
+                    var responseMessage = await httpClient.PostAsync(url, null);
+
+                    if (!responseMessage.IsSuccessStatusCode)
+                    {
+                        switch (responseMessage.StatusCode.ToString())
+                        {
+                            case "BadRequest":
+                                //LogStatusMessage("The API returned a 400 Bad Request. This is caused by either a missing DeviceId parameter or one containig a GUID that is not already registered with the device API.", StatusSeverity.Error);
+                                break;
+                            default:
+                                //LogStatusMessage($"The API returned a non-sucess status {responseMessage.ReasonPhrase}", StatusSeverity.Error);
+                                break;
+                        }
+                        return null;
+                    }
+
+                    var response = await responseMessage.Content.ReadAsStringAsync();
+                    return response;
+                    //JObject s = JObject.Parse(response);
+                    //return s["id"].ToString();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"PostMessageToApiAsync Exception: {ex}");
+                return null;
+            }
+        }
+
+        public static async Task<string> GetBotMessageFromApiAsync(ResourceLoader appSettings, string conversationId)
+        {
+            try
+            {
+                using (var httpClient = new HttpClient())
+                {
+                    var content = new StringContent(conversationId);
+
+                    var url = appSettings.GetString("BotApiUrl");
+                    var deviceId = Settings.GetString(DeviceSettingKeys.DeviceIdKey);
+                    url = $"{url}?conversationId={conversationId}";
+
+                    var responseMessage = await httpClient.GetAsync(url);
+
+                    if (!responseMessage.IsSuccessStatusCode)
+                    {
+                        switch (responseMessage.StatusCode.ToString())
+                        {
+                            case "BadRequest":
+                                //LogStatusMessage("The API returned a 400 Bad Request. This is caused by either a missing DeviceId parameter or one containig a GUID that is not already registered with the device API.", StatusSeverity.Error);
+                                break;
+                            default:
+                                //LogStatusMessage($"The API returned a non-sucess status {responseMessage.ReasonPhrase}", StatusSeverity.Error);
+                                break;
+                        }
+                        return null;
+                    }
+
+                    var response = await responseMessage.Content.ReadAsStringAsync();
+                    return response;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"GetMessageToApiAsync Exception: {ex}");
                 return null;
             }
         }
