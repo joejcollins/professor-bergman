@@ -1,5 +1,6 @@
 ﻿using Dinmore.WebApp.Interfaces;
 using Dinmore.WebApp.Models;
+using Dinmore.Domain;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
