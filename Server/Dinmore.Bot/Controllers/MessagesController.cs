@@ -6,6 +6,8 @@ using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Connector;
 using Dinmore.Bot.Dialogs;
 using System.Configuration;
+using Dinmore.Bot.Models;
+using Newtonsoft.Json;
 
 namespace Dinmore.Bot
 {
@@ -20,11 +22,15 @@ namespace Dinmore.Bot
         {
             if (activity.Type == ActivityTypes.Message)
             {
-                if (activity.ChannelData != null)
+                if (activity.ChannelId == "directline")
                 {
                     // Extract the QnAKnowledgeBaseId from the channeldata - which is derived from the device at each exhibit
-                    string modelId = activity.ChannelData.ToString();
-                    await Conversation.SendAsync(activity, () => new QnARootDialog(knowledgebaseId: modelId, subscriptionKey: ConfigurationManager.AppSettings["QnASubscriptionKey"]));
+                    var customChannelData = JsonConvert.DeserializeObject<BotCustomChannelData>(activity.ChannelData.ToString());
+                    await Conversation.SendAsync(activity, () => new QnARootDialog(knowledgebaseId: customChannelData?.QnaModelKnowledgeBaseId, subscriptionKey: ConfigurationManager.AppSettings["QnASubscriptionKey"]));
+                }
+                else
+                {
+                    await Conversation.SendAsync(activity, () => new RootDialog());
                 }
             }
             else

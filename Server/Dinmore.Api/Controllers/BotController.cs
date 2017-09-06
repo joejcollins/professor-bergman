@@ -32,7 +32,7 @@ namespace Dinmore.Api.Controllers
         {
             if (string.IsNullOrEmpty(conversationId)) return BadRequest();
 
-            string result = "Sorry no responding right now";
+            string result = $"Sorry no response for {conversationId}";
 
             DirectLineClient directLine = new DirectLineClient(_appSettings.BotDirectLineSecret);
             directLine.BaseUri = new Uri(_appSettings.DirectLineBaseUrl);
@@ -76,16 +76,21 @@ namespace Dinmore.Api.Controllers
                 return Ok("QnA KnowledgeBase not found for given device Id - please check configuration");
             }
 
+            var conversation = await directLine.Conversations.StartConversationAsync();
+//            conversation.
+
+            var channelData = new BotCustomChannelData { QnaModelKnowledgeBaseId = device.QnAKnowledgeBaseId };
+
             // Send a new activity to the bot with the captured text to process
             Activity activity = new Activity
             {
                 Text = message,
                 From = new ChannelAccount(_appSettings.BotFromUserName),
                 Type = ActivityTypes.Message,
-                ChannelData = device.QnAKnowledgeBaseId
+                ChannelData = channelData
             };
 
-            var conversation = await directLine.Conversations.StartConversationAsync();
+            
             var botResponse = await directLine.Conversations.PostActivityAsync(conversation.ConversationId, activity);
 
             // TODO: Investigate conversation Id format being returned

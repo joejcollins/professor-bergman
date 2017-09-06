@@ -117,9 +117,11 @@
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Compile Include="Controllers\MessagesController.cs" />
     <Compile Include="Dialogs\QnARootDialog.cs" />
+    <Compile Include="Dialogs\RootDialog.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Models\BotCustomChannelData.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -128,6 +130,9 @@
     </Content>
     <Content Include="QnAModels\PoultonElk_v3.0.json" />
     <Content Include="QnAModels\PoultonElk.tsv" />
+    <None Include="Properties\PublishProfiles\JDBlackRadleyBot - Web Deploy.pubxml" />
+    <Content Include="QnAModels\PrestonLamplightersBanner.tsv" />
+    <Content Include="QnAModels\ViewOfPreston.tsv" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
