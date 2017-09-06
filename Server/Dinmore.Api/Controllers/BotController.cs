@@ -1,6 +1,5 @@
 using dinmore.api.Interfaces;
 using dinmore.api.Models;
-using Dinmore.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Bot.Connector.DirectLine;
 using Microsoft.Extensions.Options;

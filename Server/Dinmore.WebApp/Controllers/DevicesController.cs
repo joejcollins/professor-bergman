@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Dinmore.WebApp.Interfaces;
 using Dinmore.WebApp.Models;
+using Dinmore.Domain;
 using System.IO;
 
 namespace Dinmore.WebApp.Controllers

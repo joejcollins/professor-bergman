@@ -34,11 +34,14 @@
     <PackageReference Include="Microsoft.VisualStudio.Web.BrowserLink" Version="1.1.0" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="1.1.0" />
 	<PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="1.1.1" />
-	<PackageReference Include="WindowsAzure.Storage" Version="8.1.1" />
+	<PackageReference Include="WindowsAzure.Storage" Version="8.4.0" />
   </ItemGroup>
   <ItemGroup>
     <DotNetCliToolReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Tools" Version="1.0.0" />
 	<DotNetCliToolReference Include="Microsoft.Extensions.SecretManager.Tools" Version="1.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Dinmore.Domain\Dinmore.Domain.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Configuration">
