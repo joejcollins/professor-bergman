@@ -22,6 +22,14 @@ namespace dinmore.api.Models
         public string StoreDeviceContainerName { get; set; }
 
         public string StoreDevicePartitionKey { get; set; }
+
+        public string DirectLineBaseUrl { get; set; }
+
+        public string BotDirectLineSecret { get; set; }
+
+        public string BotId { get; set; }
+
+        public string BotFromUserName { get; set; }
         public string StoreVoicePackageContainerName { get; set; }
 
         public string StoreVoicePackagesRootUrl { get; set; }

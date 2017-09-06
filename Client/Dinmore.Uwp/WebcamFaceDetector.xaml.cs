@@ -2,22 +2,23 @@ using Dinmore.Uwp.Constants;
 using Dinmore.Uwp.Helpers;
 using Dinmore.Uwp.Infrastructure.Media;
 using Dinmore.Uwp.Models;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.Resources;
+using Windows.Devices.Enumeration;
 using Windows.Graphics.Imaging;
 using Windows.Media;
 using Windows.Media.Capture;
 using Windows.Media.FaceAnalysis;
 using Windows.Media.MediaProperties;
+using Windows.Media.SpeechRecognition;
 using Windows.Networking.Connectivity;
 using Windows.System.Threading;
 using Windows.UI.Xaml.Controls;
@@ -68,6 +69,19 @@ namespace Dinmore.Uwp
         /// </summary>
         private SemaphoreSlim frameProcessingSemaphore = new SemaphoreSlim(1);
 
+        /// <summary>
+        /// Semaphore to ensure Speech Reconigtion logic only executes one at a time
+        /// </summary>
+        private SemaphoreSlim speechRecognitionProcessingSemaphore = new SemaphoreSlim(1);
+
+
+        /// <summary>
+        /// Detect any speech to the app
+        /// </summary>
+        private SpeechRecognizer SpeechRecognizer;
+
+        private bool IsSpeechRecognitionInProgress = false;
+
         private double ApiIntervalMs;
         private int NumberMilliSecsForFacesToDisappear;
         private int NumberMilliSecsToWaitForHello;
@@ -81,13 +95,13 @@ namespace Dinmore.Uwp
 
         public ObservableCollection<StatusMessage> StatusLog { get; set; } = new ObservableCollection<StatusMessage>();
 
-        //private BoundingBoxCreator boundingBoxCreator = new BoundingBoxCreator();
-
         private static ResourceLoader AppSettings;
 
         private IVoicePlayer vp = new VoicePlayerGenerated();
-        
+
         private VoicePlayerGenerated vpGenerated = new VoicePlayerGenerated();
+
+        private VoicePlayerSpeechRecog vpSpeechRecog = new VoicePlayerSpeechRecog();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WebcamFaceDetector"/> class.
@@ -98,10 +112,10 @@ namespace Dinmore.Uwp
             AppSettings = ResourceLoader.GetForCurrentView();
             NumberMilliSecsForFacesToDisappear = int.Parse(AppSettings.GetString("NumberMilliSecsForFacesToDisappear"));
             NumberMilliSecsToWaitForHello = int.Parse(AppSettings.GetString("NumberMilliSecsToWaitForHello"));
-            NumberMillSecsBeforeWePlayAgain =  int.Parse(AppSettings.GetString("NumberMillSecsBeforeWePlayAgain"));
+            NumberMillSecsBeforeWePlayAgain = int.Parse(AppSettings.GetString("NumberMillSecsBeforeWePlayAgain"));
             TimerInterval = TimeSpan.FromMilliseconds(int.Parse(AppSettings.GetString("TimerIntervalMilliSecs")));
-            ApiIntervalMs =  double.Parse(AppSettings.GetString("ApiIntervalMilliSecs"));
-            
+            ApiIntervalMs = double.Parse(AppSettings.GetString("ApiIntervalMilliSecs"));
+
 
             InitializeComponent();
 
@@ -119,7 +133,7 @@ namespace Dinmore.Uwp
             await UpdateDeviceSettings();
 
             this.vp = await Infrastructure.VoicePackageService.VoicePlayerFactory();
-            
+
             // VerbaliseSystemInformation
             if (Settings.GetBool(DeviceSettingKeys.VerbaliseSystemInformationOnBootKey))
             {
@@ -134,6 +148,31 @@ namespace Dinmore.Uwp
             {
                 faceTracker = await FaceTracker.CreateAsync();
                 ChangeDetectionState(DetectionStates.Startup);
+            }
+
+            if (!Settings.GetBool(DeviceSettingKeys.InteractiveKey))
+            {
+                // Prompt for permission to access the microphone. This request will only happen
+                // once, it will not re-prompt if the user rejects the permission.
+                if (!await AudioCapturePermissions.RequestMicrophonePermission())
+                {
+                    Say(AppSettings.GetString("MicrophonePrivacyDeclined"));
+                }
+                else
+                {
+                    try
+                    {
+                        Debug.WriteLine($"Initialising speech recognizer"); //This can fail randomly
+                        SpeechRecognizer = new SpeechRecognizer();
+                        SpeechRecognizer.Timeouts.InitialSilenceTimeout = TimeSpan.FromMinutes(5);
+                        await SpeechRecognizer.CompileConstraintsAsync();
+                        Debug.WriteLine($"Speech recognizer initialised");
+                    }
+                    catch (Exception exp)
+                    {
+                        Say($"There was an error initialising the speech recognizer: {exp.Message}");
+                    }
+                }
             }
         }
 
@@ -216,11 +255,11 @@ namespace Dinmore.Uwp
                 // the ip address
                 return hostname?.CanonicalName;
             }
-            catch {
+            catch
+            {
                 return "Greedy, 2 network cards";
             }
         }
-
 
         /// <summary>
         /// Responds to App Suspend event to stop/release MediaCapture object if it's running and return to Idle state.
@@ -244,6 +283,18 @@ namespace Dinmore.Uwp
         }
 
         /// <summary>
+        /// Get a given camera id if provided
+        /// </summary>
+        /// <returns></returns>
+        private async Task<DeviceInformation> GetDesiredWebcameraDeviceAsync()
+        {
+            // Finds all video capture devices
+            DeviceInformationCollection devices = await DeviceInformation.FindAllAsync(DeviceClass.VideoCapture);
+            DeviceInformation desiredDevice = devices.FirstOrDefault(x => x.Name.Equals(AppSettings.GetString("CameraDeviceName")));
+            return desiredDevice ?? devices.FirstOrDefault();
+        }
+
+        /// <summary>
         /// Initializes a new MediaCapture instance and starts the Preview streaming to the CamPreview UI element.
         /// </summary>
         /// <returns>Async Task object returning true if initialization and streaming were successful and false if an exception occurred.</returns>
@@ -251,14 +302,16 @@ namespace Dinmore.Uwp
         {
             bool successful = true;
             try
-            { 
+            {
+
                 mediaCapture = new MediaCapture();
 
                 // For this scenario, we only need Video (not microphone) so specify this in the initializer.
                 // NOTE: the appxmanifest only declares "webcam" under capabilities and if this is changed to include
                 // microphone (default constructor) you must add "microphone" to the manifest or initialization will fail.
-                MediaCaptureInitializationSettings settings = new MediaCaptureInitializationSettings();
-                settings.StreamingCaptureMode = StreamingCaptureMode.Video;
+
+                var device = await GetDesiredWebcameraDeviceAsync();
+                var settings = new MediaCaptureInitializationSettings { VideoDeviceId = device.Id, StreamingCaptureMode = StreamingCaptureMode.Video };
                 await mediaCapture.InitializeAsync(settings);
                 mediaCapture.Failed += MediaCapture_CameraStreamFailed;
 
@@ -272,7 +325,7 @@ namespace Dinmore.Uwp
                 await mediaCapture.StartPreviewAsync();
 
                 RunTimer();
-               
+
             }
             catch (UnauthorizedAccessException)
             {
@@ -292,6 +345,145 @@ namespace Dinmore.Uwp
             }
 
             return successful;
+        }
+
+        /// <summary>
+        /// Start listening for audio
+        /// </summary>
+        /// <returns></returns>
+        private async Task StartSpeechRecognition()
+        {
+            await speechRecognitionProcessingSemaphore.WaitAsync();
+
+            // End previous session
+            await StopSpeechRecognition();
+
+            try
+            {
+                SpeechRecognizer.ContinuousRecognitionSession.Completed += ContinuousRecognitionSession_Completed;
+                SpeechRecognizer.ContinuousRecognitionSession.ResultGenerated += ContinuousRecognitionSession_ResultGenerated;
+
+                await SpeechRecognizer.ContinuousRecognitionSession.StartAsync();
+                IsSpeechRecognitionInProgress = true;
+                Debug.WriteLine($"StartSpeechRecognition: Recognizer started successfully");
+                LogStatusMessage($"StartSpeechRecognition: Recognizer started successfully", StatusSeverity.Error, false);
+            }
+            catch (Exception exp)
+            {
+                Debug.WriteLine($"StartSpeechRecognition: Error {exp}");
+            }
+            finally
+            {
+                speechRecognitionProcessingSemaphore.Release();
+            }
+        }
+
+        /// <summary>
+        /// Stop listening for audio
+        /// </summary>
+        /// <returns></returns>
+        private async Task StopSpeechRecognition()
+        {
+            // In case we're in initialising of the app and speech recognizer has not started yet
+            if (SpeechRecognizer == null)
+            {
+                return;
+            }
+
+            //LogStatusMessage($"StopSpeechRecognition: Ending speech recognition", StatusSeverity.Info);
+            //Debug.WriteLine($"StopSpeechRecognition: Ending speech recognition");
+
+            // Unhook events
+            SpeechRecognizer.ContinuousRecognitionSession.Completed -= ContinuousRecognitionSession_Completed;
+            SpeechRecognizer.ContinuousRecognitionSession.ResultGenerated -= ContinuousRecognitionSession_ResultGenerated;
+
+            if (IsSpeechRecognitionInProgress)
+            {
+                try
+                {
+                    if (SpeechRecognizer.State != SpeechRecognizerState.Idle)
+                    {
+                        await SpeechRecognizer.ContinuousRecognitionSession.CancelAsync();
+                        LogStatusMessage($"StopSpeechRecognition: Speech recognition cancelled", StatusSeverity.Info);
+                        Debug.WriteLine($"StopSpeechRecognition: Speech recognition cancelled");
+                    }
+                    else
+                    {
+                        await SpeechRecognizer.ContinuousRecognitionSession.StopAsync();
+                        LogStatusMessage($"StopSpeechRecognition: Speech recognition stopped", StatusSeverity.Info);
+                        Debug.WriteLine($"StopSpeechRecognition: Speech recognition stopped");
+                    }
+                }
+                catch (Exception exp)
+                {
+                    LogStatusMessage($"StopSpeechRecognition: error: {exp}", StatusSeverity.Info);
+                    Debug.WriteLine($"StopSpeechRecognition error: {exp}");
+                }
+                finally
+                {
+                    IsSpeechRecognitionInProgress = false;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Called once Speech Recognizer has detected something
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="args"></param>
+        private async void ContinuousRecognitionSession_ResultGenerated(SpeechContinuousRecognitionSession sender, SpeechContinuousRecognitionResultGeneratedEventArgs args)
+        {
+            Debug.WriteLine($"ContinuousRecognitionSession_ResultGenerated: Result generated: {args.Result.Status}");
+            if (args.Result.Status != SpeechRecognitionResultStatus.Success)
+            {
+                return;
+            }
+
+            Debug.WriteLine($"ContinuousRecognitionSession_ResultGenerated: Result: {args.Result.Text} (Confidence: {args.Result.Confidence})");
+            LogStatusMessage($"ContinuousRecognitionSession_ResultGenerated: Result: {args.Result.Text} (Confidence: {args.Result.Confidence})", StatusSeverity.Info, false);
+            if (args.Result.Confidence == SpeechRecognitionConfidence.Low || args.Result.Text?.Length == 0)
+            {
+                return;
+            }
+
+            try
+            {
+                string conversationId = await PostMessageToApiAsync(args.Result.Text);
+                if (conversationId == null)
+                {
+                    Debug.WriteLine($"ContinuousRecognitionSession_ResultGenerated: No conversation Id returned from bot");
+                    LogStatusMessage($"ContinuousRecognitionSession_ResultGenerated: No conversation Id returned from bot", StatusSeverity.Info, false);
+                    return;
+                }
+
+                string botResponse = await GetMessageFromApiAsync(conversationId) ?? "No reply";
+                Debug.WriteLine($"ContinuousRecognitionSession_ResultGenerated: Bot response {botResponse}");
+                LogStatusMessage($"ContinuousRecognitionSession_ResultGenerated: Bot response {botResponse}", StatusSeverity.Info);
+                await StopSpeechRecognition();
+                await vpSpeechRecog.SayAsync(botResponse);
+            }
+            catch (Exception exp)
+            {
+                Debug.WriteLine($"ContinuousRecognitionSession_ResultGenerated: Error calling bot {exp}");
+                LogStatusMessage($"ContinuousRecognitionSession_ResultGenerated: Error calling bot {exp}", StatusSeverity.Error);
+            }
+        }
+
+        /// <summary>
+        /// Called after ContinuousRecognitionSession_ResultGenerated
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="args"></param>
+        private void ContinuousRecognitionSession_Completed(SpeechContinuousRecognitionSession sender, SpeechContinuousRecognitionCompletedEventArgs args)
+        {
+            Debug.WriteLine($"Speech recognizer session completed: {args.Status}");
+            LogStatusMessage($"Speech recognizer session completed: {args.Status}", StatusSeverity.Info);
+            IsSpeechRecognitionInProgress = false;
+        }
+
+        private void Say(string phrase)
+        {
+            vpGenerated.Say(phrase);
         }
 
         private void RunTimer()
@@ -361,7 +553,7 @@ namespace Dinmore.Uwp
                             await Infrastructure.VoicePackageService.DownloadUnpackVoicePackage(Settings.GetString(DeviceSettingKeys.VoicePackageUrlKey));
                             LogStatusMessage("Got the voice package.", StatusSeverity.Info, true);
 
-                                this.vp = await Infrastructure.VoicePackageService.VoicePlayerFactory(Settings.GetString(DeviceSettingKeys.VoicePackageUrlKey));
+                            this.vp = await Infrastructure.VoicePackageService.VoicePlayerFactory(Settings.GetString(DeviceSettingKeys.VoicePackageUrlKey));
 
                             ChangeDetectionState(DetectionStates.WaitingForFaces);
                         }
@@ -385,8 +577,17 @@ namespace Dinmore.Uwp
                             //ThreadPoolTimer.CreateTimer(
                             //    new TimerElapsedHandler(HelloAudioHandler),
                             //    TimeSpan.FromMilliseconds(NumberMilliSecsToWaitForHello));
-
-                            HelloAudio();
+                            if (!Settings.GetBool(DeviceSettingKeys.InteractiveKey))
+                            {
+                                if (!vpSpeechRecog.IsCurrentlyPlaying && !IsSpeechRecognitionInProgress)
+                                {
+                                    await vpSpeechRecog.SayAsync("I'm listening, talk to me");
+                                }
+                            }
+                            else
+                            {
+                                HelloAudio();
+                            }
 
                             CurrentState.LastImageApiPush = DateTimeOffset.UtcNow;
                             CurrentState.FacesFoundByApi = await PostImageToApiAsync(CurrentState.ApiRequestParameters.Image);
@@ -395,6 +596,7 @@ namespace Dinmore.Uwp
 
                             ChangeDetectionState(DetectionStates.ApiResponseReceived);
                         }
+
                         break;
 
                     case DetectionStates.ApiResponseReceived:
@@ -420,13 +622,15 @@ namespace Dinmore.Uwp
 
                         if (!vp.IsCurrentlyPlaying)
                         {
-                            LogStatusMessage("Starting playlist", StatusSeverity.Info, false);
-
-                            var play = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                            if (Settings.GetBool(DeviceSettingKeys.InteractiveKey))
                             {
-                                //TODO This needs 
-                                vp.Play(CurrentState);
-                            });
+                                LogStatusMessage("Starting playlist", StatusSeverity.Info);
+                                var play = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
+                                {
+                                    //TODO This needs 
+                                    vp.Play(CurrentState);
+                                });
+                            }
                         }
 
                         // Check here if the media has finished playing or the people have walked away.
@@ -440,13 +644,11 @@ namespace Dinmore.Uwp
                     case DetectionStates.WaitingForFacesToDisappear:
 
                         CurrentState.FacesStillPresent = await AreFacesStillPresent();
-                        LogStatusMessage($"Faces present: {CurrentState.FacesStillPresent}", StatusSeverity.Info, false);
+                        LogStatusMessage($"Faces present: {CurrentState.FacesStillPresent} Speech Recognition active: {IsSpeechRecognitionInProgress}", StatusSeverity.Info, false);
 
                         //we dont have a face
                         if (!CurrentState.FacesStillPresent)
                         {
-
-
                             //TODO Refactor this out.
                             await Task.Delay(NumberMilliSecsForFacesToDisappear)
                                 .ContinueWith((t =>
@@ -462,9 +664,18 @@ namespace Dinmore.Uwp
                                     }
                                 }
                                 ));
-
                         }
-
+                        else
+                        {
+                            if (!Settings.GetBool(DeviceSettingKeys.InteractiveKey))
+                            {
+                                if (!vpSpeechRecog.IsCurrentlyPlaying && !IsSpeechRecognitionInProgress)
+                                {
+                                    LogStatusMessage("Starting speech recognizer", StatusSeverity.Info);
+                                    await StartSpeechRecognition();
+                                }
+                            }
+                        }
 
                         break;
 
@@ -486,13 +697,13 @@ namespace Dinmore.Uwp
         private void HelloAudio()
         {
             LogStatusMessage("Starting introduction", StatusSeverity.Info, false);
-        
+
             vp.PlayIntroduction(CurrentState.ApiRequestParameters.Faces.Count());
             //timer.Cancel();
         }
 
 
-        private void LogStatusMessage(string message, StatusSeverity severity, bool say)
+        private void LogStatusMessage(string message, StatusSeverity severity, bool say = false)
         {
             var ignored = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
             {
@@ -524,6 +735,87 @@ namespace Dinmore.Uwp
             }
         }
 
+        private async Task<string> PostMessageToApiAsync(string messageText)
+        {
+            try
+            {
+                using (var httpClient = new HttpClient())
+                {
+                    //var content = new StringContent(messageText);
+                    var url = AppSettings.GetString("BotApiUrl");
+                    var deviceId = Settings.GetString(DeviceSettingKeys.DeviceIdKey);
+                    url = $"{url}?deviceid={deviceId}&message={messageText}";
+
+                    var responseMessage = await httpClient.PostAsync(url, null);
+
+                    if (!responseMessage.IsSuccessStatusCode)
+                    {
+                        switch (responseMessage.StatusCode.ToString())
+                        {
+                            case "BadRequest":
+                                LogStatusMessage("The API returned a 400 Bad Request. This is caused by either a missing DeviceId parameter or one containig a GUID that is not already registered with the device API.", StatusSeverity.Error);
+                                break;
+                            default:
+                                LogStatusMessage($"The API returned a non-sucess status {responseMessage.ReasonPhrase}", StatusSeverity.Error);
+                                break;
+                        }
+                        return null;
+                    }
+
+                    var response = await responseMessage.Content.ReadAsStringAsync();
+                    return response;
+                    //JObject s = JObject.Parse(response);
+                    //return s["id"].ToString();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"PostMessageToApiAsync Exception: {ex}");
+                LogStatusMessage("Exception: " + ex.ToString(), StatusSeverity.Error);
+                return null;
+            }
+        }
+
+        private async Task<string> GetMessageFromApiAsync(string conversationId)
+        {
+            try
+            {
+                using (var httpClient = new HttpClient())
+                {
+                    var content = new StringContent(conversationId);
+
+                    var url = AppSettings.GetString("BotApiUrl");
+                    var deviceId = Settings.GetString(DeviceSettingKeys.DeviceIdKey);
+                    url = $"{url}?conversationId={conversationId}";
+
+                    var responseMessage = await httpClient.GetAsync(url);
+
+                    if (!responseMessage.IsSuccessStatusCode)
+                    {
+                        switch (responseMessage.StatusCode.ToString())
+                        {
+                            case "BadRequest":
+                                LogStatusMessage("The API returned a 400 Bad Request. This is caused by either a missing DeviceId parameter or one containig a GUID that is not already registered with the device API.", StatusSeverity.Error);
+                                break;
+                            default:
+                                LogStatusMessage($"The API returned a non-sucess status {responseMessage.ReasonPhrase}", StatusSeverity.Error);
+                                break;
+                        }
+                        return null;
+                    }
+
+                    var response = await responseMessage.Content.ReadAsStringAsync();
+                    return response;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"GetMessageToApiAsync Exception: {ex}");
+                LogStatusMessage("Exception: " + ex.ToString(), StatusSeverity.Error);
+                return null;
+            }
+        }
+
         private async Task<String> ProcessCurrentVideoFrameForQRCodeAsync()
         {
             // If a lock is being held it means we're still waiting for processing work on the previous frame to complete.
@@ -547,7 +839,7 @@ namespace Dinmore.Uwp
                         null;
                 }
             }
-           
+
             finally
             {
                 frameProcessingSemaphore.Release();

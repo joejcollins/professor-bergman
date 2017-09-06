@@ -1,0 +1,46 @@
+﻿{
+  "name": "The Poulton Elk",
+  "qnaList": [
+    {
+      "qnaId": 1,
+      "answer": "This is the Poulton Elk",
+      "source": "Editorial",
+      "questions": [
+        "What is this exhibit?",
+        "What am I looking at?",
+        "Tell me what this is?",
+        "What is this picture of?"
+      ],
+      "metadata": [
+        {
+          "name": "ArtefactId",
+          "value": "1001"
+        },
+        {
+          "name": "RelatedQuestion1",
+          "value": "Who drew this picture?"
+        }
+      ]
+    },
+    {
+      "qnaId": 2,
+      "answer": "13,500 years old, end of the last Ice Age and earliest evidence of humans in Lancashire (it has injuries from a failed hunt on the bones and it is essentially someone’s lunch that got away!) It died from its injuries shortly afterwards to be preserved as a complete skeleton.",
+      "source": "Editorial",
+      "questions": [
+        "Tell me more",
+        "What does it symbolize",
+        "Do you have any more facts on this?",
+        "What is the Poulton Elk?"
+      ]
+    },
+    {
+      "qnaId": 3,
+      "answer": "It got eaten",
+      "source": "Editorial",
+      "questions": [
+        "How did it die?",
+        "What injuries did it die from?"
+      ]
+    }
+  ]
+}

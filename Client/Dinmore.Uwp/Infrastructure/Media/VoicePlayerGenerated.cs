@@ -1,21 +1,14 @@
-﻿using System;
+﻿using Dinmore.Uwp.Constants;
+using Dinmore.Uwp.Helpers;
+using Dinmore.Uwp.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Dinmore.Uwp.Models;
+using Windows.Media.Core;
 using Windows.Media.Playback;
 using Windows.Media.SpeechSynthesis;
-using Windows.Media.Core;
-using System.IO;
 using Windows.Storage;
-using Windows.UI.Xaml.Controls;
-using Windows.Storage.Streams;
-using Windows.ApplicationModel;
-using Windows.ApplicationModel.Core;
-using Windows.UI.Core;
-using Dinmore.Uwp.Helpers;
-using Dinmore.Uwp.Constants;
 
 namespace Dinmore.Uwp.Infrastructure.Media
 {
