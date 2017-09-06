@@ -1,6 +1,7 @@
 ﻿using dinmore.api.Interfaces;
 using dinmore.api.Models;
 using Dinmore.Api.Models;
+using Dinmore.Domain;
 using Microsoft.Extensions.Options;
 
 using Microsoft.WindowsAzure.Storage;

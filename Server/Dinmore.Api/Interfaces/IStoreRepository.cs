@@ -2,6 +2,7 @@
 using dinmore.api.Models;
 using System.Threading.Tasks;
 using Dinmore.Api.Models;
+using Dinmore.Domain;
 
 namespace dinmore.api.Interfaces
 {

@@ -41,6 +41,9 @@
 	<DotNetCliToolReference Include="Microsoft.Extensions.SecretManager.Tools" Version="1.0.0" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Dinmore.Domain\Dinmore.Domain.csproj" />
+  </ItemGroup>
+  <ItemGroup>
     <Reference Include="System.Configuration">
       <HintPath>..\..\..\..\..\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.6\System.Configuration.dll</HintPath>
     </Reference>
