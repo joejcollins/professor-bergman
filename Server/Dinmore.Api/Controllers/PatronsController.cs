@@ -1,7 +1,6 @@
 using dinmore.api.Interfaces;
 using dinmore.api.Models;
 using Dinmore.Api.Helpers;
-using Dinmore.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
