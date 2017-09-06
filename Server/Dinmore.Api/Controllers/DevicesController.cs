@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using dinmore.api.Interfaces;
-using Dinmore.Api.Models;
 using Dinmore.Api.Helpers;
 using Dinmore.Domain;
 using System.IO;
