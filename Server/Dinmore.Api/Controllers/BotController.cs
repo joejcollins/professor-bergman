@@ -1,5 +1,6 @@
 using dinmore.api.Interfaces;
 using dinmore.api.Models;
+using Dinmore.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Bot.Connector.DirectLine;
 using Microsoft.Extensions.Options;
@@ -76,8 +77,6 @@ namespace Dinmore.Api.Controllers
             }
 
             var conversation = await directLine.Conversations.StartConversationAsync();
-//            conversation.
-
             var channelData = new BotCustomChannelData { QnaModelKnowledgeBaseId = device.QnAKnowledgeBaseId };
 
             // Send a new activity to the bot with the captured text to process
