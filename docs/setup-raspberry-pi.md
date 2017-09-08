@@ -5,7 +5,7 @@ title: Set up Pi
 
 1. Download and install the [Windows IoT Dashboard](https://developer.microsoft.com/en-us/windows/iot/docs/iotdashboard)
 
-2. Stick the SD card into your laptop.
+2. Stick the SD card into your laptop.  
 
 ![SD Card]({{ site.baseurl }}/img/sd-card.jpg)
 
@@ -22,3 +22,4 @@ Attach a screen to the Raspberry Pi so you can see what is going on.
 
 6. May not appear on "My Devices" in which case get the Ethernet IP address from the screen.
 
+Now proceed to [on boarding]({{ site.baseurl }}/onboarding) to create the device data entry and associate the physical device with it. This is required before the device can start using the patrons API.

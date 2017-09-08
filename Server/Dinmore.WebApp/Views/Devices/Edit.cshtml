@@ -1,12 +1,12 @@
-@model Dinmore.WebApp.Models.Device
+@model Dinmore.Domain.Device
 
 @{
-    ViewData["Title"] = "Device Edit";
+    ViewData["Title"] = "Edit";
 }
 
-<h2>@ViewData["Title"]</h2>
+<h2>Edit</h2>
 
-<form asp-action="Edit">
+<form asp-action="Edit" enctype="multipart/form-data">
     <div class="form-horizontal">
         <h4>Device</h4>
         <hr />
@@ -15,7 +15,7 @@
             <label asp-for="Id" class="col-md-2 control-label"></label>
             <div class="col-md-10">
                 <input asp-for="Id" class="form-control" readonly />
-                <span class="text-info">If you want to change the DeviceId; delete the record and create a new one</span>
+                <span class="text-info">You can't edit this. Delete and Re-create if you wish to change device id.</span>
                 <span asp-validation-for="Id" class="text-danger"></span>
             </div>
         </div>
@@ -38,6 +38,60 @@
             <div class="col-md-10">
                 <input asp-for="Venue" class="form-control" />
                 <span asp-validation-for="Venue" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <div class="checkbox">
+                    <input asp-for="Interactive" />
+                    <label asp-for="Interactive"></label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <div class="checkbox">
+                    <input asp-for="VerbaliseSystemInformationOnBoot" />
+                    <label asp-for="VerbaliseSystemInformationOnBoot"></label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <div class="checkbox">
+                    <input asp-for="SoundOn" />
+                    <label asp-for="SoundOn"></label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <div class="checkbox">
+                    <input asp-for="ResetOnBoot" />
+                    <label asp-for="ResetOnBoot"></label>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label asp-for="QnAKnowledgeBaseId" class="col-md-2 control-label"></label>
+            <div class="col-md-10">
+                <input asp-for="QnAKnowledgeBaseId" class="form-control" />
+                <span asp-validation-for="QnAKnowledgeBaseId" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label asp-for="VoicePackageUrl" class="col-md-2 control-label"></label>
+            <div class="col-md-10">
+                <input asp-for="VoicePackageUrl" class="form-control" />
+                <span asp-validation-for="VoicePackageUrl" class="text-danger"></span>
+                <span class="text-info">If you are uploading a new Voice Package file, this will be updated automatically.</span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label asp-for="VoicePackage" class="col-md-2 control-label"></label>
+            <div class="col-md-10">
+                <input type="file" name="file" id="file" class="form-control input-lg">
+                <span class="text-info">Select a ZIP file containing WAV files and a JSON index. See documentation for details.</span>
             </div>
         </div>
         <div class="form-group">

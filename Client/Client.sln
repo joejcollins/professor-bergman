@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26228.12
+VisualStudioVersion = 15.0.26730.10
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dinmore.Uwp", "Dinmore.Uwp\Dinmore.Uwp.csproj", "{DC30CE66-DAEE-4CCF-BD02-8837FE918B6F}"
 EndProject
@@ -18,6 +18,8 @@ Global
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{DC30CE66-DAEE-4CCF-BD02-8837FE918B6F}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{DC30CE66-DAEE-4CCF-BD02-8837FE918B6F}.Debug|Any CPU.Build.0 = Debug|x86
+		{DC30CE66-DAEE-4CCF-BD02-8837FE918B6F}.Debug|Any CPU.Deploy.0 = Debug|x86
 		{DC30CE66-DAEE-4CCF-BD02-8837FE918B6F}.Debug|ARM.ActiveCfg = Debug|ARM
 		{DC30CE66-DAEE-4CCF-BD02-8837FE918B6F}.Debug|ARM.Build.0 = Debug|ARM
 		{DC30CE66-DAEE-4CCF-BD02-8837FE918B6F}.Debug|ARM.Deploy.0 = Debug|ARM
@@ -28,6 +30,8 @@ Global
 		{DC30CE66-DAEE-4CCF-BD02-8837FE918B6F}.Debug|x86.Build.0 = Debug|x86
 		{DC30CE66-DAEE-4CCF-BD02-8837FE918B6F}.Debug|x86.Deploy.0 = Debug|x86
 		{DC30CE66-DAEE-4CCF-BD02-8837FE918B6F}.Release|Any CPU.ActiveCfg = Release|x86
+		{DC30CE66-DAEE-4CCF-BD02-8837FE918B6F}.Release|Any CPU.Build.0 = Release|x86
+		{DC30CE66-DAEE-4CCF-BD02-8837FE918B6F}.Release|Any CPU.Deploy.0 = Release|x86
 		{DC30CE66-DAEE-4CCF-BD02-8837FE918B6F}.Release|ARM.ActiveCfg = Release|ARM
 		{DC30CE66-DAEE-4CCF-BD02-8837FE918B6F}.Release|ARM.Build.0 = Release|ARM
 		{DC30CE66-DAEE-4CCF-BD02-8837FE918B6F}.Release|ARM.Deploy.0 = Release|ARM
@@ -40,5 +44,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F602D78A-CE8B-4CC2-BEB7-F010472C62AF}
 	EndGlobalSection
 EndGlobal

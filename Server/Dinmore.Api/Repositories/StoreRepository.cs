@@ -1,6 +1,6 @@
 ﻿using dinmore.api.Interfaces;
 using dinmore.api.Models;
-using Dinmore.Api.Models;
+using Dinmore.Domain;
 using Microsoft.Extensions.Options;
 
 using Microsoft.WindowsAzure.Storage;
@@ -29,12 +29,9 @@ namespace dinmore.api.Repositories
             //get cloudtable
             var table = await GetCloudTable(_appSettings.TableStorageConnectionString, _appSettings.StoreDeviceContainerName);
 
-            DeviceStorageTableEntity deviceStorageTableEntity = new DeviceStorageTableEntity(device.Id.ToString(), _appSettings.StoreDevicePartitionKey);
-            deviceStorageTableEntity.DeviceLabel = device.DeviceLabel;
-            deviceStorageTableEntity.Exhibit = device.Exhibit;
-            deviceStorageTableEntity.Venue = device.Venue;
+            TableEntityAdapter<Device> entity = new TableEntityAdapter<Device>(device, _appSettings.StoreDevicePartitionKey, device.Id.ToString());
 
-            TableOperation insertOperation = TableOperation.Insert(deviceStorageTableEntity);
+            TableOperation insertOperation = TableOperation.Insert(entity);
 
             await table.ExecuteAsync(insertOperation);
         }
@@ -45,14 +42,13 @@ namespace dinmore.api.Repositories
             var table = await GetCloudTable(_appSettings.TableStorageConnectionString, _appSettings.StoreDeviceContainerName);
 
             // Create a retrieve operation that expects a customer entity.
-            TableOperation retrieveOperation = TableOperation.Retrieve<DeviceStorageTableEntity>(_appSettings.StoreDevicePartitionKey, deviceId);
+            TableOperation retrieveOperation = TableOperation.Retrieve<TableEntityAdapter<Device>>(_appSettings.StoreDevicePartitionKey, deviceId);
 
             // Execute the operation.
             TableResult retrievedResult = await table.ExecuteAsync(retrieveOperation);
 
             // Assign the result to a CustomerEntity.
-            var deleteEntity = (DeviceStorageTableEntity)retrievedResult.Result;
-
+            var deleteEntity = (TableEntityAdapter<Device>)retrievedResult.Result;
 
             // Create the Delete TableOperation.
             if (deleteEntity != null)
@@ -72,7 +68,7 @@ namespace dinmore.api.Repositories
             var table = await GetCloudTable(_appSettings.TableStorageConnectionString, _appSettings.StoreDeviceContainerName);
 
             // Create a retrieve operation that takes a customer entity.
-            TableOperation retrieveOperation = TableOperation.Retrieve<DeviceStorageTableEntity>(_appSettings.StoreDevicePartitionKey, deviceId);
+            TableOperation retrieveOperation = TableOperation.Retrieve<TableEntityAdapter<Device>>(_appSettings.StoreDevicePartitionKey, deviceId);
 
             // Execute the retrieve operation.
             TableResult retrievedResult = await table.ExecuteAsync(retrieveOperation);
@@ -80,12 +76,9 @@ namespace dinmore.api.Repositories
             if (retrievedResult.Result != null)
             {
                 // get the result and create a new device from the data
-                var deviceResult = (DeviceStorageTableEntity)retrievedResult.Result;
+                var deviceResult = (TableEntityAdapter<Device>)retrievedResult.Result;
 
-                // Create a new Device object from result
-                var device = CastDeviceStorageTableEntityToDevice(deviceResult);
-
-                return device;
+                return deviceResult.OriginalEntity;
             }
             else
             {
@@ -100,10 +93,10 @@ namespace dinmore.api.Repositories
 
             TableContinuationToken token = null;
 
-            var entities = new List<DeviceStorageTableEntity>();
+            var entities = new List<TableEntityAdapter<Device>>();
             do
             {
-                var queryResult = await table.ExecuteQuerySegmentedAsync(new TableQuery<DeviceStorageTableEntity>(), token);
+                var queryResult = await table.ExecuteQuerySegmentedAsync(new TableQuery<TableEntityAdapter<Device>>(), token);
                 entities.AddRange(queryResult.Results);
                 token = queryResult.ContinuationToken;
             } while (token != null);
@@ -112,10 +105,7 @@ namespace dinmore.api.Repositories
             var devices = new List<Device>();
             foreach (var deviceStorageTableEntity in entities)
             {
-                // Create a new Device object from result
-                var device = CastDeviceStorageTableEntityToDevice(deviceStorageTableEntity);
-
-                devices.Add(device);
+                devices.Add(deviceStorageTableEntity.OriginalEntity);
             }
 
             return devices;
@@ -123,40 +113,49 @@ namespace dinmore.api.Repositories
 
         public async Task<Device> ReplaceDevice(Device device)
         {
-            //get cloudtable
-            var table = await GetCloudTable(_appSettings.TableStorageConnectionString, _appSettings.StoreDeviceContainerName);
+            //upload voice package if there is one
+            var fileName = string.Empty;
+            if (device.VoicePackage.Length > 0)
+            {
+                // Retrieve storage account from connection string.
+                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(_appSettings.TableStorageConnectionString);
 
-            // Create a retrieve operation that takes a customer entity.
-            TableOperation retrieveOperation = TableOperation.Retrieve<DeviceStorageTableEntity>(_appSettings.StoreDevicePartitionKey, device.Id.ToString());
+                // Create the blob client.
+                CloudBlobClient blobClient = storageAccount.CreateCloudBlobClient();
+
+                // Retrieve reference to a previously created container.
+                CloudBlobContainer container = blobClient.GetContainerReference(_appSettings.StoreVoicePackageContainerName);
+
+                // Retrieve reference to a blob named "myblob".
+                fileName = $"{device.Exhibit}-{device.DeviceLabel}-{DateTime.Now.ToString("yyyyMMddHHmmss")}.zip";
+                CloudBlockBlob blockBlob = container.GetBlockBlobReference(fileName);
+                blockBlob.Properties.ContentType = "application/zip";
+
+                // Create or overwrite the blob with contents from a local file.
+                await blockBlob.UploadFromByteArrayAsync(device.VoicePackage, 0, device.VoicePackage.Length);
+            }
+
+            // Construct the new voce package url if we have a file name, otherwise default to what ws passed in the Device object
+            var voicePackageUrl = device.VoicePackageUrl;
+            if (!string.IsNullOrEmpty(fileName))
+            {
+                voicePackageUrl = $"{_appSettings.StoreVoicePackagesRootUrl}{fileName}";
+            }
+            device.VoicePackageUrl = voicePackageUrl;
+
+            // Get cloudtable
+            var table = await GetCloudTable(_appSettings.TableStorageConnectionString,_appSettings.StoreDeviceContainerName);
+
+            // Create the entity based on passed in device
+            TableEntityAdapter<Device> entity = new TableEntityAdapter<Device>(device, _appSettings.StoreDevicePartitionKey, device.Id.ToString());
+
+            // Create the InsertOrReplace operation
+            TableOperation updateOperation = TableOperation.InsertOrReplace(entity);
 
             // Execute the operation.
-            TableResult retrievedResult = await table.ExecuteAsync(retrieveOperation);
+            await table.ExecuteAsync(updateOperation);
 
-            // Assign the result to a CustomerEntity object.
-            var updateEntity = (DeviceStorageTableEntity)retrievedResult.Result;
-
-            if (updateEntity != null)
-            {
-                // Change the entity
-                updateEntity.Exhibit = device.Exhibit;
-                updateEntity.DeviceLabel = device.DeviceLabel;
-                updateEntity.Venue = device.Venue;
-
-                // Create the Replace TableOperation.
-                TableOperation updateOperation = TableOperation.Replace(updateEntity);
-
-                // Execute the operation.
-                await table.ExecuteAsync(updateOperation);
-
-                // Create a new Device object from result
-                var newDevice = CastDeviceStorageTableEntityToDevice(updateEntity);
-
-                return newDevice;
-            }
-            else
-            {
-                return null;
-            }
+            return device;
         }
 
         public async Task StorePatrons(List<Patron> patrons)
@@ -170,12 +169,13 @@ namespace dinmore.api.Repositories
                 var persistedFaceId = patron.PersistedFaceId;
                 var sightingId = Guid.NewGuid().ToString(); //This is a unique ID for the sighting
 
+                // TO DO: This should be updated to use the TableEntityAdapter<Patron> approach like we've done for device
                 PatronStorageTableEntity patronStorageTableEntity = new PatronStorageTableEntity(persistedFaceId, sightingId);
                 patronStorageTableEntity.Device = patron.DeviceLabel;
                 patronStorageTableEntity.Exhibit = patron.Exhibit;
                 patronStorageTableEntity.Venue = patron.Venue;
                 patronStorageTableEntity.Gender = patron.FaceAttributes.gender;
-                patronStorageTableEntity.Age = Math.Round(patron.FaceAttributes.age,0);
+                patronStorageTableEntity.Age = Math.Round(patron.FaceAttributes.age, 0);
                 patronStorageTableEntity.PrimaryEmotion = patron.PrimaryEmotion;
                 patronStorageTableEntity.TimeOfSighting = (DateTime)patron.Time;
                 patronStorageTableEntity.Smile = patron.FaceAttributes.smile;
@@ -186,19 +186,6 @@ namespace dinmore.api.Repositories
 
                 await table.ExecuteAsync(insertOperation);
             }
-        }
-
-        private Device CastDeviceStorageTableEntityToDevice(DeviceStorageTableEntity deviceEntity)
-        {
-            var device = new Device()
-            {
-                Id = new Guid(deviceEntity.RowKey),
-                Exhibit = deviceEntity.Exhibit,
-                DeviceLabel = deviceEntity.DeviceLabel,
-                Venue = deviceEntity.Venue
-            };
-
-            return device;
         }
 
         private async Task<CloudTable> GetCloudTable(string tableConnectionString, string containerName)

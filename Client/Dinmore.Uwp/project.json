@@ -6,7 +6,7 @@
     "ZXing.Net": "0.16.0"
   },
   "frameworks": {
-    "uap10.0": {}
+    "uap10.0.10240": {}
   },
   "runtimes": {
     "win10-arm": {},

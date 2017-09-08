@@ -17,12 +17,13 @@
     <EnableDotNetNativeCompatibleProfile>true</EnableDotNetNativeCompatibleProfile>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{A5A43C5B-DE2A-4C0C-9213-0A381AF9435A};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
-    <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
+    <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
     <AppxBundle>Always</AppxBundle>
     <AppxBundlePlatforms>arm</AppxBundlePlatforms>
     <PackageCertificateThumbprint>6C1CA19D22011E0F94A3AE4C4258B06FE4A57A06</PackageCertificateThumbprint>
     <PackageCertificateKeyFile>Dinmore.Uwp_TemporaryKey.pfx</PackageCertificateKeyFile>
     <HockeyAppResourceId>508914dfa5e94e9280aacd818588588a</HockeyAppResourceId>
+    <AppxSymbolPackageEnabled>False</AppxSymbolPackageEnabled>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <DebugSymbols>true</DebugSymbols>
@@ -94,6 +95,8 @@
     <UseDotNetNativeToolchain>true</UseDotNetNativeToolchain>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="Assets\Voice\de724d1e-85ba-416b-8784-93ab178b68a8.zip" />
+    <None Include="Assets\Voice\de724d1e-85ba-416b-8784-93ab178b68a8\voice.json" />
     <None Include="Dinmore.Uwp_TemporaryKey.pfx" />
     <None Include="Connected Services\HockeyApp\ConnectedService.json" />
     <None Include="project.json" />
@@ -103,15 +106,23 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Constants\AppConsts.cs" />
+    <Compile Include="Constants\DeviceSettingKeys.cs" />
     <Compile Include="Converters.cs" />
+    <Compile Include="Helpers\Api.cs" />
+    <Compile Include="Helpers\Settings.cs" />
     <Compile Include="Infrastructure\Media\IVoicePlayer.cs" />
+    <Compile Include="AudioCapturePermissions.cs" />
     <Compile Include="Infrastructure\Media\PlayList.cs" />
     <Compile Include="Infrastructure\Media\PlayListGroup.cs" />
     <Compile Include="Infrastructure\Media\PlayListItem.cs" />
     <Compile Include="Infrastructure\Media\VoicePlayer.cs" />
+    <Compile Include="Infrastructure\Media\VoicePlayerSpeechRecog.cs" />
     <Compile Include="Infrastructure\Media\VoicePlayerGenerated.cs" />
+    <Compile Include="Infrastructure\VoicePackageService.cs" />
     <Compile Include="Models\ApiRequestParameters.cs" />
     <Compile Include="Models\DetectionStates.cs" />
+    <Compile Include="Models\Device.cs" />
     <Compile Include="Models\Emotion.cs" />
     <Compile Include="Models\FaceAttributes.cs" />
     <Compile Include="Models\FaceLandmarks.cs" />
@@ -185,6 +196,28 @@
     <Content Include="Assets\StoreLogo.scale-200.png" />
     <Content Include="Assets\StoreLogo.scale-400.png" />
     <Content Include="Assets\Voice\12-17.txt" />
+    <Content Include="Assets\Voice\de724d1e-85ba-416b-8784-93ab178b68a8\1-12-17.wav" />
+    <Content Include="Assets\Voice\de724d1e-85ba-416b-8784-93ab178b68a8\1-55-64.wav" />
+    <Content Include="Assets\Voice\de724d1e-85ba-416b-8784-93ab178b68a8\12-17.txt" />
+    <Content Include="Assets\Voice\de724d1e-85ba-416b-8784-93ab178b68a8\2-12-17.wav" />
+    <Content Include="Assets\Voice\de724d1e-85ba-416b-8784-93ab178b68a8\2-55-64.wav" />
+    <Content Include="Assets\Voice\de724d1e-85ba-416b-8784-93ab178b68a8\3-12-17.wav" />
+    <Content Include="Assets\Voice\de724d1e-85ba-416b-8784-93ab178b68a8\3-55-64.wav" />
+    <Content Include="Assets\Voice\de724d1e-85ba-416b-8784-93ab178b68a8\4-12-17.wav" />
+    <Content Include="Assets\Voice\de724d1e-85ba-416b-8784-93ab178b68a8\4-55-64.wav" />
+    <Content Include="Assets\Voice\de724d1e-85ba-416b-8784-93ab178b68a8\5-12-17.wav" />
+    <Content Include="Assets\Voice\de724d1e-85ba-416b-8784-93ab178b68a8\6-12-17.wav" />
+    <Content Include="Assets\Voice\de724d1e-85ba-416b-8784-93ab178b68a8\7-12-17.wav" />
+    <Content Include="Assets\Voice\de724d1e-85ba-416b-8784-93ab178b68a8\goat.wav" />
+    <Content Include="Assets\Voice\de724d1e-85ba-416b-8784-93ab178b68a8\hello.wav" />
+    <Content Include="Assets\Voice\de724d1e-85ba-416b-8784-93ab178b68a8\helloall.wav" />
+    <Content Include="Assets\Voice\de724d1e-85ba-416b-8784-93ab178b68a8\helloeveryone.wav" />
+    <Content Include="Assets\Voice\de724d1e-85ba-416b-8784-93ab178b68a8\hellomadam.wav" />
+    <Content Include="Assets\Voice\de724d1e-85ba-416b-8784-93ab178b68a8\hellosir.wav" />
+    <Content Include="Assets\Voice\de724d1e-85ba-416b-8784-93ab178b68a8\hiya.wav" />
+    <Content Include="Assets\Voice\de724d1e-85ba-416b-8784-93ab178b68a8\intro.txt" />
+    <Content Include="Assets\Voice\de724d1e-85ba-416b-8784-93ab178b68a8\introgroup.txt" />
+    <Content Include="Assets\Voice\de724d1e-85ba-416b-8784-93ab178b68a8\sheep.wav" />
     <Content Include="Assets\Voice\hello.wav">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -244,6 +277,7 @@
     <Content Include="Assets\Voice\sheep.wav">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="Assets\Voice\silent.wav" />
     <Content Include="Assets\WideTile.scale-100.png" />
     <Content Include="Assets\WideTile.scale-125.png" />
     <Content Include="Assets\WideTile.scale-150.png" />
