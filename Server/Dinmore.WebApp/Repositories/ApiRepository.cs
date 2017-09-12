@@ -1,5 +1,6 @@
 ﻿using Dinmore.WebApp.Interfaces;
 using Dinmore.WebApp.Models;
+using Dinmore.Domain;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -67,11 +68,15 @@ namespace Dinmore.WebApp.Repositories
             {
                 httpClient.BaseAddress = new Uri(_appSettings.ApiRoot + "/api/devices/" +device.Id.ToString());
 
+                //get the voice package as httpcontent
+                var content = new ByteArrayContent(device.VoicePackage);
+                content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+
                 //construct full API endpoint uri
                 var parameters = GetDeviceQueryParams(device);
                 var apiUri = QueryHelpers.AddQueryString(httpClient.BaseAddress.ToString(), parameters);
 
-                var responseMessage = await httpClient.PutAsync(apiUri, null);
+                var responseMessage = await httpClient.PutAsync(apiUri, content);
                 responseString = await responseMessage.Content.ReadAsStringAsync();
             }
 

@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Dinmore.WebApp.Interfaces;
 using Dinmore.WebApp.Models;
+using Dinmore.Domain;
+using System.IO;
 
 namespace Dinmore.WebApp.Controllers
 {
@@ -76,6 +78,20 @@ namespace Dinmore.WebApp.Controllers
             try
             {
                 var device = CastFormCollectionToDevice(collection);
+
+                // Get voice package byte array from request form and add it to device object
+                byte[] voicePackageBytes = null;
+                if (Request.Form.Files.Count > 0)
+                {
+                    var formFile = Request.Form.Files[0];
+                    using (var fileStream = formFile.OpenReadStream())
+                    using (var ms = new MemoryStream())
+                    {
+                        fileStream.CopyTo(ms);
+                        voicePackageBytes = ms.ToArray();
+                    }
+                }
+                device.VoicePackage = voicePackageBytes;
 
                 var result = _apiRepository.ReplaceDevice(device);
 

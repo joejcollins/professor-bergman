@@ -154,4 +154,23 @@
   <data name="DeviceApiUrl" xml:space="preserve">
     <value>http://blackradley-dinmore-api-develop.azurewebsites.net/api/devices</value>
   </data>
+  <data name="MicrophonePrivacyDeclined" xml:space="preserve">
+    <value>Please check application setting in Settings-&gt;Privacy-&gt;Microphone privacy settings</value>
+    <comment>Required for speech recognition</comment>
+  </data>
+  <data name="PrivacyStatementDeclined" xml:space="preserve">
+    <value>Privacy statement was declined.  Go to Settings -&gt; Privacy -&gt; Speech, inking and typing, and turn on speech services.</value>
+    <comment>Also required for speech recognition</comment>
+  </data>
+  <data name="CameraDeviceName" xml:space="preserve">
+    <value>Microsoft® LifeCam Cinema(TM)</value>
+    <comment>Provide one to override the default webcamera</comment>
+  </data>
+  <data name="BotApiUrl" xml:space="preserve">
+    <value>http://blackradley-dinmore-api-develop.azurewebsites.net/api/bot</value>
+  </data>
+  <data name="NumberMilliSecsForSpeechRecognitionTimeout" xml:space="preserve">
+    <value>10000</value>
+    <comment>Time before we give up listening for speech as no audio has been detected</comment>
+  </data>
 </root>

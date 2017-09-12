@@ -5,9 +5,11 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using dinmore.api.Interfaces;
-using Dinmore.Api.Models;
+using Dinmore.Api.Helpers;
+using Dinmore.Domain;
+using System.IO;
 
-namespace Dinmore.Api.Controllers
+namespace dinmore.api.Controllers
 {
     [Produces("application/json")]
     [Route("api/Devices")]
@@ -59,6 +61,10 @@ namespace Dinmore.Api.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Put(string id, Device device)
         {
+            // Get file if there is one
+            byte[] voicePackage = Helpers.ReadFileStream(Request.Body);
+            device.VoicePackage = voicePackage;
+
             // Update device data to storage
             await _storeRepository.ReplaceDevice(device);
 

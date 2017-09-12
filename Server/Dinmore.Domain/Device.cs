@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
-namespace Dinmore.WebApp.Models
+namespace Dinmore.Domain
 {
     public class Device
     {
@@ -26,5 +23,7 @@ namespace Dinmore.WebApp.Models
         public string VoicePackageUrl { get; set; }
 
         public string QnAKnowledgeBaseId { get; set; }
+
+        public byte[] VoicePackage { get; set; }
     }
 }

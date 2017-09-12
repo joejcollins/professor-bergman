@@ -1,19 +1,14 @@
-﻿using System;
+﻿using Dinmore.Uwp.Constants;
+using Dinmore.Uwp.Helpers;
+using Dinmore.Uwp.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Dinmore.Uwp.Models;
+using Windows.Media.Core;
 using Windows.Media.Playback;
 using Windows.Media.SpeechSynthesis;
-using Windows.Media.Core;
-using System.IO;
 using Windows.Storage;
-using Windows.UI.Xaml.Controls;
-using Windows.Storage.Streams;
-using Windows.ApplicationModel;
-using Windows.ApplicationModel.Core;
-using Windows.UI.Core;
 
 namespace Dinmore.Uwp.Infrastructure.Media
 {
@@ -106,19 +101,24 @@ namespace Dinmore.Uwp.Infrastructure.Media
             await PlayNext();
         }
 
-        public async Task<bool> PlayNext() {
-
-            if (!this.IsCurrentlyPlaying && mediaPlayer.PlaybackSession.PlaybackState != MediaPlaybackState.Playing && speechlist.Count > 0)
+        public async Task<bool> PlayNext()
+        {
+            // Respect sound on setting
+            if (Settings.GetBool(DeviceSettingKeys.SoundOnKey))
             {
-                this.IsCurrentlyPlaying = true;
-                var item = speechlist.Dequeue();
-                var synth = new Windows.Media.SpeechSynthesis.SpeechSynthesizer();
-                SpeechSynthesisStream stream = await synth.SynthesizeTextToStreamAsync(item);
-                MediaSource mediaSource = MediaSource.CreateFromStream(stream, stream.ContentType);
-                mediaPlayer.Source = mediaSource;
-                mediaPlayer.Play();
-                return true;
+                if (!this.IsCurrentlyPlaying && mediaPlayer.PlaybackSession.PlaybackState != MediaPlaybackState.Playing && speechlist.Count > 0)
+                {
+                    this.IsCurrentlyPlaying = true;
+                    var item = speechlist.Dequeue();
+                    var synth = new Windows.Media.SpeechSynthesis.SpeechSynthesizer();
+                    SpeechSynthesisStream stream = await synth.SynthesizeTextToStreamAsync(item);
+                    MediaSource mediaSource = MediaSource.CreateFromStream(stream, stream.ContentType);
+                    mediaPlayer.Source = mediaSource;
+                    mediaPlayer.Play();
+                    return true;
+                }
             }
+
             return false;
         }
 
