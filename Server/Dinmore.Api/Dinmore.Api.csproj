@@ -12,13 +12,9 @@
 
   <ItemGroup>
     <Compile Remove="TableStorage\**" />
-    <Compile Remove="wwwroot\**" />
     <Content Remove="TableStorage\**" />
-    <Content Remove="wwwroot\**" />
     <EmbeddedResource Remove="TableStorage\**" />
-    <EmbeddedResource Remove="wwwroot\**" />
     <None Remove="TableStorage\**" />
-    <None Remove="wwwroot\**" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.0.0" />
@@ -34,6 +30,7 @@
     <PackageReference Include="Microsoft.VisualStudio.Web.BrowserLink" Version="1.1.0" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="1.1.0" />
 	<PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="1.1.1" />
+	<PackageReference Include="Swashbuckle.AspNetCore" Version="1.0.0" />
 	<PackageReference Include="WindowsAzure.Storage" Version="8.4.0" />
   </ItemGroup>
   <ItemGroup>
@@ -44,8 +41,6 @@
     <ProjectReference Include="..\Dinmore.Domain\Dinmore.Domain.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="System.Configuration">
-      <HintPath>..\..\..\..\..\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.6\System.Configuration.dll</HintPath>
-    </Reference>
+    <None Include="wwwroot\index.html" />
   </ItemGroup>
 </Project>
