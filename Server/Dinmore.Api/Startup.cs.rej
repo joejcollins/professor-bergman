@@ -1,0 +1,14 @@
+diff a/Server/Dinmore.Api/Startup.cs b/Server/Dinmore.Api/Startup.cs	(rejected hunks)
+@@ -49,12 +49,6 @@
+             // Add repositories
+             services.AddSingleton<IFaceApiRepository, FaceApiRepository>();
+             services.AddSingleton<IStoreRepository, StoreRepository>();
+-
+-            // Register the Swagger generator, defining one or more Swagger documents
+-            services.AddSwaggerGen(c =>
+-            {
+-                c.SwaggerDoc("v1", new Info { Title = "My API", Version = "v1" });
+-            });
+         }
+ 
+         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
