@@ -61,9 +61,14 @@ namespace dinmore.api.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Put(string id, Device device)
         {
-            // Get file if there is one
+            // Get file if there is one and stor it to storage
             byte[] voicePackage = Helpers.ReadFileStream(Request.Body);
-            device.VoicePackage = voicePackage;
+            if (voicePackage.Length > 0)
+            {
+                var voicePackageUrl = await _storeRepository.StoreVoicePackage(voicePackage, device);
+
+                device.VoicePackageUrl = voicePackageUrl;
+            }
 
             // Update device data to storage
             await _storeRepository.ReplaceDevice(device);

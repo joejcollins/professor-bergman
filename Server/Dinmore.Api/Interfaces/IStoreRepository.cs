@@ -18,5 +18,7 @@ namespace dinmore.api.Interfaces
         Task<IEnumerable<Device>> GetDevices();
 
         Task<Device> ReplaceDevice(Device device);
+
+        Task<string> StoreVoicePackage(byte[] voicePackage, Device device);
     }
 }

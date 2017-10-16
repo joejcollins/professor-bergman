@@ -113,36 +113,6 @@ namespace dinmore.api.Repositories
 
         public async Task<Device> ReplaceDevice(Device device)
         {
-            //upload voice package if there is one
-            var fileName = string.Empty;
-            if (device.VoicePackage.Length > 0)
-            {
-                // Retrieve storage account from connection string.
-                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(_appSettings.TableStorageConnectionString);
-
-                // Create the blob client.
-                CloudBlobClient blobClient = storageAccount.CreateCloudBlobClient();
-
-                // Retrieve reference to a previously created container.
-                CloudBlobContainer container = blobClient.GetContainerReference(_appSettings.StoreVoicePackageContainerName);
-
-                // Retrieve reference to a blob named "myblob".
-                fileName = $"{device.Exhibit}-{device.DeviceLabel}-{DateTime.Now.ToString("yyyyMMddHHmmss")}.zip";
-                CloudBlockBlob blockBlob = container.GetBlockBlobReference(fileName);
-                blockBlob.Properties.ContentType = "application/zip";
-
-                // Create or overwrite the blob with contents from a local file.
-                await blockBlob.UploadFromByteArrayAsync(device.VoicePackage, 0, device.VoicePackage.Length);
-            }
-
-            // Construct the new voce package url if we have a file name, otherwise default to what ws passed in the Device object
-            var voicePackageUrl = device.VoicePackageUrl;
-            if (!string.IsNullOrEmpty(fileName))
-            {
-                voicePackageUrl = $"{_appSettings.StoreVoicePackagesRootUrl}{fileName}";
-            }
-            device.VoicePackageUrl = voicePackageUrl;
-
             // Get cloudtable
             var table = await GetCloudTable(_appSettings.TableStorageConnectionString,_appSettings.StoreDeviceContainerName);
 
@@ -150,7 +120,7 @@ namespace dinmore.api.Repositories
             TableEntityAdapter<Device> entity = new TableEntityAdapter<Device>(device, _appSettings.StoreDevicePartitionKey, device.Id.ToString());
 
             // Create the InsertOrReplace operation
-            TableOperation updateOperation = TableOperation.InsertOrReplace(entity);
+            TableOperation updateOperation = TableOperation.InsertOrMerge(entity);
 
             // Execute the operation.
             await table.ExecuteAsync(updateOperation);
@@ -187,6 +157,36 @@ namespace dinmore.api.Repositories
                 await table.ExecuteAsync(insertOperation);
             }
         }
+
+        public async Task<string> StoreVoicePackage(byte[] voicePackage, Device device)
+        {
+            //upload voice package if there is one
+            var fileName = string.Empty;
+
+            // Retrieve storage account from connection string.
+            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(_appSettings.TableStorageConnectionString);
+
+            // Create the blob client.
+            CloudBlobClient blobClient = storageAccount.CreateCloudBlobClient();
+
+            // Retrieve reference to a previously created container.
+            CloudBlobContainer container = blobClient.GetContainerReference(_appSettings.StoreVoicePackageContainerName);
+
+            // TO DO: Should we delete existing packages of matching file name of {device.Exhibit}-{device.DeviceLabel}-*.zip here
+
+            // Retrieve reference to a blob named "myblob".
+            fileName = $"{device.Exhibit}-{device.DeviceLabel}-{DateTime.Now.ToString("yyyyMMddHHmmss")}.zip";
+            CloudBlockBlob blockBlob = container.GetBlockBlobReference(fileName);
+            blockBlob.Properties.ContentType = "application/zip";
+
+            // Create or overwrite the blob with contents from a local file.
+            await blockBlob.UploadFromByteArrayAsync(voicePackage, 0, voicePackage.Length);
+
+            var fullUrl = $"{_appSettings.StoreVoicePackagesRootUrl}{fileName}";
+
+            return fullUrl;
+        }
+
 
         private async Task<CloudTable> GetCloudTable(string tableConnectionString, string containerName)
         {
