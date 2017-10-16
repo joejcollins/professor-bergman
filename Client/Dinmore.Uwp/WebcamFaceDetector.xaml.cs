@@ -617,7 +617,8 @@ namespace Dinmore.Uwp
 
                         if (CurrentState.FacesFoundByApi != null && CurrentState.FacesFoundByApi.Any())
                         {
-                            LogStatusMessage("Face(s) detected", StatusSeverity.Info, false);
+                            var firstFaceAge = CurrentState.FacesFoundByApi.FirstOrDefault().faceAttributes.age.ToString();
+                            LogStatusMessage($"Face(s) detected. First face's age is {firstFaceAge}", StatusSeverity.Info, false);
                             ChangeDetectionState(DetectionStates.InterpretingApiResults);
                             CurrentState.FacesStillPresent = true;
                             break;
