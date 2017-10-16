@@ -232,6 +232,11 @@ namespace Dinmore.Uwp
                 Settings.Set(DeviceSettingKeys.ResetOnBootKey, device.ResetOnBoot);
                 Settings.Set(DeviceSettingKeys.VoicePackageUrlKey, device.VoicePackageUrl);
                 Settings.Set(DeviceSettingKeys.QnAKnowledgeBaseIdKey, device.QnAKnowledgeBaseId);
+
+                // Always update voice package
+                LogStatusMessage("Downloading the voice package.", StatusSeverity.Info, true);
+                await Infrastructure.VoicePackageService.DownloadUnpackVoicePackage(Settings.GetString(DeviceSettingKeys.VoicePackageUrlKey));
+                LogStatusMessage("Got the voice package.", StatusSeverity.Info, true);
             }
 
             return true;
@@ -559,11 +564,6 @@ namespace Dinmore.Uwp
 
                             // Get device settings
                             await this.UpdateDeviceSettings();
-
-                            // Update voice package
-                            LogStatusMessage("Downloading the voice package.", StatusSeverity.Info, true);
-                            await Infrastructure.VoicePackageService.DownloadUnpackVoicePackage(Settings.GetString(DeviceSettingKeys.VoicePackageUrlKey));
-                            LogStatusMessage("Got the voice package.", StatusSeverity.Info, true);
 
                             this.vp = await Infrastructure.VoicePackageService.VoicePlayerFactory(Settings.GetString(DeviceSettingKeys.VoicePackageUrlKey));
 
