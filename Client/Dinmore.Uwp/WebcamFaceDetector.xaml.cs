@@ -18,6 +18,7 @@ using Windows.Media.Capture;
 using Windows.Media.FaceAnalysis;
 using Windows.Media.MediaProperties;
 using Windows.Media.SpeechRecognition;
+using Windows.Networking;
 using Windows.Networking.Connectivity;
 using Windows.System.Threading;
 using Windows.UI.Xaml.Controls;
@@ -247,22 +248,20 @@ namespace Dinmore.Uwp
             // TODO: Make this more robust https://github.com/blackradley/dinmore/issues/29
             try
             {
-                var icp = NetworkInformation.GetInternetConnectionProfile();
-
-                if (icp?.NetworkAdapter == null) return null;
-                var hostname =
-                    NetworkInformation.GetHostNames()
-                        .SingleOrDefault(
-                            hn =>
-                                hn.IPInformation?.NetworkAdapter != null && hn.IPInformation.NetworkAdapter.NetworkAdapterId
-                                == icp.NetworkAdapter.NetworkAdapterId);
-
-                // the ip address
-                return hostname?.CanonicalName;
+                var ip = string.Empty;
+                foreach (HostName localHostName in NetworkInformation.GetHostNames().Where(n => n.Type == HostNameType.Ipv4))
+                {
+                    if (localHostName.IPInformation != null)
+                    {
+                        ip =  localHostName.ToString();
+                        break;
+                    }
+                }
+                return ip;
             }
             catch
             {
-                return "Greedy, 2 network cards";
+                return "Could not find IP address";
             }
         }
 
