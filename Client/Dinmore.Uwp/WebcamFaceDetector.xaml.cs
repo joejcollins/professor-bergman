@@ -235,7 +235,6 @@ namespace Dinmore.Uwp
                 Settings.Set(DeviceSettingKeys.QnAKnowledgeBaseIdKey, device.QnAKnowledgeBaseId);
 
                 // Always update voice package
-                LogStatusMessage("Downloading the voice package.", StatusSeverity.Info, true);
                 await Infrastructure.VoicePackageService.DownloadUnpackVoicePackage(Settings.GetString(DeviceSettingKeys.VoicePackageUrlKey));
                 LogStatusMessage("Got the voice package.", StatusSeverity.Info, true);
             }
@@ -559,7 +558,7 @@ namespace Dinmore.Uwp
                         {
                             //store the device id guid
                             Settings.Set(DeviceSettingKeys.DeviceIdKey, result);
-                            LogStatusMessage($"Found a QR code with device id {result}.", StatusSeverity.Info, true);
+                            LogStatusMessage($"Found a QR code, thanks.", StatusSeverity.Info, true);
 
                             // Get device settings
                             await this.UpdateDeviceSettings();
@@ -602,11 +601,11 @@ namespace Dinmore.Uwp
                                 HelloAudio();
                             }
 
-                            CurrentState.LastImageApiPush = DateTimeOffset.UtcNow;
-                            CurrentState.FacesFoundByApi = await PostImageToApiAsync(CurrentState.ApiRequestParameters.Image);
-
                             LogStatusMessage($"Sending faces to api", StatusSeverity.Info, false);
 
+                            CurrentState.LastImageApiPush = DateTimeOffset.UtcNow;
+                            CurrentState.FacesFoundByApi = await PostImageToApiAsync(CurrentState.ApiRequestParameters.Image);
+                            
                             ChangeDetectionState(DetectionStates.ApiResponseReceived);
                         }
 
@@ -733,7 +732,18 @@ namespace Dinmore.Uwp
         {
             try
             {
-                return await Api.PostPatron(AppSettings, image);
+                var face = await Api.PostPatron(AppSettings, image);
+
+                if (face != null)
+                {
+                    return face;
+                }
+                else
+                {
+                    vp.Stop();
+                    LogStatusMessage("Exception posting to Patron api: Null response", StatusSeverity.Error, false);
+                    return null;
+                }
             }
             catch (Exception ex)
             {
@@ -897,8 +907,6 @@ namespace Dinmore.Uwp
                     var deviceId = Settings.GetString(DeviceSettingKeys.DeviceIdKey);
                     if (deviceId == null)
                     {
-                        //need to verbalise this directly rather than going through LogStatusMessage because the SoundOn setting is not yet set 
-                        vpGenerated.Say("I have no device ID. I'm now onboarding, show me a QR code containing a device ID.");
                         ChangeDetectionState(DetectionStates.OnBoarding);
                     }
                     else

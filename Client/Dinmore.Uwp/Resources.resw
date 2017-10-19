@@ -137,8 +137,8 @@
     <comment>If face goes away and we stop don't start the next hello until this time has elapsed</comment>
   </data>
   <data name="TimerIntervalMilliSecs" xml:space="preserve">
-    <value>250</value>
-    <comment>Every 250ms poll the face detction api</comment>
+    <value>500</value>
+    <comment>Every x ms poll the face detction api</comment>
   </data>
   <data name="TurnOnDisplay" xml:space="preserve">
     <value>false</value>
