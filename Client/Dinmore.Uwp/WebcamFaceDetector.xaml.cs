@@ -224,6 +224,14 @@ namespace Dinmore.Uwp
             }
             else
             {
+                //Download the voice package only if the local and cloud Voice package url does not match
+                if (device.VoicePackageUrl != Settings.GetString(DeviceSettingKeys.VoicePackageUrlKey))
+                {
+                    LogStatusMessage("Looks like there is a new voice package so downloading it (could be a while).", StatusSeverity.Info, true);
+                    await Infrastructure.VoicePackageService.DownloadUnpackVoicePackage(Settings.GetString(DeviceSettingKeys.VoicePackageUrlKey));
+                    LogStatusMessage("Got the voice package.", StatusSeverity.Info, true);
+                }
+
                 // Store device settings in Windows local app settings
                 Settings.Set(DeviceSettingKeys.DeviceExhibitKey, device.Exhibit);
                 Settings.Set(DeviceSettingKeys.DeviceLabelKey, device.DeviceLabel);
@@ -233,10 +241,6 @@ namespace Dinmore.Uwp
                 Settings.Set(DeviceSettingKeys.ResetOnBootKey, device.ResetOnBoot);
                 Settings.Set(DeviceSettingKeys.VoicePackageUrlKey, device.VoicePackageUrl);
                 Settings.Set(DeviceSettingKeys.QnAKnowledgeBaseIdKey, device.QnAKnowledgeBaseId);
-
-                // Always update voice package
-                await Infrastructure.VoicePackageService.DownloadUnpackVoicePackage(Settings.GetString(DeviceSettingKeys.VoicePackageUrlKey));
-                LogStatusMessage("Got the voice package.", StatusSeverity.Info, true);
             }
 
             return true;
