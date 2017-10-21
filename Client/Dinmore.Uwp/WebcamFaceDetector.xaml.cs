@@ -224,13 +224,8 @@ namespace Dinmore.Uwp
             }
             else
             {
-                //Download the voice package only if the local and cloud Voice package url does not match
-                if (device.VoicePackageUrl != Settings.GetString(DeviceSettingKeys.VoicePackageUrlKey))
-                {
-                    LogStatusMessage("Looks like there is a new voice package so downloading it (could be a while).", StatusSeverity.Info, true);
-                    await Infrastructure.VoicePackageService.DownloadUnpackVoicePackage(Settings.GetString(DeviceSettingKeys.VoicePackageUrlKey));
-                    LogStatusMessage("Got the voice package.", StatusSeverity.Info, true);
-                }
+                //capture the previous url before it potentially gets changed
+                var preLoadVoicePackageUrl = Settings.GetString(DeviceSettingKeys.VoicePackageUrlKey);
 
                 // Store device settings in Windows local app settings
                 Settings.Set(DeviceSettingKeys.DeviceExhibitKey, device.Exhibit);
@@ -239,8 +234,16 @@ namespace Dinmore.Uwp
                 Settings.Set(DeviceSettingKeys.VerbaliseSystemInformationOnBootKey, device.VerbaliseSystemInformationOnBoot);
                 Settings.Set(DeviceSettingKeys.SoundOnKey, device.SoundOn);
                 Settings.Set(DeviceSettingKeys.ResetOnBootKey, device.ResetOnBoot);
-                Settings.Set(DeviceSettingKeys.VoicePackageUrlKey, device.VoicePackageUrl);
                 Settings.Set(DeviceSettingKeys.QnAKnowledgeBaseIdKey, device.QnAKnowledgeBaseId);
+                Settings.Set(DeviceSettingKeys.VoicePackageUrlKey, device.VoicePackageUrl);
+
+                //Download the voice package only if the local and cloud Voice package url does not match
+                if (device.VoicePackageUrl != preLoadVoicePackageUrl)
+                {
+                    LogStatusMessage("Looks like there is a new voice package so downloading it (could be a while).", StatusSeverity.Info, true);
+                    await Infrastructure.VoicePackageService.DownloadUnpackVoicePackage(Settings.GetString(DeviceSettingKeys.VoicePackageUrlKey));
+                    LogStatusMessage("Got the voice package.", StatusSeverity.Info, true);
+                }
             }
 
             return true;
