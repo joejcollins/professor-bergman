@@ -133,7 +133,7 @@
     <comment>Wait this time before we say hello, pre ai call</comment>
   </data>
   <data name="NumberMillSecsBeforeWePlayAgain" xml:space="preserve">
-    <value>10000</value>
+    <value>5000</value>
     <comment>If face goes away and we stop don't start the next hello until this time has elapsed</comment>
   </data>
   <data name="TimerIntervalMilliSecs" xml:space="preserve">
@@ -170,7 +170,7 @@
     <value>http://blackradley-dinmore-api-develop.azurewebsites.net/api/bot</value>
   </data>
   <data name="NumberMilliSecsForSpeechRecognitionTimeout" xml:space="preserve">
-    <value>10000</value>
+    <value>5000</value>
     <comment>Time before we give up listening for speech as no audio has been detected</comment>
   </data>
 </root>
