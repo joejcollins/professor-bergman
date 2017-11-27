@@ -3,5 +3,5 @@ layout: default
 title: Client
 ---
 
-* [Set up Raspberry Pi]({{ site.baseurl }}/setup-raspberry-pi/)
+* [Set up Raspberry Pi]({{ site.baseurl }}/raspberry-pi-setup/)
 * [Onboarding the device]({{ site.baseurl }}/onboarding/)
