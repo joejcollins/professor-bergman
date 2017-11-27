@@ -28,8 +28,9 @@ If it is a fresh SD card you shouldn't see these two.
 1. Put the SD card in the Raspberry Pi, attach it directly to your laptop with the ethernet cable and turn it on.
     ![SD Card](./07-ethernet-to-pi.png)
 
-1. 
-    ![SD Card](./07-device-list.png)
+1. Once the Raspberry Pi has started it should appear in the device list on the Dashboard.
+    ![SD Card](./08-device-list.png)
+Sometimes this doesn't happen.  This process relies on ebootpinger.exe running on the Raspberry Pi.  So the recommendation is to restart ebootpinger.exe.  If you are relying on the dashboard to find the Raspberry Pi (if you don't have access to the router) this isn't very useful advice.
 
 5. First boot is the longest whilst Windows sets up, so be patient.
 Attach a screen to the Raspberry Pi so you can see what is going on.
