@@ -30,18 +30,32 @@ title: Set up Pi
     ![SD Card](./05-apply-image.png)
 
 1. Once the card is setup you should see this.
+
     ![SD Card](./06-card-complete.png)
 
-1. Put the SD card in the Raspberry Pi, attach it directly to your laptop with the ethernet cable and turn it on.
+1. Put the SD card in the Raspberry Pi, attach it directly to your laptop with the ethernet cable and turn it on.  First boot is the longest whilst Windows sets up, so be patient.
+Attach a screen to the Raspberry Pi so you can see what is going on.
+
     ![SD Card](./07-ethernet-to-pi.png)
 
 1. Once the Raspberry Pi has started it should appear in the device list on the Dashboard.
+
     ![SD Card](./08-device-list.png)
-    Sometimes this doesn't happen.  This process relies on ebootpinger.exe running on the Raspberry Pi.  So the recommendation is to restart ebootpinger.exe.  If you are relying on the dashboard to find the Raspberry Pi (if you don't have access to the router) this isn't very useful advice.
+    
+    Sometimes this doesn't happen.  It relies on ebootpinger.exe running on the Raspberry Pi.  So if it doesn't happen the recommendation is to restart ebootpinger.exe on the Raspberry Pi.  If you are relying on the dashboard to find the Raspberry Pi (because you don't have access to the router) this isn't very useful advice.  Rebooting the device can sometimes get it to appear.  If it doesn't I then attach a screen, the default application on the device shows the IP address and you can use this in a browser to open the device portal.
 
-5. First boot is the longest whilst Windows sets up, so be patient.
-Attach a screen to the Raspberry Pi so you can see what is going on.
+    Also note that the new device has a different OS version.  The operating system will need to be updated. The IP address is in the APIPA (Automatic Private IP Addressing) range because it is a direct connection.
+    
+1. Right click on the device and open in the device portal.
 
-6. May not appear on "My Devices" in which case get the Ethernet IP address from the screen.
+    ![SD Card](./09-open-device-portal.png)
+     
+1. The device portal should allow you to change setting on the device, such as the name etc...
+
+    ![SD Card](./10-device-portal.png)
+
+1. Set up the network connection, selecting the prefered network and providing the password.  This should automatically set up a profile as the same time.  In the event that the network requires authentication via a browser, this will need to be done by attaching a screen, keyboard and mouse to the device.
+
+    ![SD Card](./11-network-setup.png)
 
 Now proceed to [on boarding]({{ site.baseurl }}/onboarding) to create the device data entry and associate the physical device with it. This is required before the device can start using the patrons API.
