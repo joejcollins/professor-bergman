@@ -18,6 +18,7 @@ using Windows.Media.Capture;
 using Windows.Media.FaceAnalysis;
 using Windows.Media.MediaProperties;
 using Windows.Media.SpeechRecognition;
+using Windows.Networking;
 using Windows.Networking.Connectivity;
 using Windows.System.Threading;
 using Windows.UI.Xaml.Controls;
@@ -223,6 +224,9 @@ namespace Dinmore.Uwp
             }
             else
             {
+                //capture the previous url before it potentially gets changed
+                var preLoadVoicePackageUrl = Settings.GetString(DeviceSettingKeys.VoicePackageUrlKey);
+
                 // Store device settings in Windows local app settings
                 Settings.Set(DeviceSettingKeys.DeviceExhibitKey, device.Exhibit);
                 Settings.Set(DeviceSettingKeys.DeviceLabelKey, device.DeviceLabel);
@@ -230,8 +234,16 @@ namespace Dinmore.Uwp
                 Settings.Set(DeviceSettingKeys.VerbaliseSystemInformationOnBootKey, device.VerbaliseSystemInformationOnBoot);
                 Settings.Set(DeviceSettingKeys.SoundOnKey, device.SoundOn);
                 Settings.Set(DeviceSettingKeys.ResetOnBootKey, device.ResetOnBoot);
-                Settings.Set(DeviceSettingKeys.VoicePackageUrlKey, device.VoicePackageUrl);
                 Settings.Set(DeviceSettingKeys.QnAKnowledgeBaseIdKey, device.QnAKnowledgeBaseId);
+                Settings.Set(DeviceSettingKeys.VoicePackageUrlKey, device.VoicePackageUrl);
+
+                //Download the voice package only if the local and cloud Voice package url does not match
+                if (device.VoicePackageUrl != preLoadVoicePackageUrl)
+                {
+                    LogStatusMessage("Looks like there is a new voice package so downloading it (could be a while).", StatusSeverity.Info, true);
+                    await Infrastructure.VoicePackageService.DownloadUnpackVoicePackage(Settings.GetString(DeviceSettingKeys.VoicePackageUrlKey));
+                    LogStatusMessage("Got the voice package.", StatusSeverity.Info, true);
+                }
             }
 
             return true;
@@ -242,22 +254,20 @@ namespace Dinmore.Uwp
             // TODO: Make this more robust https://github.com/blackradley/dinmore/issues/29
             try
             {
-                var icp = NetworkInformation.GetInternetConnectionProfile();
-
-                if (icp?.NetworkAdapter == null) return null;
-                var hostname =
-                    NetworkInformation.GetHostNames()
-                        .SingleOrDefault(
-                            hn =>
-                                hn.IPInformation?.NetworkAdapter != null && hn.IPInformation.NetworkAdapter.NetworkAdapterId
-                                == icp.NetworkAdapter.NetworkAdapterId);
-
-                // the ip address
-                return hostname?.CanonicalName;
+                var ip = string.Empty;
+                foreach (HostName localHostName in NetworkInformation.GetHostNames().Where(n => n.Type == HostNameType.Ipv4))
+                {
+                    if (localHostName.IPInformation != null)
+                    {
+                        ip =  localHostName.ToString();
+                        break;
+                    }
+                }
+                return ip;
             }
             catch
             {
-                return "Greedy, 2 network cards";
+                return "Could not find IP address";
             }
         }
 
@@ -555,15 +565,10 @@ namespace Dinmore.Uwp
                         {
                             //store the device id guid
                             Settings.Set(DeviceSettingKeys.DeviceIdKey, result);
-                            LogStatusMessage($"Found a QR code with device id {result}.", StatusSeverity.Info, true);
+                            LogStatusMessage($"Found a QR code, thanks.", StatusSeverity.Info, true);
 
                             // Get device settings
                             await this.UpdateDeviceSettings();
-
-                            // Update voice package
-                            LogStatusMessage("Downloading the voice package.", StatusSeverity.Info, true);
-                            await Infrastructure.VoicePackageService.DownloadUnpackVoicePackage(Settings.GetString(DeviceSettingKeys.VoicePackageUrlKey));
-                            LogStatusMessage("Got the voice package.", StatusSeverity.Info, true);
 
                             this.vp = await Infrastructure.VoicePackageService.VoicePlayerFactory(Settings.GetString(DeviceSettingKeys.VoicePackageUrlKey));
 
@@ -603,11 +608,11 @@ namespace Dinmore.Uwp
                                 HelloAudio();
                             }
 
-                            CurrentState.LastImageApiPush = DateTimeOffset.UtcNow;
-                            CurrentState.FacesFoundByApi = await PostImageToApiAsync(CurrentState.ApiRequestParameters.Image);
-
                             LogStatusMessage($"Sending faces to api", StatusSeverity.Info, false);
 
+                            CurrentState.LastImageApiPush = DateTimeOffset.UtcNow;
+                            CurrentState.FacesFoundByApi = await PostImageToApiAsync(CurrentState.ApiRequestParameters.Image);
+                            
                             ChangeDetectionState(DetectionStates.ApiResponseReceived);
                         }
 
@@ -617,7 +622,8 @@ namespace Dinmore.Uwp
 
                         if (CurrentState.FacesFoundByApi != null && CurrentState.FacesFoundByApi.Any())
                         {
-                            LogStatusMessage("Face(s) detected", StatusSeverity.Info, false);
+                            var firstFaceAge = CurrentState.FacesFoundByApi.FirstOrDefault().faceAttributes.age.ToString();
+                            LogStatusMessage($"Face(s) detected. First face's age is {firstFaceAge}", StatusSeverity.Info, false);
                             ChangeDetectionState(DetectionStates.InterpretingApiResults);
                             CurrentState.FacesStillPresent = true;
                             break;
@@ -733,7 +739,18 @@ namespace Dinmore.Uwp
         {
             try
             {
-                return await Api.PostPatron(AppSettings, image);
+                var face = await Api.PostPatron(AppSettings, image);
+
+                if (face != null)
+                {
+                    return face;
+                }
+                else
+                {
+                    vp.Stop();
+                    LogStatusMessage("Exception posting to Patron api: Null response", StatusSeverity.Error, false);
+                    return null;
+                }
             }
             catch (Exception ex)
             {
@@ -897,8 +914,6 @@ namespace Dinmore.Uwp
                     var deviceId = Settings.GetString(DeviceSettingKeys.DeviceIdKey);
                     if (deviceId == null)
                     {
-                        //need to verbalise this directly rather than going through LogStatusMessage because the SoundOn setting is not yet set 
-                        vpGenerated.Say("I have no device ID. I'm now onboarding, show me a QR code containing a device ID.");
                         ChangeDetectionState(DetectionStates.OnBoarding);
                     }
                     else
