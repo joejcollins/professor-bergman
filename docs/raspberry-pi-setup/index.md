@@ -19,7 +19,7 @@ title: Set up Pi
 
     ![SD Card](./03-erase-card.png)
 
-1. And the tool to clean the previous install will be run.
+1. If there is a previous installation to be dealt with the dashboard will run the tool to clean it up.
 
     ![SD Card](./04-clean-previous.png)
     
@@ -53,9 +53,30 @@ Attach a screen to the Raspberry Pi so you can see what is going on.
 1. The device portal should allow you to change setting on the device, such as the name etc...
 
     ![SD Card](./10-device-portal.png)
+    
+1. Adjust the time zone to the times on the logs make sense to you.
+
+    ![SD Card](./11-set-time-zone.png)
 
 1. Set up the network connection, selecting the prefered network and providing the password.  This should automatically set up a profile as the same time.  In the event that the network requires authentication via a browser, this will need to be done by attaching a screen, keyboard and mouse to the device.
 
-    ![SD Card](./11-network-setup.png)
+    ![SD Card](./12-network-setup.png)
+    
+1. Windows will need updating so ensure that the updates have been downloaded.
+
+    ![SD Card](./13-windows-update.png)
+    
+1. Restart the device.
+
+    ![SD Card](./14-windows-restart.png)
+
+1. The restart doesn't always work so it is easiest just to turn it off and on again.
+
+    ![SD Card](./15-windows-restart-fail.png)
+    
+1. Installing the updates may take some time so it might be as well in plug in a monitor so you know what is going on.
+
+    ![SD Card](./15-windows-restart-fail.png)
+    
 
 Now proceed to [on boarding]({{ site.baseurl }}/onboarding) to create the device data entry and associate the physical device with it. This is required before the device can start using the patrons API.
