@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Set up Pi
+title: Raspberry Pi 3 Set up
 ---
 
 1. Download and install the [Windows IoT Dashboard](https://developer.microsoft.com/en-us/windows/iot/docs/iotdashboard).  The Dashboard provides a convenient means of setting up the devices (essentially running the command line tools) and accessing the devices. 
@@ -74,12 +74,12 @@ Attach a screen to the Raspberry Pi so you can see what is going on.
 
     ![SD Card](./15-windows-restart-fail.png)
     
-1. Installing the updates may take some time so it might be as well in plug in a monitor so you know what is going on.
+1. Installing the updates may take some time but the portal will also provide some feedback.
 
     ![SD Card](./16-updating.png)
     
-1. The portal will also provide some feedback.
+1. The device will need rebooting again.  The updates will continue to install again this will take some time so it might be as well in plug in a monitor so you know what is going on.  The portal won't provide any feedback at this point since you can't connect to the device.
 
-    ![SD Card](./17-updating.png)
+    ![SD Card](./17-updating-post-reboot.png)
     
 Now proceed to [on boarding]({{ site.baseurl }}/onboarding) to create the device data entry and associate the physical device with it. This is required before the device can start using the patrons API.

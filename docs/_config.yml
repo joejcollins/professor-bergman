@@ -19,6 +19,6 @@ permalink:        pretty
 title: Insight 2 
 description: Intelligent Museum Exhibit
 
-gems:
+plugins:
    - jekyll-paginate
    - jekyll-sitemap
