@@ -48,38 +48,38 @@ Attach a screen to the Raspberry Pi so you can see what is going on.
     
 1. Right click on the device and open in the device portal.
 
-    ![SD Card](./09-open-device-portal.png)
+    ![Open the Device Portal](./09-open-device-portal.png)
      
 1. The device portal should allow you to change setting on the device, such as the name etc...
 
-    ![SD Card](./10-device-portal.png)
+    ![Device Portal](./10-device-portal.png)
     
 1. Adjust the time zone to the times on the logs make sense to you.
 
-    ![SD Card](./11-set-time-zone.png)
+    ![Set Time Zone](./11-set-time-zone.png)
 
 1. Set up the network connection, selecting the prefered network and providing the password.  This should automatically set up a profile as the same time.  In the event that the network requires authentication via a browser, this will need to be done by attaching a screen, keyboard and mouse to the device.
 
-    ![SD Card](./12-network-setup.png)
+    ![Network Set Up](./12-network-setup.png)
     
 1. Windows will need updating so ensure that the updates have been downloaded.
 
-    ![SD Card](./13-windows-update.png)
+    ![Windows Update](./13-windows-update.png)
     
 1. Restart the device.
 
-    ![SD Card](./14-windows-restart.png)
+    ![Restart](./14-windows-restart.png)
 
 1. The restart doesn't always work so it is easiest just to turn it off and on again.
 
-    ![SD Card](./15-windows-restart-fail.png)
+    ![Restart Fail](./15-windows-restart-fail.png)
     
 1. Installing the updates may take some time but the portal will also provide some feedback.
 
-    ![SD Card](./16-updating.png)
+    ![Updating](./16-updating.png)
     
 1. The device will need rebooting again.  The updates will continue to install again this will take some time so it might be as well in plug in a monitor so you know what is going on.  The portal won't provide any feedback at this point since you can't connect to the device.
 
     ![SD Card](./17-updating-post-reboot.png)
     
-Now proceed to [on boarding]({{ site.baseurl }}/onboarding) to create the device data entry and associate the physical device with it. This is required before the device can start using the patrons API.
+Now proceed to [installing the Intelligent Exhibit]({{ site.baseurl }}/installing-intelligent-exhibit).
