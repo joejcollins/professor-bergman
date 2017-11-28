@@ -76,7 +76,10 @@ Attach a screen to the Raspberry Pi so you can see what is going on.
     
 1. Installing the updates may take some time so it might be as well in plug in a monitor so you know what is going on.
 
-    ![SD Card](./15-windows-restart-fail.png)
+    ![SD Card](./16-updating.png)
     
+1. The portal will also provide some feedback.
 
+    ![SD Card](./17-updating.png)
+    
 Now proceed to [on boarding]({{ site.baseurl }}/onboarding) to create the device data entry and associate the physical device with it. This is required before the device can start using the patrons API.
