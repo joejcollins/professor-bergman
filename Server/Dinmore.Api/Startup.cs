@@ -21,9 +21,8 @@ namespace dinmore.api
 
             if (env.IsDevelopment())
             {
-                // For more details on using the user secret store see 
-                // http://go.microsoft.com/fwlink/?LinkID=532709
-                builder.AddUserSecrets();
+                // For more details on setting up the user secrets see README.md
+                builder.AddUserSecrets<Startup>();
             }
 
             builder.AddEnvironmentVariables();
