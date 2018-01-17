@@ -131,7 +131,7 @@ namespace Dinmore.Uwp
         protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
             //get device settings here
-            await UpdateDeviceSettings();
+            await this.GetDeviceSettings();
 
             this.vp = await Infrastructure.VoicePackageService.VoicePlayerFactory();
 
@@ -178,12 +178,13 @@ namespace Dinmore.Uwp
         }
 
         /// <summary>
-        /// Updates local device settings from the device API
+        /// Get and updates local device settings from the device API
         /// </summary>
-        /// <returns>True if the function worked. False if the device has not been onboarded or there was a problem</returns>
-        private async Task<bool> UpdateDeviceSettings()
+        /// <returns>True if the function worked. False if the device has not been 
+        /// onboarded or there was a problem</returns>
+        private async Task<bool> GetDeviceSettings()
         {
-            LogStatusMessage("Getting device settings", StatusSeverity.Info, false);
+            LogStatusMessage("Getting device settings from API", StatusSeverity.Info, false);
 
             // First check if we have a device ID (has the device been onboarded yet?)
             //var deviceId = ApplicationData.Current.LocalSettings.Values[_DeviceIdKey];
@@ -568,7 +569,7 @@ namespace Dinmore.Uwp
                             LogStatusMessage($"Found a QR code, thanks.", StatusSeverity.Info, true);
 
                             // Get device settings
-                            await this.UpdateDeviceSettings();
+                            await this.GetDeviceSettings();
 
                             this.vp = await Infrastructure.VoicePackageService.VoicePlayerFactory(Settings.GetString(DeviceSettingKeys.VoicePackageUrlKey));
 
