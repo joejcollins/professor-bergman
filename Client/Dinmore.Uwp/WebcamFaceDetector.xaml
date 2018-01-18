@@ -10,30 +10,58 @@
     <Page.Resources>
         <conv:DateFormatConverter x:Name="DateToStringFormatConverter"/>
     </Page.Resources>
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-        <CaptureElement Grid.Row="1" Name="CamPreview"   />
-        <ListBox Grid.Row="2" Name="Messages" ItemsSource="{Binding StatusLog}" Height="Auto" VerticalAlignment="Top">
-            <ListBox.Background>
-                <SolidColorBrush Opacity="0" />
-            </ListBox.Background>
-            <ListBox.ItemContainerStyle>
-                <Style TargetType="ListBoxItem">
-                    <Setter Property="Padding" Value="5,0,0,0" />
-                    <Setter Property="Margin" Value="0" />
-                    <Setter Property="Foreground" Value="Red" />
-                </Style>
-            </ListBox.ItemContainerStyle>
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <TextBlock Padding="0,0,5,0">
-                        <Run Text="{Binding When, Converter={StaticResource DateToStringFormatConverter}}"/>
-                        <Run Text="{Binding What}"/>
-                    </TextBlock>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Pivot x:Name="rootPivot">
+        <PivotItem Header="Camera">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <CaptureElement Grid.Row="1" Name="CamPreview"   />
+                <ListBox Grid.Row="2" Name="Messages" ItemsSource="{Binding StatusLog}" Height="Auto" VerticalAlignment="Top">
+                    <ListBox.Background>
+                        <SolidColorBrush Opacity="0" />
+                    </ListBox.Background>
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Padding" Value="5,0,0,0" />
+                            <Setter Property="Margin" Value="0" />
+                            <Setter Property="Foreground" Value="Red" />
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Padding="0,0,5,0">
+                                <Run Text="{Binding When, Converter={StaticResource DateToStringFormatConverter}}"/>
+                                <Run Text="{Binding What}"/>
+                            </TextBlock>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+            </PivotItem>
+            <PivotItem Header="Web">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Orientation="Horizontal">
+                            <AppBarButton Icon="Back" Label="back" Click="Back_Click"/>
+                            <AppBarButton Icon="Forward" Label="forward" Click="Forward_Click"/>
+                            <AppBarButton Icon="Refresh" Label="refresh" Click="Refresh_Click"/>
+                            <AppBarButton Icon="Cancel" Label="stop" Click="Stop_Click"/>
+                        </StackPanel>
+                        <TextBox Grid.Column="1" Name="Value" VerticalAlignment="Center" InputScope="Url" KeyDown="Go_KeyDown"/>
+                    </Grid>
+                    <WebView Grid.Row="1" Name="Display" NavigationCompleted="Web_NavigationCompleted" Source="http://blackradley-dinmore-webapp-develop.azurewebsites.net/Devices"/>
+                </Grid>
+            </PivotItem>
+        </Pivot>
     </Grid>
 </Page>

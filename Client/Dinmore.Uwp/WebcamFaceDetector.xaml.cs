@@ -21,7 +21,9 @@ using Windows.Media.SpeechRecognition;
 using Windows.Networking;
 using Windows.Networking.Connectivity;
 using Windows.System.Threading;
+using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 using ZXing;
@@ -942,5 +944,45 @@ namespace Dinmore.Uwp
                 ChangeDetectionState(DetectionStates.Idle);
             });
         }
+
+        /// <summary>
+        /// BROWSER STUFF 
+        /// Taken from https://comentsys.wordpress.com/2015/05/13/windows-10-universal-windows-platform-web-browser/
+        /// </summary>
+        public BrowserLibrary Library = new BrowserLibrary();
+
+        private void Back_Click(object sender, RoutedEventArgs e)
+        {
+            Library.Back(ref Display);
+        }
+
+        private void Forward_Click(object sender, RoutedEventArgs e)
+        {
+            Library.Forward(ref Display);
+        }
+
+        private void Refresh_Click(object sender, RoutedEventArgs e)
+        {
+            Display.Refresh();
+        }
+
+        private void Stop_Click(object sender, RoutedEventArgs e)
+        {
+            Display.Stop();
+        }
+
+        private void Go_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            Library.Go(ref Display, Value.Text, e);
+        }
+
+        private void Web_NavigationCompleted(WebView sender, WebViewNavigationCompletedEventArgs args)
+        {
+            if (args.IsSuccess)
+            {
+                Value.Text = args.Uri.ToString();
+            }
+        }
+
     }
 }

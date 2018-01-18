@@ -106,6 +106,7 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="BrowserLibrary.cs" />
     <Compile Include="Constants\AppConsts.cs" />
     <Compile Include="Constants\DeviceSettingKeys.cs" />
     <Compile Include="Converters.cs" />
