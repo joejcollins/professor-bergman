@@ -141,7 +141,7 @@
     <comment>Every x ms poll the face detction api</comment>
   </data>
   <data name="TurnOnDisplay" xml:space="preserve">
-    <value>false</value>
+    <value>true</value>
   </data>
   <data name="ReturnFaceAttributes" xml:space="preserve">
     <value>age,gender,smile,emotion,accessories,facialHair</value>
